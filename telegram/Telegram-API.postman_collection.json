@@ -1,0 +1,286 @@
+{
+  "info": {
+    "name": "Telegram Microservice API",
+    "description": "Complete API collection for Telegram microservice endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8005",
+      "type": "string"
+    },
+    {
+      "key": "phone",
+      "value": "+1234567890",
+      "type": "string"
+    },
+    {
+      "key": "apiId",
+      "value": "12345",
+      "type": "string"
+    },
+    {
+      "key": "apiHash",
+      "value": "your_api_hash_here",
+      "type": "string"
+    },
+    {
+      "key": "phoneCodeHash",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "receiverPhone",
+      "value": "+0987654321",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication Flow",
+      "item": [
+        {
+          "name": "1. Save Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"apiId\": {{apiId}},\n  \"apiHash\": \"{{apiHash}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "credentials"]
+            },
+            "description": "Store phone number with Telegram API credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Start Authentication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "start"]
+            },
+            "description": "Initiate authentication - sends verification code to Telegram"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.phoneCodeHash) {",
+                  "        pm.collectionVariables.set('phoneCodeHash', jsonData.data.phoneCodeHash);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Verify Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"12345\",\n  \"phoneCodeHash\": \"{{phoneCodeHash}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify"]
+            },
+            "description": "Verify the code received on Telegram app"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messaging",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderPhone\": \"{{phone}}\",\n  \"receiverPhone\": \"{{receiverPhone}}\",\n  \"message\": \"Hello from Postman! This is a test message.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["send"]
+            },
+            "description": "Send a message from authenticated sender to receiver"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages by Phone",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/get?phone={{phone}}&chatPhone={{receiverPhone}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["get"],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "{{phone}}",
+                  "description": "Your authenticated phone number"
+                },
+                {
+                  "key": "chatPhone",
+                  "value": "{{receiverPhone}}",
+                  "description": "Contact's phone number"
+                }
+              ]
+            },
+            "description": "Get unread messages from a conversation by phone number"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages by Chat ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/get?phone={{phone}}&chatId=123456789",
+              "host": ["{{baseUrl}}"],
+              "path": ["get"],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "{{phone}}",
+                  "description": "Your authenticated phone number"
+                },
+                {
+                  "key": "chatId",
+                  "value": "123456789",
+                  "description": "Telegram chat ID"
+                }
+              ]
+            },
+            "description": "Get unread messages from a conversation by chat ID"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Send Without Auth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderPhone\": \"+9999999999\",\n  \"receiverPhone\": \"{{receiverPhone}}\",\n  \"message\": \"This should fail - sender not authenticated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["send"]
+            },
+            "description": "Test error handling when sender is not authenticated"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages Without Auth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/get?phone=+9999999999&chatPhone={{receiverPhone}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["get"],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "+9999999999"
+                },
+                {
+                  "key": "chatPhone",
+                  "value": "{{receiverPhone}}"
+                }
+              ]
+            },
+            "description": "Test error handling when user is not authenticated"
+          },
+          "response": []
+        },
+        {
+          "name": "Missing Required Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderPhone\": \"{{phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["send"]
+            },
+            "description": "Test validation - missing receiverPhone and message"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
