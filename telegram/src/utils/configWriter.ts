@@ -23,3 +23,4 @@ export function updateConfig<T>(
   writeConfig(phone, updated);
   return updated;
 }
+

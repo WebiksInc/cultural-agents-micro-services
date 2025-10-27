@@ -18,3 +18,4 @@ export function sessionExists(phone: string): boolean {
   const sessionPath = getSessionPath(phone);
   return fs.existsSync(sessionPath);
 }
+

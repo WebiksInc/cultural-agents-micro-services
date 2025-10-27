@@ -2,6 +2,7 @@ import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { PhoneConfig } from '../types';
 import { getSessionPath, ensureSessionsDir } from '../utils/sessionManager';
+import * as fs from 'fs';
 
 const clients = new Map<string, TelegramClient>();
 
@@ -11,7 +12,13 @@ export async function createClient(
   ensureSessionsDir();
   
   const sessionPath = getSessionPath(config.phone);
-  const session = new StringSession('');
+  let sessionString = '';
+  
+  if (fs.existsSync(sessionPath)) {
+    sessionString = fs.readFileSync(sessionPath, 'utf-8');
+  }
+  
+  const session = new StringSession(sessionString);
   
   const client = new TelegramClient(
     session,

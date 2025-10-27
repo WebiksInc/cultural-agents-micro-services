@@ -3,6 +3,7 @@ import * as path from 'path';
 
 const CONFIG_DIR = path.join(__dirname, '../../config');
 
+// Ensure the configuration directory exists, create if missing
 export function ensureConfigDir(): void {
   if (!fs.existsSync(CONFIG_DIR)) {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
@@ -12,10 +13,6 @@ export function ensureConfigDir(): void {
 export function getConfigPath(phone: string): string {
   const sanitized = phone.replace(/[^0-9+]/g, '');
   return path.join(CONFIG_DIR, `phone_${sanitized}.json`);
-}
-
-export function configExists(phone: string): boolean {
-  return fs.existsSync(getConfigPath(phone));
 }
 
 export function readConfig<T>(phone: string): T | null {
@@ -30,3 +27,4 @@ export function readConfig<T>(phone: string): T | null {
     return null;
   }
 }
+

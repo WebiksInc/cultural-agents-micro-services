@@ -17,3 +17,4 @@ export async function markAsRead(
     throw new Error('Failed to mark messages as read');
   }
 }
+

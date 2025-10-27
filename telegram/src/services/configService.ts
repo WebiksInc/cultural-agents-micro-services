@@ -19,3 +19,4 @@ export function savePhoneCredentials(
   writeConfig(phone, config);
   return config;
 }
+
