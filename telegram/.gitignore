@@ -1,7 +1,0 @@
-node_modules/
-dist/
-config/
-sessions/
-*.session
-*.log
-.env
