@@ -51,3 +51,4 @@ export function warn(message: string, context?: LogContext): void {
 export function error(message: string, context?: LogContext): void {
   logOutput('error', message, context);
 }
+

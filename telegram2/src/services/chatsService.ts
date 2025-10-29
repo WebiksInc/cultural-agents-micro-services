@@ -98,3 +98,4 @@ export async function getGroupsOnly(accountPhone: string): Promise<ChatsResponse
   
   return { chats, details: groups };
 }
+
