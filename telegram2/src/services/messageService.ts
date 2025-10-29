@@ -7,7 +7,7 @@ export const sendMessage = async (
   fromPhone: string,
   toTarget: string,
   message: string
-): Promise<void> => {
+): Promise<{ sentTo: string }> => {
   validators.validatePhone(fromPhone);
   validators.validateTarget(toTarget);
   validators.validateMessage(message);
@@ -22,4 +22,6 @@ export const sendMessage = async (
   await client.sendMessage(toTarget, { message });
 
   logger.info('Message sent successfully', { fromPhone, toTarget });
+
+  return { sentTo: toTarget };
 };

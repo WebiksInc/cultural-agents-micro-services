@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import * as messageService from '../services/messageService';
+import {sendMessage}  from '../services/messageService';
 import * as validators from '../utils/validators';
 import * as logger from '../utils/logger';
 
@@ -11,7 +11,7 @@ router.post('/send', async (req: Request, res: Response) => {
     const toTarget = validators.validateTarget(req.body.toTarget);
     const message = validators.validateMessage(req.body.message);
     
-    const result = await messageService.sendMessage(fromPhone, toTarget, message);
+    const result = await sendMessage(fromPhone, toTarget, message);
     
     res.json({
       success: true,
