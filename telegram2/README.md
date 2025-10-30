@@ -40,26 +40,26 @@ telegram2/npm install
 
 │   │   ├── logger.ts         # JSON logging
 
-│   │   ├── phoneStorage.ts   # Per-phone JSON filesSet LOG_LEVEL=debug for verbose logs.
-
+│   │   ├── phoneStorage.ts   # Per-phone JSON files
+│   │   │                        # Set LOG_LEVEL=debug for verbose logs.
 │   │   └── validators.ts     # Input validation
 
-│   ├── services/       # Business logic## Data Store
-
-│   │   ├── sessionManager.ts # Session lifecycleSingle JSON file at data/store.json maintaining accounts, messages, and conversation state.
-
+│   ├── services/       # Business logic
+│   │   │                  # Data Store
+│   │   ├── sessionManager.ts # Session lifecycle
+│   │   │                        # Single JSON file at data/store.json maintaining accounts, messages, and conversation state.
 │   │   ├── authService.ts    # Authentication
 
-│   │   ├── messageService.ts # Send messages## Notes
-
-│   │   └── unreadService.ts  # Fetch unread- Each file kept under 120 lines.
-
-│   ├── routes/         # API endpoints- Sessions auto-loaded at startup.
-
-│   │   ├── authRoutes.ts- Unread determined by last fetched message id per conversation.
-
-│   │   ├── messageRoutes.ts- Channel support: pass channel username as target (e.g. @telegram). Messages filtered same way.
-
+│   │   ├── messageService.ts # Send messages
+│   │   │                        # Notes
+│   │   └── unreadService.ts  # Fetch unread
+│   │   │                        # Each file kept under 120 lines.
+│   ├── routes/         # API endpoints
+│   │   │                  # Sessions auto-loaded at startup.
+│   │   ├── authRoutes.ts
+│   │   │                        # Unread determined by last fetched message id per conversation.
+│   │   ├── messageRoutes.ts
+│   │   │                        # Channel support: pass channel username as target (e.g. @telegram). Messages filtered same way.
 │   │   ├── unreadRoutes.ts
 │   │   └── index.ts
 │   └── server.ts       # Express server
