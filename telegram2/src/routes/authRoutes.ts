@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import * as authService from '../services/authService';
+import { sendCode } from '../services/sendCodeService';
+import { verifyCode } from '../services/verifyCodeService';
 import * as sessionManager from '../services/sessionManager';
 import * as validators from '../utils/validators';
 import * as logger from '../utils/logger';
@@ -14,7 +15,7 @@ router.post('/send-code', async (req: Request, res: Response) => {
       req.body.apiHash
     );
     
-    const result = await authService.sendCode(phone, apiId, apiHash);
+    const result = await sendCode(phone, apiId, apiHash);
     
     res.json({
       success: true,
@@ -31,7 +32,7 @@ router.post('/verify-code', async (req: Request, res: Response) => {
     const phone = validators.validatePhone(req.body.phone);
     const code = validators.validateCode(req.body.code);
     
-    const result = await authService.verifyCode(phone, code);
+    const result = await verifyCode(phone, code);
     
     res.json({
       success: true,

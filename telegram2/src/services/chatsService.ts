@@ -1,101 +1,121 @@
 import * as logger from '../utils/logger';
 import * as sessionManager from './sessionManager';
-
-interface ChatInfo {
-  id: string;
-  name: string;
-  type: 'user' | 'group' | 'channel' | 'bot';
-  username?: string;
-}
-
-interface ChatsResponse {
-  chats: Record<string, string>;
-  details: ChatInfo[];
-}
+import { 
+  ChatInfo, 
+  ChatsResponse, 
+  EntityType, 
+  TelegramDialog, 
+  TelegramEntity 
+} from '../types/chats';
 
 export async function getAllChats(accountPhone: string): Promise<ChatsResponse> {
   logger.info('Fetching all chats', { accountPhone });
-  
+  const client = await getAuthenticatedClient(accountPhone);
+  const dialogs = await fetchDialogs(client);
+  const { chats, details } = processDialogs(dialogs);
+  logChatsSummary(accountPhone, details);
+  return { chats, details };
+}
+
+async function getAuthenticatedClient(accountPhone: string): Promise<any> {
   let client = sessionManager.getClient(accountPhone);
-  
   if (!client) {
     client = await sessionManager.loadSession(accountPhone);
   }
-  
-  if (!client) {
-    throw new Error('Account not authenticated. Please authenticate first.');
-  }
-  
+  return client;
+}
+
+async function fetchDialogs(client: any): Promise<TelegramDialog[]> {
   try {
-    const dialogs = await client.getDialogs({ limit: 100 });
-    
-    const chats: Record<string, string> = {};
-    const details: ChatInfo[] = [];
-    
-    for (const dialog of dialogs) {
-      const entity = dialog.entity;
-      
-      let name = dialog.title || 'Unknown';
-      let id = entity.id?.toString() || '';
-      let type: 'user' | 'group' | 'channel' | 'bot' = 'user';
-      let username: string | undefined;
-      
-      if (entity.className === 'User') {
-        const firstName = (entity as any).firstName || '';
-        const lastName = (entity as any).lastName || '';
-        name = `${firstName} ${lastName}`.trim() || 'Unknown User';
-        type = (entity as any).bot ? 'bot' : 'user';
-        username = (entity as any).username;
-      } else if (entity.className === 'Channel') {
-        name = (entity as any).title || 'Unknown Channel';
-        type = (entity as any).broadcast ? 'channel' : 'group';
-        username = (entity as any).username;
-      } else if (entity.className === 'Chat') {
-        name = (entity as any).title || 'Unknown Chat';
-        type = 'group';
-      }
-      
-      if (id) {
-        chats[name] = id;
-        details.push({
-          id,
-          name,
-          type,
-          username,
-        });
-      }
-    }
-    
-    logger.info('Chats fetched successfully', { 
-      accountPhone, 
-      totalChats: details.length,
-      users: details.filter(d => d.type === 'user').length,
-      groups: details.filter(d => d.type === 'group').length,
-      channels: details.filter(d => d.type === 'channel').length,
-      bots: details.filter(d => d.type === 'bot').length,
-    });
-    
-    return { chats, details };
+    return await client.getDialogs({ limit: 100 });
   } catch (err: any) {
-    logger.error('Failed to fetch chats', { accountPhone, error: err.message });
     throw new Error(`Failed to fetch chats: ${err.message}`);
   }
 }
 
+function processDialogs(dialogs: TelegramDialog[]): { chats: Record<string, string>; details: ChatInfo[] } {
+  const chats: Record<string, string> = {};
+  const details: ChatInfo[] = [];
+  for (const dialog of dialogs) {
+    const chatInfo = extractChatInfo(dialog);
+    if (chatInfo && chatInfo.id) {
+      chats[chatInfo.name] = chatInfo.id;
+      details.push(chatInfo);
+    }
+  }
+  return { chats, details };
+}
+
+function extractChatInfo(dialog: TelegramDialog): ChatInfo | null {
+  const entity = dialog.entity;
+  const id = entity.id?.toString();
+  if (!id) {
+    return null;
+  }
+  const name = determineChatName(dialog, entity);
+  const type = determineChatType(entity);
+  const username = entity.username;
+  
+  return { id, name, type, username };
+}
+
+function determineChatName(dialog: TelegramDialog, entity: TelegramEntity): string {
+  switch (entity.className) {
+    case 'User':
+      return buildUserName(entity);
+    case 'Channel':
+      return entity.title || 'Unknown Channel';
+    case 'Chat':
+      return entity.title || 'Unknown Chat';
+    default:
+      return dialog.title || 'Unknown';
+  }
+}
+
+function buildUserName(entity: TelegramEntity): string {
+  const firstName = entity.firstName || '';
+  const lastName = entity.lastName || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  return fullName || 'Unknown User';
+}
+
+function determineChatType(entity: TelegramEntity): EntityType {
+  switch (entity.className) {
+    case 'User':
+      return entity.bot ? 'bot' : 'user';
+    
+    case 'Channel':
+      return entity.broadcast ? 'channel' : 'group';
+    
+    case 'Chat':
+      return 'group';
+    
+    default:
+      return 'user';
+  }
+}
+
+function logChatsSummary(accountPhone: string, details: ChatInfo[]): void {
+  logger.info('Chats fetched successfully', { 
+    accountPhone, 
+    totalChats: details.length,
+    users: details.filter(d => d.type === 'user').length,
+    groups: details.filter(d => d.type === 'group').length,
+    channels: details.filter(d => d.type === 'channel').length,
+    bots: details.filter(d => d.type === 'bot').length,
+  });
+}
+
 export async function getGroupsOnly(accountPhone: string): Promise<ChatsResponse> {
   logger.info('Fetching groups only', { accountPhone });
-  
   const allChats = await getAllChats(accountPhone);
-  
   const groups = allChats.details.filter(d => d.type === 'group' || d.type === 'channel');
   const chats: Record<string, string> = {};
-  
   for (const group of groups) {
     chats[group.name] = group.id;
   }
-  
   logger.info('Groups fetched successfully', { accountPhone, count: groups.length });
-  
   return { chats, details: groups };
 }
+
 

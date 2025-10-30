@@ -2,18 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import * as logger from './logger';
 import { config } from './config';
+import { PhoneData } from '../types/phone';
+
+// Re-export for backward compatibility
+export type { PhoneData };
 
 const dataDir = path.resolve(config.dataDir);
-
-export interface PhoneData {
-  phone: string;
-  apiId: number;
-  apiHash: string;
-  session?: string;
-  phoneCodeHash?: string;
-  verified: boolean;
-  lastAuthAt?: string;
-}
 
 function ensureDataDir(): void {
   if (!fs.existsSync(dataDir)) {
@@ -85,9 +79,11 @@ export function listAllPhones(): string[] {
 export function deletePhoneData(phone: string): void {
   const filePath = getPhoneFilePath(phone);
   
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    logger.info('Deleted phone data', { phone });
+  if (!fs.existsSync(filePath)) {
+    return;
   }
+  
+  fs.unlinkSync(filePath);
+  logger.info('Deleted phone data', { phone });
 }
 

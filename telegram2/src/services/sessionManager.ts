@@ -1,58 +1,14 @@
-import { TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions';
 import * as logger from '../utils/logger';
-import * as phoneStorage from '../utils/phoneStorage';
-import { config } from '../utils/config';
+import * as sessionLoader from './sessionLoader';
 
 const activeClients = new Map<string, any>();
 
 export async function loadAllSessions(): Promise<void> {
-  logger.info('Loading existing sessions');
-  
-  const phones = phoneStorage.listAllPhones();
-  
-  for (const phone of phones) {
-    try {
-      await loadSession(phone);
-    } catch (err: any) {
-      logger.warn('Failed to load session', { phone, error: err.message });
-    }
-  }
-  
-  logger.info('Sessions loaded', { count: activeClients.size });
+  return sessionLoader.loadAllSessions(activeClients);
 }
 
 export async function loadSession(phone: string): Promise<any | null> {
-  const existing = activeClients.get(phone);
-  if (existing) {
-    logger.debug('Session already loaded', { phone });
-    return existing;
-  }
-  
-  const phoneData = phoneStorage.loadPhoneData(phone);
-  
-  if (!phoneData || !phoneData.session || !phoneData.verified) {
-    logger.debug('No valid session found', { phone });
-    return null;
-  }
-  
-  try {
-    const client = new TelegramClient(
-      new StringSession(phoneData.session),
-      phoneData.apiId,
-      phoneData.apiHash,
-      { connectionRetries: config.connectionRetries }
-    );
-    
-    await client.connect();
-    activeClients.set(phone, client);
-    
-    logger.info('Session loaded and connected', { phone });
-    return client;
-  } catch (err: any) {
-    logger.error('Failed to connect session', { phone, error: err.message });
-    return null;
-  }
+  return sessionLoader.loadSession(phone, activeClients);
 }
 
 export function getClient(phone: string): any | null {
@@ -72,14 +28,16 @@ export function removeClient(phone: string): void {
 export async function disconnectClient(phone: string): Promise<void> {
   const client = activeClients.get(phone);
   
-  if (client) {
-    try {
-      await client.disconnect();
-      activeClients.delete(phone);
-      logger.info('Client disconnected', { phone });
-    } catch (err: any) {
-      logger.error('Failed to disconnect client', { phone, error: err.message });
-    }
+  if (!client) {
+    return;
+  }
+  
+  try {
+    await client.disconnect();
+    activeClients.delete(phone);
+    logger.info('Client disconnected', { phone });
+  } catch (err: any) {
+    logger.error('Failed to disconnect client', { phone, error: err.message });
   }
 }
 
@@ -110,6 +68,5 @@ export function getActivePhones(): string[] {
 export function getActiveClientCount(): number {
   return activeClients.size;
 }
-
 
 

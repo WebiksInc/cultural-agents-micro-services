@@ -12,7 +12,6 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.json({ 
     success: true, 
-    message: 'Service is healthy',
     version: '0.1.0',
     environment: config.nodeEnv,
     port: config.port
