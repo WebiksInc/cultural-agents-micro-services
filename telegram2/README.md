@@ -3,7 +3,8 @@
 
 
 
-A clean, functional TypeScript microservice for Telegram integration using GramJS library.Minimal service providing:
+A clean, functional TypeScript microservice for Telegram integration using GramJS library.
+Minimal service providing:
 
 - Authentication (send code, verify code) using telegram (MTProto client)
 
