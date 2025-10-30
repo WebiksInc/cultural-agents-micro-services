@@ -4,6 +4,7 @@ import { StringSession } from 'telegram/sessions';
 import * as logger from '../utils/logger';
 import * as phoneStorage from '../utils/phoneStorage';
 import * as sessionManager from './sessionManager';
+import { config } from '../utils/config';
 
 export async function sendCode(
   phone: string,
@@ -20,7 +21,7 @@ export async function sendCode(
       new StringSession(''),
       apiId,
       apiHash,
-      { connectionRetries: 3 }
+      { connectionRetries: config.connectionRetries }
     );
     await client.connect();
     sessionManager.setClient(phone, client);

@@ -2,6 +2,7 @@ import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import * as logger from '../utils/logger';
 import * as phoneStorage from '../utils/phoneStorage';
+import { config } from '../utils/config';
 
 const activeClients = new Map<string, any>();
 
@@ -40,7 +41,7 @@ export async function loadSession(phone: string): Promise<any | null> {
       new StringSession(phoneData.session),
       phoneData.apiId,
       phoneData.apiHash,
-      { connectionRetries: 3 }
+      { connectionRetries: config.connectionRetries }
     );
     
     await client.connect();

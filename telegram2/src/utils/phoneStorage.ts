@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import * as logger from './logger';
+import { config } from './config';
 
-const dataDir = path.join(process.cwd(), 'data');
+const dataDir = path.resolve(config.dataDir);
 
 export interface PhoneData {
   phone: string;

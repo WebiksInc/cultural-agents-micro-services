@@ -19,11 +19,10 @@ router.post('/send-code', async (req: Request, res: Response) => {
     res.json({
       success: true,
       phoneCodeHash: result.phoneCodeHash,
-      message: 'Verification code sent to Telegram',
     });
   } catch (err: any) {
     logger.error('Send code failed', { error: err.message });
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -37,11 +36,10 @@ router.post('/verify-code', async (req: Request, res: Response) => {
     res.json({
       success: true,
       user: result.user,
-      message: 'Authentication successful',
     });
   } catch (err: any) {
     logger.error('Verify code failed', { error: err.message });
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -55,7 +53,6 @@ router.get('/debug/active-sessions', async (req: Request, res: Response) => {
     success: true,
     count,
     activePhones,
-    message: 'These phones have active clients in memory',
   });
 });
 

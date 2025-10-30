@@ -1,25 +1,51 @@
+import 'dotenv/config';
 import express from 'express';
 import routes from './routes';
 import * as sessionManager from './services/sessionManager';
 import * as logger from './utils/logger';
+import { config } from './utils/config';
 
 const app = express();
-const port = process.env.PORT || 4000;
 
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
-  res.json({ success: true, message: 'Service is healthy' });
+  res.json({ 
+    success: true, 
+    message: 'Service is healthy',
+    version: '0.1.0',
+    environment: config.nodeEnv,
+    port: config.port
+  });
+});
+
+app.get('/config', (_req, res) => {
+  res.json({
+    success: true,
+    config: {
+      nodeEnv: config.nodeEnv,
+      port: config.port,
+      logLevel: config.logLevel,
+      dataDir: config.dataDir,
+      autoLoadSessions: config.autoLoadSessions,
+      connectionRetries: config.connectionRetries,
+      hasDefaultApiCredentials: !!(config.telegramApiId && config.telegramApiHash)
+    }
+  });
 });
 
 app.use('/api', routes);
 
 async function startServer(): Promise<void> {
   try {
-    await sessionManager.loadAllSessions();
+    if (config.autoLoadSessions) {
+      await sessionManager.loadAllSessions();
+    } else {
+      logger.info('Auto-load sessions disabled');
+    }
     
-    const server = app.listen(port, () => {
-      logger.info('Server started', { port });
+    const server = app.listen(config.port, () => {
+      logger.info('Server started', { port: config.port });
     });
     
     async function shutdown(): Promise<void> {
@@ -35,7 +61,7 @@ async function startServer(): Promise<void> {
       setTimeout(() => {
         logger.error('Forced shutdown after timeout');
         process.exit(1);
-      }, 10000);
+      }, config.shutdownTimeout);
     }
     
     process.on('SIGINT', shutdown);

@@ -257,7 +257,7 @@ server.ts
 ### No Classes - Pure Functions
 
 ```typescript
-// ❌ OOP Approach (NOT used)
+
 class SessionManager {
   private clients = new Map();
   getClient() { ... }

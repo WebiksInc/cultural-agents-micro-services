@@ -1,4 +1,4 @@
-# Telegram2 Microservice# Telegram2 Service (Simple Telegram MTProto Integration)
+# Telegram2 Service (Simple Telegram MTProto Integration)
 
 
 
@@ -38,7 +38,7 @@ telegram2/npm install
 
 │   │   ├── logger.ts         # JSON logging
 
-│   │   ├── phoneStorage.ts   # Per-phone JSON filesSet LOG_LEVEL=debug for verbose logs.
+│   │   ├── phoneStorage.ts   # Per-phone JSON files.
 
 │   │   └── validators.ts     # Input validation
 
@@ -48,11 +48,11 @@ telegram2/npm install
 
 │   │   ├── authService.ts    # Authentication
 
-│   │   ├── messageService.ts # Send messages## Notes
+│   │   ├── messageService.ts # Send messages
 
 │   │   └── unreadService.ts  # Fetch unread- Each file kept under 120 lines.
 
-│   ├── routes/         # API endpoints- Sessions auto-loaded at startup.
+│   ├── routes/         # API endpoints.
 
 │   │   ├── authRoutes.ts- Unread determined by last fetched message id per conversation.
 
@@ -74,6 +74,24 @@ cd telegram2
 npm install
 ```
 
+### Setup Environment Variables
+
+1. Copy the environment template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` with your preferred settings:
+   ```bash
+   # Basic configuration
+   PORT=4000
+   NODE_ENV=development
+   LOG_LEVEL=info
+   DATA_DIR=./data
+   ```
+
+3. See `ENV_VARIABLES.md` for full configuration options
+
 ### Get Telegram API Credentials
 
 1. Visit https://my.telegram.org
@@ -81,6 +99,11 @@ npm install
 3. Go to "API development tools"
 4. Create an application
 5. Copy your `api_id` and `api_hash`
+6. (Optional) Add them to `.env` as defaults:
+   ```bash
+   TELEGRAM_API_ID=your_api_id
+   TELEGRAM_API_HASH=your_api_hash
+   ```
 
 ## Running the Service
 
@@ -114,7 +137,27 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Service is healthy"
+  "message": "Service is healthy",
+  "version": "0.1.0",
+  "environment": "development",
+  "port": 4000
+}
+```
+
+**GET** `/config`
+
+Returns current configuration:
+```json
+{
+  "success": true,
+  "config": {
+    "nodeEnv": "development",
+    "port": 4000,
+    "logLevel": "info",
+    "dataDir": "./data",
+    "autoLoadSessions": true,
+    "hasDefaultApiCredentials": false
+  }
 }
 ```
 

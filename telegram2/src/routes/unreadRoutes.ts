@@ -38,7 +38,7 @@ router.get('/unread', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     logger.error('Get unread failed', { error: err.message });
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

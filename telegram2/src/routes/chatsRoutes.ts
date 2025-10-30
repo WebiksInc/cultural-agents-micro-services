@@ -15,11 +15,10 @@ router.get('/all', async (req: Request, res: Response) => {
       success: true,
       chats: result.chats,
       details: result.details,
-      count: result.details.length,
     });
   } catch (err: any) {
     logger.error('Get all chats failed', { error: err.message });
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -33,11 +32,10 @@ router.get('/groups', async (req: Request, res: Response) => {
       success: true,
       chats: result.chats,
       details: result.details,
-      count: result.details.length,
     });
   } catch (err: any) {
     logger.error('Get groups failed', { error: err.message });
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

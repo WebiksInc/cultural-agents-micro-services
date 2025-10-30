@@ -16,11 +16,10 @@ router.post('/send', async (req: Request, res: Response) => {
     res.json({
       success: true,
       sentTo: result.sentTo,
-      message: 'Message sent successfully',
     });
   } catch (err: any) {
     logger.error('Send message failed', { error: err.message });
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
