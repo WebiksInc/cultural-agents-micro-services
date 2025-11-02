@@ -4,8 +4,6 @@ import * as logger from './logger';
 import { config } from './config';
 import { PhoneData } from '../types/phone';
 
-// Re-export for backward compatibility
-export type { PhoneData };
 
 const dataDir = path.resolve(config.dataDir);
 
