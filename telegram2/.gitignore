@@ -59,3 +59,7 @@ sessions/
 
 # Postman collections (may contain sensitive data)
 Telegram2-API.postman_collection.json
+
+telegram2/Telegram2-API.postman_collection.json
+.github/prompts/readTelegram.prompt.md
+
