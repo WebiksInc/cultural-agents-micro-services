@@ -10,3 +10,19 @@ services:
       - NODE_ENV=production
       - PORT=8005
     restart: unless-stopped
+
+  telegram2:
+    build: ./telegram2
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./telegram2/data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - LOG_LEVEL=info
+      - DATA_DIR=/app/data
+      - AUTO_LOAD_SESSIONS=true
+      - CONNECTION_RETRIES=5
+      - SHUTDOWN_TIMEOUT=15000
+    restart: unless-stopped

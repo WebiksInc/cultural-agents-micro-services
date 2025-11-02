@@ -32,17 +32,9 @@ export async function getUnreadMessages(
 }
 
 async function getAuthenticatedClient(accountPhone: string): Promise<any> {
-  let client = sessionManager.getClient(accountPhone);
-  
-  if (!client) {
-    client = await sessionManager.loadSession(accountPhone);
-  }
-  
-  if (!client) {
-    throw new Error('Account not authenticated. Please authenticate first.');
-  }
-  
-  return client;
+    const client = sessionManager.getClient(accountPhone);
+    if (client) return client 
+    return await sessionManager.loadSession(accountPhone);
 }
 
 async function fetchAndProcessMessages(

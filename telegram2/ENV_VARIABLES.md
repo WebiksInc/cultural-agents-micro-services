@@ -15,45 +15,18 @@ This document describes all environment variables supported by the Telegram2 ser
 
 ## Environment Variables
 
-### Server Configuration
-
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `PORT` | number | `4000` | Port number for the HTTP server |
 | `NODE_ENV` | string | `development` | Node.js environment (development/production) |
-
-### Logging Configuration
-
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
 | `LOG_LEVEL` | string | `info` | Minimum log level: `debug`, `info`, `warn`, `error` |
-
-### Data Storage
-
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
 | `DATA_DIR` | string | `./data` | Directory to store phone session files |
-
-### Connection Settings
-
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
 | `CONNECTION_RETRIES` | number | `3` | Number of connection retries for Telegram clients |
 | `SHUTDOWN_TIMEOUT` | number | `10000` | Graceful shutdown timeout (milliseconds) |
-
-### Session Management
-
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
 | `AUTO_LOAD_SESSIONS` | boolean | `true` | Automatically load saved sessions on startup |
 | `SESSION_CLEANUP_INTERVAL` | number | `3600000` | Session cleanup interval (milliseconds, 1h default) |
-
-### Optional Telegram API Credentials
-
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `TELEGRAM_API_ID` | number | none | Default Telegram API ID (can be overridden per request) |
-| `TELEGRAM_API_HASH` | string | none | Default Telegram API Hash (can be overridden per request) |
+| `TELEGRAM_API_ID` | number | none | Optional: Default Telegram API ID (can be overridden per request) |
+| `TELEGRAM_API_HASH` | string | none | Optional: Default Telegram API Hash (can be overridden per request) |
 
 ## Usage Examples
 

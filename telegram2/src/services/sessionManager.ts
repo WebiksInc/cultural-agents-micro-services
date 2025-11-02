@@ -28,9 +28,9 @@ export function removeClient(phone: string): void {
 export async function disconnectClient(phone: string): Promise<void> {
   const client = activeClients.get(phone);
   
-  if (!client) {
+  if (!client) 
     return;
-  }
+  
   
   try {
     await client.disconnect();

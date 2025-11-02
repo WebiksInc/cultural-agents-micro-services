@@ -18,7 +18,6 @@ data/
 *.json
 !package.json
 !tsconfig.json
-!Telegram2-API.postman_collection.json
 
 # Logs
 logs/
@@ -41,6 +40,9 @@ lerna-debug.log*
 *~
 .DS_Store
 
+# GitHub
+.github/
+
 # Testing
 coverage/
 .nyc_output/
@@ -54,3 +56,6 @@ temp/
 # Session files (sensitive)
 sessions/
 *.session
+
+# Postman collections (may contain sensitive data)
+Telegram2-API.postman_collection.json

@@ -57,3 +57,4 @@ async function connectClient(session: string, apiId: number, apiHash: string): P
   await client.connect();
   return client;
 }
+

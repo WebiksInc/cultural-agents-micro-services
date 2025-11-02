@@ -9,7 +9,7 @@ const app = express();
 
 app.use(express.json());
 
-app.get('/health', (_req, res) => {
+app.get('/health', (req, res) => {
   res.json({ 
     success: true, 
     version: '0.1.0',
@@ -18,7 +18,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
-app.get('/config', (_req, res) => {
+app.get('/config', (req, res) => {
   res.json({
     success: true,
     config: {

@@ -13,11 +13,9 @@ export async function resolveEntity(client: any, target?: string, chatId?: strin
     return entity;
   }
   
-  if (target) {
-    const entity = await client.getEntity(target);
-    logger.debug('Entity fetched by target', { target, entityId: entity.id.toString() });
-    return entity;
-  }
+  const entity = await client.getEntity(target!);
+  logger.debug('Entity fetched by target', { target, entityId: entity.id.toString() });
+  return entity;
 }
 
 export async function getUnreadCount(client: any, entity: any): Promise<number> {

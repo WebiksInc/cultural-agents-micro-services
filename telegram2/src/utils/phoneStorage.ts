@@ -79,9 +79,8 @@ export function listAllPhones(): string[] {
 export function deletePhoneData(phone: string): void {
   const filePath = getPhoneFilePath(phone);
   
-  if (!fs.existsSync(filePath)) {
-    return;
-  }
+  if (!fs.existsSync(filePath)) return;
+
   
   fs.unlinkSync(filePath);
   logger.info('Deleted phone data', { phone });
