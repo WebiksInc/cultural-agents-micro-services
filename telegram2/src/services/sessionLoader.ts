@@ -1,10 +1,23 @@
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
-import * as logger from '../utils/logger';
-import * as phoneStorage from '../utils/phoneStorage';
-import { config } from '../utils/config';
+import logger from '../utils/logger';
+import phoneStorage from '../utils/phoneStorage';
+import vars from '../vars';
 
-export async function loadSession(phone: string, activeClients: Map<string, any>): Promise<any | null> {
+
+async function connectClient(session: string, apiId: number, apiHash: string): Promise<any> {
+  const client = new TelegramClient(
+    new StringSession(session),
+    apiId,
+    apiHash,
+    { connectionRetries: vars.CONNECTION_RETRIES }
+  );
+  
+  await client.connect();
+  return client;
+}
+
+export const loadSession = async (phone: string, activeClients: Map<string, any>): Promise<any | null> => {
   const existing = activeClients.get(phone);
   if (existing) {
     logger.debug('Session already loaded', { phone });
@@ -30,7 +43,7 @@ export async function loadSession(phone: string, activeClients: Map<string, any>
   }
 }
 
-export async function loadAllSessions(activeClients: Map<string, any>): Promise<void> {
+export const loadAllSessions = async (activeClients: Map<string, any>): Promise<void> => {
   logger.info('Loading existing sessions');
   
   const phones = phoneStorage.listAllPhones();
@@ -46,15 +59,8 @@ export async function loadAllSessions(activeClients: Map<string, any>): Promise<
   logger.info('Sessions loaded', { count: activeClients.size });
 }
 
-async function connectClient(session: string, apiId: number, apiHash: string): Promise<any> {
-  const client = new TelegramClient(
-    new StringSession(session),
-    apiId,
-    apiHash,
-    { connectionRetries: config.connectionRetries }
-  );
-  
-  await client.connect();
-  return client;
-}
-
+export default {
+  loadSession,
+  loadAllSessions,
+  connectClient
+};

@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import * as logger from './logger';
-import { config } from './config';
+import vars from '../vars';
 import { PhoneData } from '../types/phone';
 
 
-const dataDir = path.resolve(config.dataDir);
+const dataDir = path.resolve(vars.DATA_DIR);
 
 function ensureDataDir(): void {
   if (!fs.existsSync(dataDir)) {
@@ -30,7 +30,7 @@ export function savePhoneData(data: PhoneData): void {
   logger.info('Saved phone data', { phone: data.phone, verified: data.verified });
 }
 
-export function loadPhoneData(phone: string): PhoneData | null {
+export const loadPhoneData = (phone: string): PhoneData | null => {
   const filePath = getPhoneFilePath(phone);
   
   if (!fs.existsSync(filePath)) {
@@ -49,7 +49,7 @@ export function loadPhoneData(phone: string): PhoneData | null {
   }
 }
 
-export function updatePhoneData(phone: string, updates: Partial<PhoneData>): void {
+export const updatePhoneData = (phone: string, updates: Partial<PhoneData>): void => {
   const existing = loadPhoneData(phone);
   
   if (!existing) {
@@ -74,7 +74,7 @@ export function listAllPhones(): string[] {
   return phones;
 }
 
-export function deletePhoneData(phone: string): void {
+export const deletePhoneData = (phone: string): void => {
   const filePath = getPhoneFilePath(phone);
   
   if (!fs.existsSync(filePath)) return;
@@ -83,4 +83,13 @@ export function deletePhoneData(phone: string): void {
   fs.unlinkSync(filePath);
   logger.info('Deleted phone data', { phone });
 }
+
+export default {
+  savePhoneData,
+  loadPhoneData,
+  updatePhoneData,
+  listAllPhones,
+  deletePhoneData
+};
+
 

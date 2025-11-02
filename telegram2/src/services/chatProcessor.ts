@@ -1,4 +1,4 @@
-import * as logger from '../utils/logger';
+import logger from '../utils/logger';
 import { 
   ChatInfo, 
   EntityType, 
@@ -6,30 +6,12 @@ import {
   TelegramEntity 
 } from '../types/chats';
 
-export function processDialogs(dialogs: TelegramDialog[]): { chats: Record<string, string>; details: ChatInfo[] } {
-  const chats: Record<string, string> = {};
-  const details: ChatInfo[] = [];
-  for (const dialog of dialogs) {
-    const chatInfo = extractChatInfo(dialog);
-    if (chatInfo && chatInfo.id) {
-      chats[chatInfo.name] = chatInfo.id;
-      details.push(chatInfo);
-    }
-  }
-  return { chats, details };
-}
 
-export function extractChatInfo(dialog: TelegramDialog): ChatInfo | null {
-  const entity = dialog.entity;
-  const id = entity.id?.toString();
-  if (!id) {
-    return null;
-  }
-  const name = determineChatName(dialog, entity);
-  const type = determineChatType(entity);
-  const username = entity.username;
-  
-  return { id, name, type, username };
+function buildUserName(entity: TelegramEntity): string {
+  const firstName = entity.firstName || '';
+  const lastName = entity.lastName || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  return fullName || 'Unknown User';
 }
 
 function determineChatName(dialog: TelegramDialog, entity: TelegramEntity): string {
@@ -43,13 +25,6 @@ function determineChatName(dialog: TelegramDialog, entity: TelegramEntity): stri
     default:
       return dialog.title || 'Unknown';
   }
-}
-
-function buildUserName(entity: TelegramEntity): string {
-  const firstName = entity.firstName || '';
-  const lastName = entity.lastName || '';
-  const fullName = `${firstName} ${lastName}`.trim();
-  return fullName || 'Unknown User';
 }
 
 function determineChatType(entity: TelegramEntity): EntityType {
@@ -68,7 +43,33 @@ function determineChatType(entity: TelegramEntity): EntityType {
   }
 }
 
-export function logChatsSummary(accountPhone: string, details: ChatInfo[]): void {
+export const extractChatInfo = (dialog: TelegramDialog): ChatInfo | null => {
+  const entity = dialog.entity;
+  const id = entity.id?.toString();
+  if (!id) {
+    return null;
+  }
+  const name = determineChatName(dialog, entity);
+  const type = determineChatType(entity);
+  const username = entity.username;
+  
+  return { id, name, type, username };
+}
+
+export function processDialogs(dialogs: TelegramDialog[]): { chats: Record<string, string>; details: ChatInfo[] } {
+  const chats: Record<string, string> = {};
+  const details: ChatInfo[] = [];
+  for (const dialog of dialogs) {
+    const chatInfo = extractChatInfo(dialog);
+    if (chatInfo && chatInfo.id) {
+      chats[chatInfo.name] = chatInfo.id;
+      details.push(chatInfo);
+    }
+  }
+  return { chats, details };
+}
+
+export const logChatsSummary = (accountPhone: string, details: ChatInfo[]): void => {
   logger.info('Chats fetched successfully', { 
     accountPhone, 
     totalChats: details.length,
@@ -78,3 +79,10 @@ export function logChatsSummary(accountPhone: string, details: ChatInfo[]): void
     bots: details.filter(d => d.type === 'bot').length,
   });
 }
+
+
+export default {
+  processDialogs,
+  extractChatInfo,
+  logChatsSummary,
+};

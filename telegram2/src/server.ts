@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
-import routes from './routes';
-import * as sessionManager from './services/sessionManager';
-import * as logger from './utils/logger';
-import { config } from './utils/config';
+import sessions from './services/sessionManager';
+import logger from './utils/logger';
+import vars from './vars';
+import routes from './routes/index';
 
 const app = express();
 
@@ -13,23 +13,8 @@ app.get('/health', (req, res) => {
   res.json({ 
     success: true, 
     version: '0.1.0',
-    environment: config.nodeEnv,
-    port: config.port
-  });
-});
-
-app.get('/config', (req, res) => {
-  res.json({
-    success: true,
-    config: {
-      nodeEnv: config.nodeEnv,
-      port: config.port,
-      logLevel: config.logLevel,
-      dataDir: config.dataDir,
-      autoLoadSessions: config.autoLoadSessions,
-      connectionRetries: config.connectionRetries,
-      hasDefaultApiCredentials: !!(config.telegramApiId && config.telegramApiHash)
-    }
+    environment: vars.NODE_ENV,
+    port: vars.PORT
   });
 });
 
@@ -37,20 +22,20 @@ app.use('/api', routes);
 
 async function startServer(): Promise<void> {
   try {
-    if (config.autoLoadSessions) {
-      await sessionManager.loadAllSessions();
+    if (vars.AUTO_LOAD_SESSIONS) {
+      await sessions.loadAllSessions();
     } else {
       logger.info('Auto-load sessions disabled');
     }
     
-    const server = app.listen(config.port, () => {
-      logger.info('Server started', { port: config.port });
+    const server = app.listen(vars.PORT, () => {
+      logger.info('Server started', { port: vars.PORT });
     });
     
     async function shutdown(): Promise<void> {
       logger.info('Shutting down gracefully');
       
-      await sessionManager.disconnectAll();
+      await sessions.disconnectAll();
       
       server.close(() => {
         logger.info('Server closed');
@@ -60,7 +45,7 @@ async function startServer(): Promise<void> {
       setTimeout(() => {
         logger.error('Forced shutdown after timeout');
         process.exit(1);
-      }, config.shutdownTimeout);
+      }, vars.SHUTDOWN_TIMEOUT);
     }
     
     process.on('SIGINT', shutdown);

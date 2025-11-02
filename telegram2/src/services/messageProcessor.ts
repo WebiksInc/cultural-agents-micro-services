@@ -1,7 +1,7 @@
-import * as logger from '../utils/logger';
+import logger from '../utils/logger';
 import { UnreadMessage } from '../types/messages';
 
-export async function resolveEntity(client: any, target?: string, chatId?: string): Promise<any> {
+export const resolveEntity = async (client: any, target?: string, chatId?: string): Promise<any> => {
   if (!target && !chatId) {
     throw new Error('Either target or chatId must be provided');
   }
@@ -18,17 +18,6 @@ export async function resolveEntity(client: any, target?: string, chatId?: strin
   return entity;
 }
 
-export async function getUnreadCount(client: any, entity: any): Promise<number> {
-  const dialogs = await client.getDialogs({ limit: 100 });
-  logger.debug('Dialogs fetched', { count: dialogs.length });
-  
-  const dialog = findMatchingDialog(dialogs, entity);
-  
-  const unreadCount = dialog?.unreadCount || 0;
-  logger.debug('Unread count determined', { unreadCount, found: !!dialog });
-  
-  return unreadCount;
-}
 
 function findMatchingDialog(dialogs: any[], entity: any): any | undefined {
   const targetId = entity.id.toString();
@@ -48,7 +37,21 @@ function findMatchingDialog(dialogs: any[], entity: any): any | undefined {
   });
 }
 
-export function filterAndMapUnreadMessages(messages: any[]): UnreadMessage[] {
+export const getUnreadCount = async (client: any, entity: any): Promise<number> => {
+  const dialogs = await client.getDialogs({ limit: 100 });
+  logger.debug('Dialogs fetched', { count: dialogs.length });
+  
+  const dialog = findMatchingDialog(dialogs, entity);
+  
+  const unreadCount = dialog?.unreadCount || 0;
+  logger.debug('Unread count determined', { unreadCount, found: !!dialog });
+  
+  return unreadCount;
+}
+
+
+
+export const filterAndMapUnreadMessages = (messages: any[]): UnreadMessage[] => {
   return messages
     .filter((m: any) => {
       const isIncoming = !m.out;

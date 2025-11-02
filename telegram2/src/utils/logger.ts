@@ -77,3 +77,15 @@ export function error(message: string, context?: LogContext): void {
   logOutput('error', message, context);
 }
 
+
+export default {
+  debug,
+  info,
+  warn,
+  error,
+  logOutput,
+  getCurrentLogLevel,
+  shouldLog,
+  timestamp,
+  formatMessage
+};

@@ -12,5 +12,3 @@ router.use('/messages', unreadRoutes);
 router.use('/chats', chatsRoutes);
 
 export default router;
-
-

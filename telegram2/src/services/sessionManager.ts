@@ -1,31 +1,31 @@
-import * as logger from '../utils/logger';
-import * as sessionLoader from './sessionLoader';
+import logger from '../utils/logger';
+import sessionLoader from './sessionLoader';
 
 const activeClients = new Map<string, any>();
 
-export async function loadAllSessions(): Promise<void> {
+export const loadAllSessions = async (): Promise<void> => {
   return sessionLoader.loadAllSessions(activeClients);
 }
 
-export async function loadSession(phone: string): Promise<any | null> {
+export const loadSession = async (phone: string): Promise<any | null> => {
   return sessionLoader.loadSession(phone, activeClients);
 }
 
-export function getClient(phone: string): any | null {
+export const getClient = (phone: string): any | null => {
   return activeClients.get(phone) || null;
 }
 
-export function setClient(phone: string, client: any): void {
+export const setClient = (phone: string, client: any): void => {
   activeClients.set(phone, client);
   logger.debug('Client stored in memory', { phone });
 }
 
-export function removeClient(phone: string): void {
+export const removeClient = (phone: string): void => {
   activeClients.delete(phone);
   logger.debug('Client removed from memory', { phone });
 }
 
-export async function disconnectClient(phone: string): Promise<void> {
+export const disconnectClient = async (phone: string): Promise<void> => {
   const client = activeClients.get(phone);
   
   if (!client) 
@@ -41,7 +41,7 @@ export async function disconnectClient(phone: string): Promise<void> {
   }
 }
 
-export async function disconnectAll(): Promise<void> {
+export const disconnectAll = async (): Promise<void> => {
   logger.info('Disconnecting all clients', { count: activeClients.size });
   
   const promises = Array.from(activeClients.keys()).map(phone => 
@@ -56,17 +56,29 @@ export async function disconnectAll(): Promise<void> {
   logger.info('All clients disconnected');
 }
 
-export function isAuthenticated(phone: string): boolean {
+export const isAuthenticated = (phone: string): boolean => {
   const client = activeClients.get(phone);
   return client !== undefined;
 }
 
-export function getActivePhones(): string[] {
+export const getActivePhones = (): string[] => {
   return Array.from(activeClients.keys());
 }
 
-export function getActiveClientCount(): number {
+export const getActiveClientCount = (): number => {
   return activeClients.size;
 }
 
 
+export default({
+  loadAllSessions,
+  loadSession,
+  getClient,
+  setClient,
+  removeClient,
+  disconnectClient,
+  disconnectAll,
+  isAuthenticated,
+  getActivePhones,
+  getActiveClientCount,
+});

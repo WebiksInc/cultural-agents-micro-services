@@ -76,7 +76,9 @@ cd telegram2
 npm install
 ```
 
-### Setup Environment Variables
+### Environment Variables Configuration
+
+#### Setup
 
 1. Copy the environment template:
    ```bash
@@ -90,9 +92,75 @@ npm install
    NODE_ENV=development
    LOG_LEVEL=info
    DATA_DIR=./data
+   AUTO_LOAD_SESSIONS=true
    ```
 
-3. See `ENV_VARIABLES.md` for full configuration options
+#### Available Environment Variables
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `PORT` | number | `4000` | Port number for the HTTP server |
+| `NODE_ENV` | string | `development` | Node.js environment (development/production) |
+| `LOG_LEVEL` | string | `info` | Minimum log level: `debug`, `info`, `warn`, `error` |
+| `DATA_DIR` | string | `./data` | Directory to store phone session files |
+| `CONNECTION_RETRIES` | number | `3` | Number of connection retries for Telegram clients |
+| `SHUTDOWN_TIMEOUT` | number | `10000` | Graceful shutdown timeout (milliseconds) |
+| `AUTO_LOAD_SESSIONS` | boolean | `true` | Automatically load saved sessions on startup |
+| `SESSION_CLEANUP_INTERVAL` | number | `3600000` | Session cleanup interval (milliseconds, 1h default) |
+| `TELEGRAM_API_ID` | number | none | Optional: Default Telegram API ID (can be overridden per request) |
+| `TELEGRAM_API_HASH` | string | none | Optional: Default Telegram API Hash (can be overridden per request) |
+
+#### Environment Examples
+
+**Development Environment:**
+```bash
+PORT=4000
+NODE_ENV=development
+LOG_LEVEL=debug
+DATA_DIR=./data
+AUTO_LOAD_SESSIONS=true
+```
+
+**Production Environment:**
+```bash
+PORT=8080
+NODE_ENV=production
+LOG_LEVEL=info
+DATA_DIR=/app/data
+AUTO_LOAD_SESSIONS=true
+CONNECTION_RETRIES=5
+SHUTDOWN_TIMEOUT=15000
+```
+
+**Docker Environment:**
+```bash
+PORT=4000
+NODE_ENV=production
+LOG_LEVEL=warn
+DATA_DIR=/app/sessions
+AUTO_LOAD_SESSIONS=true
+TELEGRAM_API_ID=12345
+TELEGRAM_API_HASH=your_api_hash_here
+```
+
+#### Log Level Behavior
+
+- **`debug`**: All log messages (debug, info, warn, error)
+- **`info`**: Info, warn, and error messages
+- **`warn`**: Only warn and error messages  
+- **`error`**: Only error messages
+
+#### Data Directory
+
+The `DATA_DIR` variable controls where phone session files are stored:
+- Relative paths are resolved from the project root
+- Absolute paths are used as-is
+- Directory is created automatically if it doesn't exist
+- Files are named `phone_+1234567890.json`
+
+#### Default API Credentials
+
+If you set `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`, these will be used as defaults, but can still be overridden in individual API requests to `/api/auth/send-code`.
 
 ### Get Telegram API Credentials
 
@@ -148,7 +216,7 @@ Response:
 
 **GET** `/config`
 
-Returns current configuration:
+Returns current configuration (excluding sensitive data):
 ```json
 {
   "success": true,
@@ -158,9 +226,15 @@ Returns current configuration:
     "logLevel": "info",
     "dataDir": "./data",
     "autoLoadSessions": true,
+    "connectionRetries": 3,
     "hasDefaultApiCredentials": false
   }
 }
+```
+
+Test your configuration:
+```bash
+curl http://localhost:4000/config
 ```
 
 ### 2. Send Verification Code

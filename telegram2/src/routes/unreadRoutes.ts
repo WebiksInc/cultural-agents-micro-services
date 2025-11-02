@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import * as unreadService from '../services/unreadService';
-import * as validators from '../utils/validators';
-import * as logger from '../utils/logger';
+import  unreadService from '../services/unreadService';
+import  validators from '../utils/validators';
+import  logger from '../utils/logger';
 
 const router = Router();
 

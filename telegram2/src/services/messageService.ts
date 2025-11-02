@@ -1,7 +1,6 @@
-import { Api } from 'telegram';
-import * as sessionManager from './sessionManager';
-import * as validators from '../utils/validators';
-import * as logger from '../utils/logger';
+import  sessionManager from './sessionManager';
+import  validators from '../utils/validators';
+import  logger from '../utils/logger';
 
 export const sendMessage = async (
   fromPhone: string,

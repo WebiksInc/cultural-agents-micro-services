@@ -1,16 +1,9 @@
-import * as logger from '../utils/logger';
-import * as sessionManager from './sessionManager';
-import * as chatProcessor from './chatProcessor';
+import logger from '../utils/logger';
+import sessionManager from './sessionManager';
+import chatProcessor from './chatProcessor';
 import { ChatsResponse, TelegramDialog } from '../types/chats';
 
-export async function getAllChats(accountPhone: string): Promise<ChatsResponse> {
-  logger.info('Fetching all chats', { accountPhone });
-  const client = await getAuthenticatedClient(accountPhone);
-  const dialogs = await fetchDialogs(client);
-  const { chats, details } = chatProcessor.processDialogs(dialogs);
-  chatProcessor.logChatsSummary(accountPhone, details);
-  return { chats, details };
-}
+
 
 async function getAuthenticatedClient(accountPhone: string): Promise<any> {
     const client = sessionManager.getClient(accountPhone);
@@ -26,7 +19,16 @@ async function fetchDialogs(client: any): Promise<TelegramDialog[]> {
   }
 }
 
-export async function getGroupsOnly(accountPhone: string): Promise<ChatsResponse> {
+export const getAllChats = async (accountPhone: string): Promise<ChatsResponse> => {
+  logger.info('Fetching all chats', { accountPhone });
+  const client = await getAuthenticatedClient(accountPhone);
+  const dialogs = await fetchDialogs(client);
+  const { chats, details } = chatProcessor.processDialogs(dialogs);
+  chatProcessor.logChatsSummary(accountPhone, details);
+  return { chats, details };
+}
+
+export const getGroupsOnly = async (accountPhone: string): Promise<ChatsResponse> => {
   logger.info('Fetching groups only', { accountPhone });
   const allChats = await getAllChats(accountPhone);
   const groups = allChats.details.filter(d => d.type === 'group' || d.type === 'channel');
@@ -38,4 +40,8 @@ export async function getGroupsOnly(accountPhone: string): Promise<ChatsResponse
   return { chats, details: groups };
 }
 
+export default {
+  getAllChats,
+  getGroupsOnly,
+};
 

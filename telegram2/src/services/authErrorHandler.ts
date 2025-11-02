@@ -1,6 +1,6 @@
-import * as logger from '../utils/logger';
+import logger from '../utils/logger';
 
-export function handleSendCodeError(phone: string, err: any): Error {
+export const handleSendCodeError = (phone: string, err: any): Error => {
   logger.error('Failed to send code', { phone, error: err.message });
   
   const errorMessage = err.message || '';
@@ -20,7 +20,7 @@ export function handleSendCodeError(phone: string, err: any): Error {
   return new Error(`Failed to send code: ${err.message}`);
 }
 
-export function handleVerifyCodeError(phone: string, err: any): Error {
+export const handleVerifyCodeError = (phone: string, err: any): Error => {
   logger.error('Verification failed', { phone, error: err.message, stack: err.stack });
   
   const errorMessage = err.message || '';

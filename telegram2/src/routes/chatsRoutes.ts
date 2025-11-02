@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import * as chatsService from '../services/chatsService';
-import * as validators from '../utils/validators';
-import * as logger from '../utils/logger';
+import chatsService from '../services/chatsService';
+import validators from '../utils/validators';
+import logger from '../utils/logger';
 
 const router = Router();
 

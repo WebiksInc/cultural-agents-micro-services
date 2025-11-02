@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { sendCode } from '../services/sendCodeService';
 import { verifyCode } from '../services/verifyCodeService';
-import * as sessionManager from '../services/sessionManager';
-import * as validators from '../utils/validators';
-import * as logger from '../utils/logger';
+import sessionManager from '../services/sessionManager';
+import validators from '../utils/validators';
+import logger from '../utils/logger';
 
 const router = Router();
 

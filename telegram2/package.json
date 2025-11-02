@@ -1,12 +1,14 @@
 {
   "name": "telegram2-service",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "scripts": {
-    "start": "ts-node src/server.ts",
+    "prestart": "npm run build",
+    "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc -p ."
+    "build": "tsc",
+    "lint": "eslint src --ext .ts", 
+    "lint:fix": "eslint src --ext .ts --fix" 
   },
   "dependencies": {
     "dotenv": "^17.2.3",
@@ -19,6 +21,10 @@
     "@types/node": "^20.19.24",
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0"
   }
 }

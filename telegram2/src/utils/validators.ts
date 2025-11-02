@@ -16,7 +16,7 @@ export function validatePhone(phone: any): string {
   return cleaned;
 }
 
-export function validateApiCredentials(apiId: any, apiHash: any): { apiId: number; apiHash: string } {
+export const validateApiCredentials = (apiId: any, apiHash: any): { apiId: number; apiHash: string } => {
   if (!apiId) {
     throw new Error('apiId is required');
   }
@@ -34,7 +34,7 @@ export function validateApiCredentials(apiId: any, apiHash: any): { apiId: numbe
   return { apiId: id, apiHash: apiHash.trim() };
 }
 
-export function validateCode(code: any): string {
+export const validateCode = (code: any): string => {
   if (!code || typeof code !== 'string') {
     throw new Error('Verification code is required');
   }
@@ -48,7 +48,7 @@ export function validateCode(code: any): string {
   return cleaned;
 }
 
-export function validateMessage(message: any): string {
+export const validateMessage = (message: any): string => {
   if (!message || typeof message !== 'string') {
     throw new Error('Message content is required');
   }
@@ -60,7 +60,7 @@ export function validateMessage(message: any): string {
   return message;
 }
 
-export function validateTarget(target: any): string {
+export const validateTarget = (target: any): string => {
   if (!target || typeof target !== 'string') {
     throw new Error('Target (phone/username/channel) is required');
   }
@@ -75,3 +75,10 @@ export function validateTarget(target: any): string {
 }
 
 
+export default {
+  validatePhone,
+  validateApiCredentials,
+  validateCode,
+  validateMessage,
+  validateTarget
+};
