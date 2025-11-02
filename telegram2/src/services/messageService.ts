@@ -1,6 +1,6 @@
-import  sessionManager from './sessionManager';
-import  validators from '../utils/validators';
-import  logger from '../utils/logger';
+import sessionManager from './sessionManager.js';
+import validators from '../utils/validators.js';
+import logger from '../utils/logger.js';
 
 export const sendMessage = async (
   fromPhone: string,
@@ -18,10 +18,17 @@ export const sendMessage = async (
 
   logger.info('Sending message', { fromPhone, toTarget });
 
-  await client.sendMessage(toTarget, { message });
-
-  logger.info('Message sent successfully', { fromPhone, toTarget });
-
-  return { sentTo: toTarget };
+  try {
+    const entity = await client.getEntity(toTarget);
+    await client.sendMessage(entity, { message });
+    
+    logger.info('Message sent successfully', { fromPhone, toTarget });
+    
+    return { sentTo: toTarget };
+  } catch (err: any) {
+    if (err.message.includes('Could not find the input entity')) {
+      throw new Error(`Target not found: ${toTarget}. Make sure the user/chat exists and you have interacted with them before.`);
+    }
+    throw err;
+  }
 };
-
