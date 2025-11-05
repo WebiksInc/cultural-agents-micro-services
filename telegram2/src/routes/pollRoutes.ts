@@ -28,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     validators.validatePhone(phone);
 
-    const limit = limitParam ? parseInt(limitParam, 10) : 100;
+    const limit = limitParam ? parseInt(limitParam, 10) : 1;
 
     if (isNaN(limit) || limit < 1 || limit > 1000) {
       return res.status(400).json({
