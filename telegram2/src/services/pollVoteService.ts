@@ -1,5 +1,5 @@
-import sessionManager from './sessionManager.js';
-import logger from '../utils/logger.js';
+import sessionManager from './sessionManager';
+import logger from '../utils/logger';
 import { Api } from 'telegram';
 
 export const votePoll = async (

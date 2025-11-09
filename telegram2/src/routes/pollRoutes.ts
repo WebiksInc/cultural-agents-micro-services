@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import pollService from '../services/pollService.js';
-import pollVoteService from '../services/pollVoteService.js';
-import validators from '../utils/validators.js';
-import logger from '../utils/logger.js';
+import pollService from '../services/pollService';
+import pollVoteService from '../services/pollVoteService';
+import validators from '../utils/validators';
+import logger from '../utils/logger';
 
 const router = Router();
 

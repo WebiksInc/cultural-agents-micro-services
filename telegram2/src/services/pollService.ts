@@ -1,6 +1,6 @@
-import sessionManager from './sessionManager.js';
-import logger from '../utils/logger.js';
-import { Poll, PollOption } from '../types/polls.js';
+import sessionManager from './sessionManager';
+import logger from '../utils/logger';
+import { Poll, PollOption } from '../types/polls';
 
 function transformPollOption(option: unknown, results: unknown): PollOption {
   const opt = option as Record<string, unknown>;
