@@ -1,6 +1,7 @@
-import sessionManager from './sessionManager.js';
+import sessionManager from './sessionManager';
 import logger from '../utils/logger.js';
-import { FullChatMessage, MediaInfo } from '../types/messages.js';
+import entityResolver from './entityResolver';
+import { FullChatMessage, MediaInfo } from '../types/messages';
 
 function extractMediaInfo(media: unknown): MediaInfo {
   const mediaObj = media as Record<string, unknown>;
@@ -67,7 +68,7 @@ export const getMessages = async (
   logger.info('Fetching messages from chat', { phone, chatId, limit });
 
   try {
-    const entity = await client.getEntity(chatId);
+    const entity = await entityResolver.getEntity(client, phone, chatId);
     
     const messages = await client.getMessages(entity, {
       limit,

@@ -3,7 +3,7 @@ import logger from '../utils/logger';
 import entityResolver from './entityResolver';
 import { ChatParticipant, ChatParticipantsResponse } from '../types/chats';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 async function getAuthenticatedClient(phone: string): Promise<any> {
   const client = sessionManager.getClient(phone);
   if (client) return client;

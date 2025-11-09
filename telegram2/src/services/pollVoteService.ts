@@ -1,5 +1,6 @@
 import sessionManager from './sessionManager';
 import logger from '../utils/logger';
+import entityResolver from './entityResolver';
 import { Api } from 'telegram';
 
 export const votePoll = async (
@@ -21,20 +22,7 @@ export const votePoll = async (
   logger.info('Voting on poll', { phone, chatId, messageId, optionIds });
 
   try {
-    // Force entity resolution - fetch dialogs first to populate cache
-    let entity;
-    try {
-      entity = await client.getEntity(chatId);
-    } catch (entityError: unknown) {
-      const error = entityError as Error;
-      if (error.message.includes('Could not find the input entity')) {
-        logger.debug('Entity not in cache, fetching dialogs first', { chatId });
-        await client.getDialogs({ limit: 100 });
-        entity = await client.getEntity(chatId);
-      } else {
-        throw entityError;
-      }
-    }
+    const entity = await entityResolver.getEntity(client, phone, chatId);
     
     const messages = await client.getMessages(entity, { ids: [messageId] });
     

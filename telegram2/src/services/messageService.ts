@@ -1,7 +1,8 @@
-import sessionManager from './sessionManager.js';
-import validators from '../utils/validators.js';
-import logger from '../utils/logger.js';
-import { SendMessageContent } from '../types/messages.js';
+import sessionManager from './sessionManager';
+import validators from '../utils/validators';
+import logger from '../utils/logger';
+import entityResolver from './entityResolver';
+import { SendMessageContent } from '../types/messages';
 
 export const sendMessage = async (
   fromPhone: string,
@@ -30,7 +31,7 @@ export const sendMessage = async (
   });
 
   try {
-    const entity = await client.getEntity(toTarget);
+    const entity = await entityResolver.getEntity(client, fromPhone, toTarget);
     
     const messageOptions: Record<string, unknown> = {
       message: content.value,

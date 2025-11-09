@@ -1,5 +1,6 @@
 import logger from '../utils/logger';
 import sessionLoader from './sessionLoader';
+import entityResolver from './entityResolver';
 
 const activeClients = new Map<string, any>();
 
@@ -22,6 +23,7 @@ export const setClient = (phone: string, client: any): void => {
 
 export const removeClient = (phone: string): void => {
   activeClients.delete(phone);
+  entityResolver.clearEntityCache(phone);
   logger.debug('Client removed from memory', { phone });
 }
 
@@ -35,6 +37,7 @@ export const disconnectClient = async (phone: string): Promise<void> => {
   try {
     await client.disconnect();
     activeClients.delete(phone);
+    entityResolver.clearEntityCache(phone);
     logger.info('Client disconnected', { phone });
   } catch (err: any) {
     logger.error('Failed to disconnect client', { phone, error: err.message });
@@ -52,6 +55,7 @@ export const disconnectAll = async (): Promise<void> => {
   
   await Promise.all(promises);
   activeClients.clear();
+  entityResolver.clearAllEntityCaches();
   
   logger.info('All clients disconnected');
 }
