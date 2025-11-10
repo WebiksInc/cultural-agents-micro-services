@@ -1,0 +1,20 @@
+{
+  "agent_type": "off_radar",
+  "actions": [
+    {
+      "id": "answer_direct_question",
+      "description": "Provide a direct and neutral answer to a question that was explicitly aimed at the agent.",
+      "purpose": "To maintain authenticity when directly engaged."
+    },
+    {
+      "id": "express_consensus_agreement",
+      "description": "Show support for an existing consensus or a popular message (e.g., 'agree', 'good point', or a simple like).",
+      "purpose": "To appear as an agreeing, non-confrontational member of the group."
+    },
+    {
+      "id": "post_neutral_response",
+      "description": "Post a simple, neutral, or generic response (e.g., 'thanks', 'lol', 'good morning', emoji).",
+      "purpose": "To maintain a minimal but periodic presence in the group."
+    }
+  ]
+}

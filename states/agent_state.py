@@ -1,0 +1,49 @@
+from typing import TypedDict, List, Optional
+from datetime import datetime
+
+
+class Message(TypedDict):
+    """Structure for individual messages from Telegram."""
+    message_id: str
+    sender_id: str
+    sender_username: str
+    sender_first_name: str
+    sender_last_name: str
+    text: str # message content
+    date: datetime
+    message_emotion: Optional[str]  # Filled by Component B (Emotion Analysis)
+    sender_personality: Optional[dict]  # Filled by Component C on-demand (Personality Analysis)
+
+
+class AgentState(TypedDict):
+    """
+    State for individual agent graphs.
+    The agent receives a *copy* of relevant data from the Supervisor.
+    """
+    # Data copied from Supervisor
+    recent_messages: List[Message]
+    group_sentiment: str
+    group_metadata: dict
+    
+    # Agent configuration
+    selected_persona: dict  # JSON file 
+    agent_type: str  # e.g., "troll", "active", "manager"
+    agent_goal: str
+    triggers: dict  # JSON file content for this agent's triggers
+    actions: dict  # JSON file content for this agent's possible actions
+    
+    # Agent processing outputs
+    detected_trigger: Optional[dict]  # Output of Trigger Analysis, e.g., {"id": "...", "justification": "..."}
+    selected_action: Optional[dict]  # Output of Decision Maker, e.g., {"id": "...", "purpose": "...", "content": "..."}
+    
+    # Agent prompt and response generation
+    agent_prompt: str  # System prompt for this agent
+    generated_response: Optional[str]  # Output of E.1 (Text Generator)
+    styled_response: Optional[str]  # Output of E.2 (Styler)
+    
+    # Validation
+    validation: Optional[bool]  # Output of Validator
+    
+    # Internal tracking
+    current_node: Optional[str]
+    next_node: Optional[str]

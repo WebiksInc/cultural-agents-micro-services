@@ -1,0 +1,34 @@
+{
+  "agent_type": "active",
+  "triggers": [
+    {
+      "id": "direct_mention",
+      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
+      "suggested_actions": [
+        "answer_direct_question"
+      ]
+    },
+    {
+      "id": "prolonged_silence",
+      "description": "The group has been inactive for a predefined period (e.g., no messages for X hours). This is a proactive, time-based trigger.",
+      "suggested_actions": [
+        "initiate_discussion"
+      ]
+    },
+    {
+      "id": "discussion_faltering",
+      "description": "An ongoing discussion is losing momentum or needs to be stoked to generate more engagement.",
+      "suggested_actions": [
+        "expand_discussion",
+        "show_interest",
+        "change_narrative",
+        "initiate_discussion"
+      ]
+    },
+    {
+      "id": "neutral",
+      "description": "A message was posted, but it does not meet any specific activation criteria for this agent. No action required.",
+      "suggested_actions": []
+    }
+  ]
+}

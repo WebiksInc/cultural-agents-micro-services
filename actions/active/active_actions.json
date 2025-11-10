@@ -1,0 +1,31 @@
+{
+  "agent_type": "active",
+  "actions": [
+    {
+      "id": "initiate_discussion",
+      "description": "Spread information that supports a specific narrative or initiate a new discussion on a relevant topic.",
+      "purpose": "To proactively start a conversation and steer it towards the agent's goal."
+    },
+    {
+      "id": "expand_discussion",
+      "description": "Expand on an existing discussion by adding new information, asking follow-up questions, or relating it to a broader topic.",
+      "purpose": "To deepen the conversation and increase engagement among participants."
+    },
+    {
+      "id": "change_narrative",
+      "description": "Actively steer an existing conversation's narrative towards a different perspective or topic.",
+      "purpose": "To redirect the focus of a discussion that is veering off-topic or to counter an opposing viewpoint."
+    },
+    {
+      "id": "show_interest",
+      "description": "Show genuine interest in a personal experience or topic shared by a participant.",
+      "purpose": "To build rapport, encourage a user to share more, and keep the conversation flowing."
+    },
+    {
+      "id": "answer_direct_question",
+      "description": "Provide a direct answer to a question that was explicitly aimed at the agent.",
+      "purpose": "To maintain credibility and fulfill the agent's role when called upon."
+    }
+    
+  ]
+}
