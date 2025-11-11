@@ -6,34 +6,22 @@ Analyzes emotions in group messages and generates overall group sentiment.
 
 import json
 import logging
-import os
-from pathlib import Path
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
 
+# Import utilities
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils import load_prompt, get_model_settings
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Load prompt template
-PROMPT_DIR = Path(__file__).parent.parent.parent / "langgraph" / "prompts" / "component_B"
-PROMPT_PATH = PROMPT_DIR / "emotion_analysis_prompt.txt"
-
-def load_prompt() -> str:
-    """Load the emotion analysis prompt from file."""
-    try:
-        with open(PROMPT_PATH, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        logger.error(f"Prompt file not found: {PROMPT_PATH}")
-        raise
-    except Exception as e:
-        logger.error(f"Error loading prompt: {e}")
-        raise
-
 
 def format_message_for_prompt(msg: Dict[str, Any], include_emotion: bool = True) -> str:
-    """Format a single message for the prompt."""
+    """Format a single message for the prompt (without timestamp for component B)."""
     sender = msg.get('sender_username', msg.get('sender_first_name', 'Unknown'))
     text = msg.get('text', '')
     emotion_str = ""
@@ -102,7 +90,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
     unclassified_text = "\n".join(unclassified_lines)
     
     # Build prompt
-    prompt_template = load_prompt()
+    prompt_template = load_prompt("supervisor_graph/component_B/emotion_analysis_prompt.txt")
     prompt = prompt_template.format(
         group_name=group_name,
         group_topic=group_topic,
@@ -112,14 +100,17 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
     )
     
     try:
-        # Initialize model
-        model_name = os.getenv('COMPONENT_B_MODEL', 'gpt-5-nano')
-        logger.info(f"Using model: {model_name}")
+        # Get model settings
+        model_settings = get_model_settings('component_B', 'COMPONENT_B_MODEL')
+        model_name = model_settings['model']
+        temperature = model_settings['temperature']
+        
+        logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
             model=model_name,
             model_provider="openai",
-            temperature=0
+            temperature=temperature
         )
         
         # Call LLM
