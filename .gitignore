@@ -1,3 +1,4 @@
 telegram2/Telegram2-API.postman_collection.json
 .github/prompts/readTelegram.prompt.md
 telegram2/src/vars.ts
+volumes
