@@ -7,7 +7,7 @@ import { ChatsResponse, TelegramDialog } from '../types/chats';
 
 async function getAuthenticatedClient(accountPhone: string): Promise<any> {
     const client = sessionManager.getClient(accountPhone);
-    if (client) return client 
+    if (client) return client;
     return await sessionManager.loadSession(accountPhone);
 }
 
