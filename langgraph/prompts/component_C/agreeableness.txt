@@ -1,0 +1,67 @@
+AGREEABLENESS_PROMPT = """
+You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Agreeableness**.
+
+## Trait Definition: Agreeableness (A)
+
+Agreeableness is the general concern for social harmony. Agreeable individuals value getting along with others. They are generally considerate, kind, generous, trusting and trustworthy, helpful, 
+and willing to compromise their interests with others. Agreeable people also have an optimistic view of human nature. Being agreeable helps us cope with stress.
+
+Disagreeable individuals place self-interest above getting along with others. They are generally unconcerned with others' well-being and are less likely to extend themselves for other people. 
+Sometimes their skepticism about others' motives causes them to be suspicious, unfriendly, and uncooperative. 
+Disagreeable people are often competitive or challenging, which can be seen as argumentative or untrustworthy.
+
+## Your Instructions
+
+1.  You must return a JSON object with two keys: `"agreeableness"` and `"justification"`.
+2.  The `"agreeableness"` key must be a binary integer: `1` or `0`.
+3. The presence of one or more of the following criteria entails assigning a `1` for Agreeableness:
+    * Being considerate, kind, generous, helpful, empathetic (sympathising, feeling others' emotions)
+    * Trusting others, having an optimistic view of human nature
+    * Willingness to cooperate or compromise
+    * Making people feel at ease
+    This corresponds to a trait strength above 0.5.
+4. Otherwise assign `0`.
+5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
+6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+
+## Examples of Analysis
+
+**Example 1:**
+* **Text:** "I saw my neighbor struggling with his groceries, so I ran over to help him carry everything inside."
+* **Output:**
+    ```json
+    {
+      "agreeableness": 1,
+      "justification": "The user demonstrates high Agreeableness through a clear, proactive act of helping ('ran over to help him carry everything inside') after observing someone in need, showing concern for others' well-being."
+    }
+    ```
+
+**Example 2:**
+* **Text:** "I'm so tired of people. I honestly don't care about their problems, everyone is just trying to take advantage of you. I got into three arguments online today just to prove them wrong."
+* **Output:**
+    ```json
+    {
+      "agreeableness": 0,
+      "justification": "The user expresses low Agreeableness through a lack of concern for others ('don't care about their problems'), suspicion ('everyone is just trying to take advantage'), and argumentative behavior."
+    }
+    ```
+
+**Example 3:**
+* **Text:** "I think the project is due on Tuesday, but I'm not sure. I need to check the syllabus."
+* **Output:**
+    ```json
+    {
+      "agreeableness": 0,
+      "justification": "The text is purely informational and task-oriented, providing no insight into the user's kindness, empathy, trust, or concern for social harmony. Therefore, the trait cannot be confirmed."
+    }
+    ```
+
+## Your Task
+
+Analyze the following text and provide your JSON output:
+
+**Text:**
+"{{USER_TEXT}}"
+
+**Output:**
+"""

@@ -16,8 +16,8 @@ from langchain.chat_models import init_chat_model
 logger = logging.getLogger(__name__)
 
 # Load prompt template
-PROMPT_DIR = Path(__file__).parent.parent.parent / "prompts" / "component_B"
-PROMPT_PATH = PROMPT_DIR / "emotion_analysis.txt"
+PROMPT_DIR = Path(__file__).parent.parent.parent / "langgraph" / "prompts" / "component_B"
+PROMPT_PATH = PROMPT_DIR / "emotion_analysis_prompt.txt"
 
 def load_prompt() -> str:
     """Load the emotion analysis prompt from file."""

@@ -1,0 +1,66 @@
+CONSCIENTIOUSNESS_PROMPT = """
+You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Conscientiousness**.
+
+## Trait Definition: Conscientiousness (C)
+
+Conscientiousness is a tendency to be self-disciplined, act dutifully, and strive for achievement against measures or outside expectations. 
+It is related to people's level of impulse control, regulation, and direction. High conscientiousness is often perceived as being stubborn and focused. 
+Low conscientiousness is associated with flexibility and spontaneity, but can also appear as sloppiness and lack of reliability. 
+High conscientiousness indicates a preference for planned rather than spontaneous behaviour.
+
+## Your Instructions
+
+1.  You must return a JSON object with two keys: `"conscientiousness"` and `"justification"`.
+2.  The `"conscientiousness"` key must be a binary integer: `1` or `0`.
+3.  The presence of one or more of the following criteria entails assigning a `1` for Conscientiousness:
+    * Innate Self-discipline, impulse control
+    * Diligence, dutifulness, striving for achievement
+    * Being prepared, paying attention to details, being punctual
+    * Orderliness, routinely following schedules and plans
+    * Reliability, getting things done right away
+    This corresponds to a trait strength above 0.5.
+4. Otherwise assign `0`.
+5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
+6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+
+## Examples of Analysis
+
+**Example 1:**
+* **Text:** "I spent the morning deep-cleaning the kitchen and organizing my files for the week. I've already set my schedule and meal-prepped, so the rest of the week should be smooth."
+* **Output:**
+    ```json
+    {
+      "conscientiousness": 1,
+      "justification": "The user demonstrates high Conscientiousness through explicit acts of organization ('organizing my files'), planning ('set my schedule'), diligence ('meal-prepped', 'deep-cleaning'), and a focus on preparation."
+    }
+    ```
+
+**Example 2:**
+* **Text:** "I know I was supposed to finish that presentation, but I just kept putting it off. My apartment is a total disaster zone right now, I can't find anything. I'll probably just wing it tomorrow."
+* **Output:**
+    ```json
+    {
+      "conscientiousness": 0,
+      "justification": "The user expresses low Conscientiousness through procrastination ('kept putting it off'), disorganization ('disaster zone', 'can't find anything'), and lack of preparation ('wing it tomorrow')."
+    }
+    ```
+
+**Example 3:**
+* **Text:** "That's an interesting point of view. I hadn't considered that before."
+* **Output:**
+    ```json
+    {
+      "conscientiousness": 0,
+      "justification": "The text is a simple social reply and provides no information about the user's level of self-control, diligence, planning, or attention to detail. Therefore, the trait cannot be confirmed."
+    }
+    ```
+
+## Your Task
+
+Analyze the following text and provide your JSON output:
+
+**Text:**
+"{{USER_TEXT}}"
+
+**Output:**
+"""
