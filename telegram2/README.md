@@ -1,71 +1,91 @@
-# Telegram2 Microservice
-# Telegram2 Service (Simple Telegram MTProto Integration)
+# Telegram2 Service
+
+A TypeScript microservice providing REST API access to Telegram's MTProto client capabilities using GramJS library.
+
+## Overview
+
+This service acts as a **stateless API gateway** to Telegram, designed to be called by other services (like LangGraph agents). It does NOT store any data - it simply fetches from Telegram and returns it. All data persistence should be handled by the calling service.
+
+## Key Features
+
+- **Authentication**: Phone verification with persistent session storage
+- **Message Operations**: Send messages, fetch chat messages, get unread messages
+-  **Chat Management**: List chats, get participants, filter groups/channels
+-  **Poll Operations**: Fetch polls and vote on them
+-  **Session Persistence**: Sessions survive server restarts
+-  **Stateless Design**: No database - perfect for microservice architecture
+-  **Clean Architecture**: Functional TypeScript with clear separation of concerns
+-  **Entity Caching**: Automatically warms Telegram entity cache for reliable chat ID resolution
 
 
 
-A clean, functional TypeScript microservice for Telegram integration using GramJS library.
-Minimal service providing:
+## Architecture
 
-- Authentication (send code, verify code) using telegram (MTProto client)
-
-## Features- Send message between accounts and targets (phone numbers only)
-
-- Fetch unread messages (based on last fetched state)
-
-- **Authentication**: Phone verification with session persistence
-
-- **Message Sending**: Send messages to users, groups, and channels## Endpoints
-
-- **Unread Messages**: Fetch and auto-mark-as-read messages from any target1. POST /auth/send-code { apiId, apiHash, phone }
-
-- **Session Management**: Persistent sessions survive server restarts2. POST /auth/verify-code { phone, code }
-
-- **Clean Architecture**: Utils, Services, Routes separation3. POST /messages/send { fromPhone, toPhone, content }
-
-- **Smart Logging**: JSON-formatted logs for easy debugging4. GET /messages/unread?accountPhone=...&target=... (target can be phone or channel username like @mychannel)
-
-
-
-## Architecture## Running
-
-Install deps and start:
-
-``````
-
-telegram2/npm install
-
-├── src/npm run dev
-
-│   ├── utils/          # Utility functions```
-
-│   │   ├── logger.ts         # JSON logging
-
-│   │   ├── phoneStorage.ts   # Per-phone JSON files
-│   │   │                        # Set LOG_LEVEL=debug for verbose logs.
-│   │   └── validators.ts     # Input validation
-
-│   ├── services/       # Business logic
-│   │   │                  # Data Store
-│   │   ├── sessionManager.ts # Session lifecycle
-│   │   │                        # Single JSON file at data/store.json maintaining accounts, messages, and conversation state.
-│   │   ├── authService.ts    # Authentication
-
-│   │   ├── messageService.ts # Send messages
-│   │   │                        # Notes
-│   │   └── unreadService.ts  # Fetch unread
-│   │   │                        # Each file kept under 120 lines.
-│   ├── routes/         # API endpoints
-│   │   │                  # Sessions auto-loaded at startup.
-│   │   ├── authRoutes.ts
-│   │   │                        # Unread determined by last fetched message id per conversation.
-│   │   ├── messageRoutes.ts
-│   │   │                        # Channel support: pass channel username as target (e.g. @telegram). Messages filtered same way.
-│   │   ├── unreadRoutes.ts
-│   │   └── index.ts
-│   └── server.ts       # Express server
-└── data/               # Generated at runtime
-    └── phone_+123.json # Per-phone credentials
 ```
+telegram2/
+├── src/
+│   ├── server.ts           # Express server & graceful shutdown
+│   ├── vars.ts            # Environment configuration
+│   ├── utils/
+│   │   ├── logger.ts      # JSON logging utility
+│   │   ├── phoneStorage.ts # Per-phone session files
+│   │   └── validators.ts  # Input validation
+│   ├── services/
+│   │   ├── sessionManager.ts      # Session lifecycle management
+│   │   ├── entityResolver.ts     # Smart Telegram entity caching
+│   │   ├── sendCodeService.ts    # Send verification code
+│   │   ├── verifyCodeService.ts  # Verify code & authenticate
+│   │   ├── messageService.ts     # Send messages
+│   │   ├── chatMessagesService.ts # Fetch chat messages
+│   │   ├── chatParticipantsService.ts # Get chat members
+│   │   ├── chatsService.ts       # List chats
+│   │   ├── pollService.ts        # Fetch polls
+│   │   ├── pollVoteService.ts    # Vote on polls
+│   │   └── unreadService.ts      # Fetch unread messages
+│   ├── routes/
+│   │   ├── authRoutes.ts         # Authentication endpoints
+│   │   ├── messageRoutes.ts      # Send messages
+│   │   ├── chatMessagesRoutes.ts # Chat message history
+│   │   ├── chatParticipantsRoutes.ts # Chat members
+│   │   ├── chatsRoutes.ts        # List chats
+│   │   ├── pollRoutes.ts         # Polls & voting
+│   │   ├── unreadRoutes.ts       # Unread messages
+│   │   └── index.ts              # Route aggregator
+│   └── types/
+│       ├── chats.ts              # Chat-related types
+│       ├── messages.ts           # Message-related types
+│       └── polls.ts              # Poll-related types
+└── data/                  # Generated at runtime
+    └── phone_+123.json    # Per-phone session storage
+```
+
+### Design Principles
+
+- **Stateless**: No database - all data comes from Telegram API
+- **Functional**: Pure functions, no classes/OOP
+- **Type-Safe**: Full TypeScript with strict typing
+- **Validated**: All inputs validated before processing
+- **Logged**: JSON-formatted logs for easy parsing
+- **Resilient**: Auto-reconnection and entity cache warming
+
+## Running the Service
+
+Install dependencies and start:
+
+```bash
+cd telegram2
+npm install
+npm run dev  # Development mode with hot reload
+```
+
+Or for production:
+
+```bash
+npm run build
+npm start
+```
+
+Set `LOG_LEVEL=debug` for verbose logs.
 
 ## Setup
 
@@ -78,22 +98,7 @@ npm install
 
 ### Environment Variables Configuration
 
-#### Setup
 
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit `.env` with your preferred settings:
-   ```bash
-   # Basic configuration
-   PORT=4000
-   NODE_ENV=development
-   LOG_LEVEL=info
-   DATA_DIR=./data
-   AUTO_LOAD_SESSIONS=true
-   ```
 
 #### Available Environment Variables
 
@@ -121,16 +126,7 @@ DATA_DIR=./data
 AUTO_LOAD_SESSIONS=true
 ```
 
-**Production Environment:**
-```bash
-PORT=8080
-NODE_ENV=production
-LOG_LEVEL=info
-DATA_DIR=/app/data
-AUTO_LOAD_SESSIONS=true
-CONNECTION_RETRIES=5
-SHUTDOWN_TIMEOUT=15000
-```
+
 
 **Docker Environment:**
 ```bash
@@ -143,12 +139,6 @@ TELEGRAM_API_ID=12345
 TELEGRAM_API_HASH=your_api_hash_here
 ```
 
-#### Log Level Behavior
-
-- **`debug`**: All log messages (debug, info, warn, error)
-- **`info`**: Info, warn, and error messages
-- **`warn`**: Only warn and error messages  
-- **`error`**: Only error messages
 
 #### Data Directory
 
@@ -199,49 +189,36 @@ Server runs on: `http://localhost:4000`
 http://localhost:4000/api
 ```
 
-### 1. Health Check
+All responses follow a consistent format with `success` boolean and either data or `error` message.
 
-**GET** `/health`
+### Quick Reference
 
-Response:
-```json
-{
-  "success": true,
-  "message": "Service is healthy",
-  "version": "0.1.0",
-  "environment": "development",
-  "port": 4000
-}
-```
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/send-code` | Send verification code to phone | No |
+| POST | `/api/auth/verify-code` | Verify code and authenticate | No |
+| GET | `/api/auth/debug/active-sessions` | List active sessions | No |
+| GET | `/api/chats/all` | Get all chats (users, groups, channels) | Yes |
+| GET | `/api/chats/groups` | Get only groups and channels | Yes |
+| GET | `/api/chat-messages` | Fetch message history from chat | Yes |
+| GET | `/api/chat-participants` | Get all participants in chat | Yes |
+| POST | `/api/messages/send` | Send message to target | Yes |
+| GET | `/api/messages/unread` | Get unread messages (auto-marks read) | Yes |
+| GET | `/api/polls` | Fetch polls from chat | Yes |
+| POST | `/api/polls/vote` | Vote on a poll | Yes |
+| GET | `/health` | Health check | No |
 
-**GET** `/config`
+---
 
-Returns current configuration (excluding sensitive data):
-```json
-{
-  "success": true,
-  "config": {
-    "nodeEnv": "development",
-    "port": 4000,
-    "logLevel": "info",
-    "dataDir": "./data",
-    "autoLoadSessions": true,
-    "connectionRetries": 3,
-    "hasDefaultApiCredentials": false
-  }
-}
-```
+### Authentication
 
-Test your configuration:
-```bash
-curl http://localhost:4000/config
-```
+#### 1. Send Verification Code
 
-### 2. Send Verification Code
+Initiate authentication by sending a verification code to the phone number via Telegram.
 
-**POST** `/api/auth/send-code`
+**Endpoint:** `POST /api/auth/send-code`
 
-Request body:
+**Request Body:**
 ```json
 {
   "phone": "+1234567890",
@@ -250,20 +227,43 @@ Request body:
 }
 ```
 
-Response:
+**Response (200):**
 ```json
 {
   "success": true,
-  "phoneCodeHash": "abc123...",
-  "message": "Verification code sent to Telegram"
+  "phoneCodeHash": "abc123def456..."
 }
 ```
 
-### 3. Verify Code
+**Errors:**
+- `500`: Invalid credentials or Telegram API error
 
-**POST** `/api/auth/verify-code`
+**Call from another service (Python example):**
+```python
+import requests
 
-Request body:
+response = requests.post(
+    "http://localhost:4000/api/auth/send-code",
+    json={
+        "phone": "+1234567890",
+        "apiId": 12345,
+        "apiHash": "your_api_hash"
+    }
+)
+data = response.json()
+if data["success"]:
+    print(f"Code sent! Hash: {data['phoneCodeHash']}")
+```
+
+---
+
+#### 2. Verify Code
+
+Complete authentication by verifying the code received on Telegram.
+
+**Endpoint:** `POST /api/auth/verify-code`
+
+**Request Body:**
 ```json
 {
   "phone": "+1234567890",
@@ -271,97 +271,64 @@ Request body:
 }
 ```
 
-Response:
+**Response (200):**
 ```json
 {
   "success": true,
-  "user": "John",
-  "message": "Authentication successful"
+  "user": "John Doe"
 }
 ```
 
-### 4. Send Message
+**Errors:**
+- `500`: Invalid code, expired code, or 2FA required
 
-**POST** `/api/messages/send`
-
-Request body:
-```json
-{
-  "fromPhone": "+1234567890",
-  "toTarget": "+9876543210",
-  "message": "Hello!"
-}
+**Call from another service (Python example):**
+```python
+response = requests.post(
+    "http://localhost:4000/api/auth/verify-code",
+    json={
+        "phone": "+1234567890",
+        "code": "12345"
+    }
+)
 ```
 
-Target can be:
-- Phone number: `+1234567890`
-- Username: `@username`
-- Group: `@groupname`
-- Channel: `@channelname`
+---
 
-Response:
-```json
-{
-  "success": true,
-  "sentTo": "+9876543210",
-  "message": "Message sent successfully"
-}
-```
+#### 3. Get Active Sessions (Debug)
 
-### 5. Get Unread Messages
+Check which phone numbers have active sessions.
 
-**GET** `/api/messages/unread`
+**Endpoint:** `GET /api/auth/debug/active-sessions`
 
-Query parameters:
-- `accountPhone`: Your authenticated phone number (required)
-- `target`: Phone/username/channel to fetch from (optional)
-- `chatId`: Chat ID to fetch from (optional)
-
-**Note**: Either `target` OR `chatId` must be provided, not both.
-
-**Example 1: Using target (phone/username)**
-```
-GET /api/messages/unread?accountPhone=%2B1234567890&target=%2B9876543210
-GET /api/messages/unread?accountPhone=%2B1234567890&target=@channelname
-```
-
-**Example 2: Using chat ID**
-```
-GET /api/messages/unread?accountPhone=%2B1234567890&chatId=123456789
-```
-
-Response:
+**Response (200):**
 ```json
 {
   "success": true,
   "count": 2,
-  "unread": [
-    {
-      "id": 12345,
-      "sender": "username",
-      "message": "Hello!",
-      "date": "2025-10-29T10:30:00.000Z",
-      "isOut": false
-    }
-  ]
+  "activePhones": ["+1234567890", "+9876543210"]
 }
 ```
 
-**Important Notes**:
-- Messages are automatically marked as read after fetching
-- Phone numbers in URL must be URL-encoded (`+` becomes `%2B`)
-- Use the `/api/chats/all` endpoint to get chat IDs
+---
 
-### 6. Get All Chats
+### Chats
 
-**GET** `/api/chats/all?accountPhone=+1234567890`
+#### 4. Get All Chats
 
-Returns all chats (users, groups, channels, bots) with their IDs.
+Retrieve all chats (users, groups, channels, bots) for an authenticated account.
 
-Query parameters:
-- `accountPhone`: Your authenticated phone number
+**Endpoint:** `GET /api/chats/all`
 
-Response:
+**Query Parameters:**
+- `accountPhone` (required): URL-encoded phone number (e.g., `%2B1234567890`)
+
+**Example Request:**
+```
+GET /api/chats/all?accountPhone=%2B1234567890
+```
+
+**Response (200):**
 ```json
 {
   "success": true,
@@ -376,22 +343,69 @@ Response:
       "name": "John Doe",
       "type": "user",
       "username": "johndoe"
+    },
+    {
+      "id": "987654321",
+      "name": "My Group",
+      "type": "group",
+      "username": null
+    },
+    {
+      "id": "555555555",
+      "name": "News Channel",
+      "type": "channel",
+      "username": "newschannel"
     }
-  ],
-  "count": 3
+  ]
 }
 ```
 
-### 7. Get Groups and Channels Only
+**Types:**
+- `user`: Direct message with a person
+- `bot`: Telegram bot
+- `group`: Group chat
+- `channel`: Broadcast channel
 
-**GET** `/api/chats/groups?accountPhone=+1234567890`
+**Errors:**
+- `500`: Authentication or connection error
 
-Returns only groups and channels (excludes users and bots).
+**Call from another service (Python example):**
+```python
+import urllib.parse
 
-Query parameters:
-- `accountPhone`: Your authenticated phone number
+phone = urllib.parse.quote("+1234567890")
+response = requests.get(
+    f"http://localhost:4000/api/chats/all?accountPhone={phone}"
+)
+chats = response.json()
 
-Response:
+# Store in your database
+for chat in chats["details"]:
+    db.save_chat({
+        "telegram_id": chat["id"],
+        "name": chat["name"],
+        "type": chat["type"],
+        "username": chat.get("username")
+    })
+```
+
+---
+
+#### 5. Get Groups and Channels Only
+
+Same as Get All Chats, but filters to only groups and channels (excludes users and bots).
+
+**Endpoint:** `GET /api/chats/groups`
+
+**Query Parameters:**
+- `accountPhone` (required): URL-encoded phone number
+
+**Example Request:**
+```
+GET /api/chats/groups?accountPhone=%2B1234567890
+```
+
+**Response (200):**
 ```json
 {
   "success": true,
@@ -403,13 +417,761 @@ Response:
     {
       "id": "987654321",
       "name": "My Group",
-      "type": "group",
-      "username": "mygroup"
+      "type": "group"
     }
-  ],
-  "count": 2
+  ]
 }
 ```
+
+---
+
+### Chat Messages
+
+#### 6. Get Chat Messages
+
+Fetch message history from a specific chat.
+
+**Endpoint:** `GET /api/chat-messages`
+
+**Query Parameters:**
+- `phone` (required): URL-encoded phone number
+- `chatId` (required): Chat ID, username, or phone number
+- `limit` (optional): Number of messages (1-1000, default: 100)
+
+**Example Request:**
+```
+GET /api/chat-messages?phone=%2B1234567890&chatId=987654321&limit=50
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "chatId": "987654321",
+  "chatTitle": "My Group",
+  "phone": "+1234567890",
+  "messagesCount": 50,
+  "messages": [
+    {
+      "id": 12345,
+      "date": "2025-11-10T10:30:00.000Z",
+      "text": "Hello everyone!",
+      "senderId": "123456",
+      "senderUsername": "johndoe",
+      "senderFirstName": "John",
+      "senderLastName": "Doe",
+      "isOutgoing": false,
+      "isForwarded": false,
+      "replyToMessageId": null,
+      "media": null,
+      "views": 42,
+      "forwards": 5
+    },
+    {
+      "id": 12346,
+      "date": "2025-11-10T10:31:00.000Z",
+      "text": null,
+      "senderId": "789012",
+      "senderUsername": "alice",
+      "senderFirstName": "Alice",
+      "senderLastName": null,
+      "isOutgoing": false,
+      "isForwarded": false,
+      "replyToMessageId": 12345,
+      "media": {
+        "type": "photo",
+        "fileName": null,
+        "fileSize": 52438,
+        "duration": null,
+        "mimeType": null
+      },
+      "views": 38,
+      "forwards": 2
+    }
+  ]
+}
+```
+
+**Media Types:**
+- `photo`, `video`, `document`, `audio`, `sticker`, `voice`, `video_note`, `animation`, `contact`, `location`, `poll`, `unknown`
+
+**Errors:**
+- `400`: Missing parameters or invalid limit
+- `401`: No authenticated session
+- `403`: Not a member or no permission
+- `404`: Chat not found
+- `500`: Server error
+
+**Call from another service (Python example):**
+```python
+import urllib.parse
+
+phone = urllib.parse.quote("+1234567890")
+chat_id = "987654321"
+
+response = requests.get(
+    f"http://localhost:4000/api/chat-messages",
+    params={
+        "phone": phone,
+        "chatId": chat_id,
+        "limit": 100
+    }
+)
+
+messages = response.json()
+if messages["success"]:
+    # Store messages in your database
+    for msg in messages["messages"]:
+        db.save_message({
+            "telegram_id": msg["id"],
+            "chat_id": chat_id,
+            "sender_id": msg["senderId"],
+            "text": msg["text"],
+            "timestamp": msg["date"],
+            "has_media": msg["media"] is not None
+        })
+```
+
+---
+
+### Chat Participants
+
+#### 7. Get Chat Participants
+
+Retrieve all participants/members in a chat (group, channel, or DM).
+
+**Endpoint:** `GET /api/chat-participants`
+
+**Query Parameters:**
+- `phone` (required): URL-encoded phone number
+- `chatId` (required): Chat ID, username, or phone number
+- `limit` (optional): Number of participants (1-1000, default: 100)
+
+**Example Request:**
+```
+GET /api/chat-participants?phone=%2B1234567890&chatId=987654321&limit=100
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "chatId": "987654321",
+  "chatTitle": "My Group",
+  "chatType": "group",
+  "phone": "+1234567890",
+  "participantsCount": 42,
+  "participants": [
+    {
+      "userId": "123456",
+      "firstName": "John",
+      "lastName": "Doe",
+      "username": "johndoe",
+      "isBot": false,
+      "isSelf": false
+    },
+    {
+      "userId": "789012",
+      "firstName": "Alice",
+      "lastName": null,
+      "username": "alice",
+      "isBot": false,
+      "isSelf": false
+    },
+    {
+      "userId": "345678",
+      "firstName": "Bot",
+      "lastName": null,
+      "username": "mybot",
+      "isBot": true,
+      "isSelf": false
+    }
+  ]
+}
+```
+
+**Chat Types:**
+- `user`: Direct message (returns 1 participant)
+- `group`: Group chat
+- `channel`: Broadcast channel
+
+**Errors:**
+- `400`: Missing parameters or invalid limit
+- `401`: No authenticated session
+- `403`: Not a member or admin privileges required
+- `404`: Chat not found
+- `500`: Server error
+
+**Call from another service (Python example):**
+```python
+response = requests.get(
+    f"http://localhost:4000/api/chat-participants",
+    params={
+        "phone": urllib.parse.quote("+1234567890"),
+        "chatId": "987654321",
+        "limit": 100
+    }
+)
+
+participants = response.json()
+if participants["success"]:
+    # Store participants in your database
+    for p in participants["participants"]:
+        db.save_user({
+            "telegram_id": p["userId"],
+            "first_name": p["firstName"],
+            "last_name": p["lastName"],
+            "username": p["username"],
+            "is_bot": p["isBot"]
+        })
+        db.save_chat_member({
+            "chat_id": "987654321",
+            "user_id": p["userId"]
+        })
+```
+
+---
+
+### Messages
+
+#### 8. Send Message
+
+Send a message to a user, group, or channel.
+
+**Endpoint:** `POST /api/messages/send`
+
+**Request Body:**
+```json
+{
+  "fromPhone": "+1234567890",
+  "toTarget": "+9876543210",
+  "content": "Hello from the API!",
+  "replyTo": 12345
+}
+```
+
+**Fields:**
+- `fromPhone` (required): Authenticated sender phone number
+- `toTarget` (required): Phone number, username, or chat ID
+- `content` (required): Message text (string or object with `type` and `value`)
+- `replyTo` (optional): Message ID to reply to
+
+**Target Formats:**
+- Phone: `+9876543210`
+- Username: `@username`
+- Chat ID: `987654321`
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "sentTo": "+9876543210",
+  "messageId": 67890
+}
+```
+
+**Errors:**
+- `400`: Missing parameters or invalid input
+- `401`: No authenticated session
+- `404`: Target not found
+- `500`: Server error
+
+**Call from another service (Python example):**
+```python
+# Send simple text message
+response = requests.post(
+    "http://localhost:4000/api/messages/send",
+    json={
+        "fromPhone": "+1234567890",
+        "toTarget": "@username",
+        "content": "Hello from LangGraph!"
+    }
+)
+
+# Send reply to a message
+response = requests.post(
+    "http://localhost:4000/api/messages/send",
+    json={
+        "fromPhone": "+1234567890",
+        "toTarget": "987654321",
+        "content": "This is a reply",
+        "replyTo": 12345
+    }
+)
+```
+
+---
+
+#### 9. Get Unread Messages
+
+Fetch unread messages from a specific chat or target. **Automatically marks messages as read after fetching.**
+
+**Endpoint:** `GET /api/messages/unread`
+
+**Query Parameters:**
+- `accountPhone` (required): URL-encoded phone number
+- `target` (optional): Phone number, username, or @channel
+- `chatId` (optional): Chat ID
+
+**Note:** Provide either `target` OR `chatId`, not both.
+
+**Example Request:**
+```
+GET /api/messages/unread?accountPhone=%2B1234567890&target=%2B9876543210
+GET /api/messages/unread?accountPhone=%2B1234567890&chatId=987654321
+GET /api/messages/unread?accountPhone=%2B1234567890&target=@channelname
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "count": 3,
+  "unread": [
+    {
+      "id": 12345,
+      "sender": "johndoe",
+      "message": "Hey, are you there?",
+      "date": "2025-11-10T10:30:00.000Z",
+      "isOut": false
+    },
+    {
+      "id": 12346,
+      "sender": "johndoe",
+      "message": "Please respond!",
+      "date": "2025-11-10T10:31:00.000Z",
+      "isOut": false
+    }
+  ]
+}
+```
+
+**Errors:**
+- `400`: Missing or conflicting parameters
+- `500`: Server error
+
+**Important:** Messages are marked as read after this call!
+
+**Call from another service (Python example):**
+```python
+response = requests.get(
+    "http://localhost:4000/api/messages/unread",
+    params={
+        "accountPhone": urllib.parse.quote("+1234567890"),
+        "chatId": "987654321"
+    }
+)
+
+unread = response.json()
+if unread["success"]:
+    print(f"Found {unread['count']} unread messages")
+    for msg in unread["unread"]:
+        # Process and store
+        db.save_message({
+            "telegram_id": msg["id"],
+            "sender": msg["sender"],
+            "text": msg["message"],
+            "timestamp": msg["date"]
+        })
+```
+
+---
+
+### Polls
+
+#### 10. Get Polls
+
+Fetch polls from a chat.
+
+**Endpoint:** `GET /api/polls`
+
+**Query Parameters:**
+- `phone` (required): URL-encoded phone number
+- `chatId` (required): Chat ID or username
+- `limit` (optional): Number of polls (1-1000, default: 1)
+
+**Example Request:**
+```
+GET /api/polls?phone=%2B1234567890&chatId=987654321&limit=10
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "chatId": "987654321",
+  "chatTitle": "My Group",
+  "phone": "+1234567890",
+  "pollsCount": 2,
+  "polls": [
+    {
+      "messageId": 12345,
+      "pollId": "5234567890123456789",
+      "question": "What's your favorite programming language?",
+      "date": "2025-11-10T10:00:00.000Z",
+      "closed": false,
+      "multipleChoice": false,
+      "quiz": false,
+      "options": [
+        {
+          "text": "Python",
+          "voterCount": 15,
+          "chosen": false
+        },
+        {
+          "text": "TypeScript",
+          "voterCount": 12,
+          "chosen": true
+        },
+        {
+          "text": "Go",
+          "voterCount": 8,
+          "chosen": false
+        }
+      ],
+      "totalVoters": 35,
+      "closePeriod": null,
+      "closeDate": null
+    }
+  ]
+}
+```
+
+**Poll Properties:**
+- `closed`: Whether poll is closed for voting
+- `multipleChoice`: Can vote for multiple options
+- `quiz`: Has correct answer
+- `chosen`: Whether current user voted for this option
+
+**Errors:**
+- `400`: Missing parameters or invalid limit
+- `401`: No authenticated session
+- `404`: Chat not found
+- `500`: Server error
+
+**Call from another service (Python example):**
+```python
+response = requests.get(
+    "http://localhost:4000/api/polls",
+    params={
+        "phone": urllib.parse.quote("+1234567890"),
+        "chatId": "987654321",
+        "limit": 10
+    }
+)
+
+polls = response.json()
+if polls["success"]:
+    for poll in polls["polls"]:
+        # Analyze poll results
+        most_voted = max(poll["options"], key=lambda x: x["voterCount"])
+        print(f"Poll: {poll['question']}")
+        print(f"Winner: {most_voted['text']} with {most_voted['voterCount']} votes")
+```
+
+---
+
+#### 11. Vote on Poll
+
+Submit a vote on a poll.
+
+**Endpoint:** `POST /api/polls/vote`
+
+**Request Body:**
+```json
+{
+  "phone": "+1234567890",
+  "chatId": "987654321",
+  "messageId": 12345,
+  "optionIds": [0, 2]
+}
+```
+
+**Fields:**
+- `phone` (required): Authenticated phone number
+- `chatId` (required): Chat ID containing the poll
+- `messageId` (required): Message ID of the poll
+- `optionIds` (required): Array of option indices (0-based)
+
+**Note:** For single-choice polls, only first option is used. For multiple-choice, all options in array are voted.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "pollId": "5234567890123456789",
+  "messageId": 12345,
+  "votedOptions": [0, 2]
+}
+```
+
+**Errors:**
+- `400`: Missing parameters, poll closed, or invalid option IDs
+- `401`: No authenticated session
+- `404`: Chat or message not found, or message is not a poll
+- `500`: Server error
+
+**Call from another service (Python example):**
+```python
+# Vote for single option (option 0)
+response = requests.post(
+    "http://localhost:4000/api/polls/vote",
+    json={
+        "phone": "+1234567890",
+        "chatId": "987654321",
+        "messageId": 12345,
+        "optionIds": [0]
+    }
+)
+
+# Vote for multiple options (if poll allows)
+response = requests.post(
+    "http://localhost:4000/api/polls/vote",
+    json={
+        "phone": "+1234567890",
+        "chatId": "987654321",
+        "messageId": 12345,
+        "optionIds": [0, 2, 3]
+    }
+)
+```
+
+---
+
+### Health & Status
+
+#### 12. Health Check
+
+Check if the service is running.
+
+**Endpoint:** `GET /health`
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "version": "0.1.0",
+  "environment": "development",
+  "port": 4000
+}
+```
+
+---
+
+## Using from Other Services
+
+### Python Example (Complete Workflow)
+
+```python
+import requests
+import urllib.parse
+from typing import Dict, List, Optional
+
+class TelegramClient:
+    def __init__(self, base_url: str = "http://localhost:4000"):
+        self.base_url = base_url
+    
+    def _encode_phone(self, phone: str) -> str:
+        """URL-encode phone number"""
+        return urllib.parse.quote(phone)
+    
+    # Authentication
+    def send_code(self, phone: str, api_id: int, api_hash: str) -> Dict:
+        """Step 1: Send verification code"""
+        response = requests.post(
+            f"{self.base_url}/api/auth/send-code",
+            json={"phone": phone, "apiId": api_id, "apiHash": api_hash}
+        )
+        return response.json()
+    
+    def verify_code(self, phone: str, code: str) -> Dict:
+        """Step 2: Verify code and authenticate"""
+        response = requests.post(
+            f"{self.base_url}/api/auth/verify-code",
+            json={"phone": phone, "code": code}
+        )
+        return response.json()
+    
+    # Chats
+    def get_all_chats(self, phone: str) -> Dict:
+        """Get all chats (users, groups, channels, bots)"""
+        response = requests.get(
+            f"{self.base_url}/api/chats/all",
+            params={"accountPhone": self._encode_phone(phone)}
+        )
+        return response.json()
+    
+    def get_groups(self, phone: str) -> Dict:
+        """Get only groups and channels"""
+        response = requests.get(
+            f"{self.base_url}/api/chats/groups",
+            params={"accountPhone": self._encode_phone(phone)}
+        )
+        return response.json()
+    
+    # Messages
+    def get_chat_messages(self, phone: str, chat_id: str, limit: int = 100) -> Dict:
+        """Fetch message history from a chat"""
+        response = requests.get(
+            f"{self.base_url}/api/chat-messages",
+            params={
+                "phone": self._encode_phone(phone),
+                "chatId": chat_id,
+                "limit": limit
+            }
+        )
+        return response.json()
+    
+    def send_message(self, from_phone: str, to_target: str, 
+                    content: str, reply_to: Optional[int] = None) -> Dict:
+        """Send a message"""
+        payload = {
+            "fromPhone": from_phone,
+            "toTarget": to_target,
+            "content": content
+        }
+        if reply_to:
+            payload["replyTo"] = reply_to
+        
+        response = requests.post(
+            f"{self.base_url}/api/messages/send",
+            json=payload
+        )
+        return response.json()
+    
+    def get_unread_messages(self, phone: str, chat_id: str) -> Dict:
+        """Get unread messages (auto-marks as read)"""
+        response = requests.get(
+            f"{self.base_url}/api/messages/unread",
+            params={
+                "accountPhone": self._encode_phone(phone),
+                "chatId": chat_id
+            }
+        )
+        return response.json()
+    
+    # Participants
+    def get_chat_participants(self, phone: str, chat_id: str, limit: int = 100) -> Dict:
+        """Get all participants in a chat"""
+        response = requests.get(
+            f"{self.base_url}/api/chat-participants",
+            params={
+                "phone": self._encode_phone(phone),
+                "chatId": chat_id,
+                "limit": limit
+            }
+        )
+        return response.json()
+    
+    # Polls
+    def get_polls(self, phone: str, chat_id: str, limit: int = 10) -> Dict:
+        """Get polls from a chat"""
+        response = requests.get(
+            f"{self.base_url}/api/polls",
+            params={
+                "phone": self._encode_phone(phone),
+                "chatId": chat_id,
+                "limit": limit
+            }
+        )
+        return response.json()
+    
+    def vote_poll(self, phone: str, chat_id: str, 
+                  message_id: int, option_ids: List[int]) -> Dict:
+        """Vote on a poll"""
+        response = requests.post(
+            f"{self.base_url}/api/polls/vote",
+            json={
+                "phone": phone,
+                "chatId": chat_id,
+                "messageId": message_id,
+                "optionIds": option_ids
+            }
+        )
+        return response.json()
+
+
+# Usage Example
+telegram = TelegramClient("http://localhost:4000")
+
+# 1. Authenticate (one-time)
+telegram.send_code("+1234567890", 12345, "api_hash")
+# ... user receives code on Telegram ...
+telegram.verify_code("+1234567890", "12345")
+
+# 2. Get all chats
+chats = telegram.get_all_chats("+1234567890")
+for chat in chats["details"]:
+    print(f"{chat['name']} ({chat['type']}): {chat['id']}")
+
+# 3. Get participants from a group
+participants = telegram.get_chat_participants("+1234567890", "987654321")
+for p in participants["participants"]:
+    print(f"- {p['firstName']} (@{p['username']})")
+
+# 4. Fetch messages
+messages = telegram.get_chat_messages("+1234567890", "987654321", limit=50)
+for msg in messages["messages"]:
+    print(f"[{msg['date']}] {msg['senderFirstName']}: {msg['text']}")
+
+# 5. Send message
+telegram.send_message("+1234567890", "@username", "Hello from Python!")
+
+# 6. Get and vote on polls
+polls = telegram.get_polls("+1234567890", "987654321")
+if polls["pollsCount"] > 0:
+    poll = polls["polls"][0]
+    telegram.vote_poll("+1234567890", "987654321", poll["messageId"], [0])
+```
+
+### Node.js/TypeScript Example
+
+```typescript
+import axios from 'axios';
+
+class TelegramClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string = 'http://localhost:4000') {
+    this.baseUrl = baseUrl;
+  }
+
+  async getAllChats(phone: string) {
+    const response = await axios.get(`${this.baseUrl}/api/chats/all`, {
+      params: { accountPhone: encodeURIComponent(phone) }
+    });
+    return response.data;
+  }
+
+  async getChatParticipants(phone: string, chatId: string, limit: number = 100) {
+    const response = await axios.get(`${this.baseUrl}/api/chat-participants`, {
+      params: {
+        phone: encodeURIComponent(phone),
+        chatId,
+        limit
+      }
+    });
+    return response.data;
+  }
+
+  async sendMessage(fromPhone: string, toTarget: string, content: string) {
+    const response = await axios.post(`${this.baseUrl}/api/messages/send`, {
+      fromPhone,
+      toTarget,
+      content
+    });
+    return response.data;
+  }
+}
+
+// Usage
+const telegram = new TelegramClient();
+const chats = await telegram.getAllChats('+1234567890');
+```
+
+---
+
+## API Endpoints
 
 ## Data Storage
 
@@ -462,7 +1224,7 @@ Log levels: `DEBUG`, `INFO`, `WARN`, `ERROR`
 
 ## Error Handling
 
-All errors return a consistent format:
+All error responses follow a consistent format:
 
 ```json
 {
@@ -471,9 +1233,34 @@ All errors return a consistent format:
 }
 ```
 
-Common errors:
-- `400`: Invalid input or authentication required
-- `500`: Internal server error
+### HTTP Status Codes
+
+- **200**: Success
+- **400**: Bad Request - Invalid input, missing parameters, or validation error
+- **401**: Unauthorized - No authenticated session found
+- **403**: Forbidden - No permission (not a member, admin required, etc.)
+- **404**: Not Found - Chat, user, or message not found
+- **500**: Internal Server Error - Server or Telegram API error
+
+### Common Error Messages
+
+| Error Message | Meaning | Solution |
+|---------------|---------|----------|
+| `No authenticated session found for {phone}` | Phone not authenticated | Call `/api/auth/send-code` and `/api/auth/verify-code` |
+| `Chat not found: {chatId}` | Chat ID doesn't exist or not accessible | Use `/api/chats/all` to get valid chat IDs |
+| `You are not a member of this chat` | Account not in the chat | Join the chat first via Telegram app |
+| `Admin privileges required to view participants` | Need admin rights | Request admin access or use admin account |
+| `Target not found: {target}` | Username or phone doesn't exist | Verify target exists and you've interacted before |
+| `Phone parameter is required` | Missing phone parameter | Add phone to query/body |
+| `Limit must be a number between 1 and 1000` | Invalid limit | Use limit between 1-1000 |
+| `Either target or chatId must be provided` | Missing both parameters | Provide one parameter |
+| `Provide either target or chatId, not both` | Conflicting parameters | Use only one parameter |
+| `PHONE_CODE_EXPIRED` | Verification code expired | Request new code (codes expire in 2-3 minutes) |
+| `Invalid verification code` | Wrong code entered | Double-check code from Telegram app |
+| `Poll is closed` | Can't vote on closed poll | Poll voting is closed |
+| `Invalid option ID` | Option index out of range | Use valid option index (0-based) |
+
+---
 
 ## Session Persistence
 
