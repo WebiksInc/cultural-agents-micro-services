@@ -15,7 +15,7 @@ class SupervisorState(TypedDict):
     recent_messages: List[Message]  # The global message history from Telegram
     
     # Action tracking
-    selected_actions: List[dict]  # History of actions taken, e.g., [{"agent": "manager", "action": ...}]
+    selected_actions: List[dict]  # actions, e.g., [{"agent": "manager", "action": ...}]
     execution_queue: List[dict]  # Output of Scheduler, e.g., [{"agent": "troll", "action": ..., "time": ...}]
     
     # Internal tracking
