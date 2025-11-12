@@ -42,7 +42,9 @@ class AgentState(TypedDict):
     styled_response: Optional[str]  # Output of E.2 (Styler)
     
     # Validation
-    validation: Optional[bool]  # Output of Validator
+    validation: Optional[dict]  # Output of Validator, e.g., {"approved": True/False, "explanation": "...", "styled_response": "..."}
+    validation_feedback: Optional[str]  # Feedback from failed validation to help E.1 regenerate
+    retry_count: int  # Number of times E.1 has been retried due to validation failure
     
     # Internal tracking
     current_node: Optional[str]

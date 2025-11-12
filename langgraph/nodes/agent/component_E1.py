@@ -83,6 +83,23 @@ def text_generator_node(state: Dict[str, Any]) -> None:
         persona_json=persona_json
     )
     
+    # If there's validation feedback, prepend it to the prompt for retry
+    validation_feedback = state.get('validation_feedback')
+    if validation_feedback:
+        logger.info(f"Retry attempt - including validation feedback")
+        feedback_note = f"""
+⚠️ IMPORTANT - PREVIOUS ATTEMPT FAILED VALIDATION ⚠️
+
+Your previous response was rejected for the following reason:
+{validation_feedback}
+
+Please generate a NEW response that addresses this issue while still fulfilling the action purpose.
+Focus on fixing the specific problem mentioned above.
+
+---
+"""
+        main_prompt = feedback_note + main_prompt
+    
     try:
         # Get model settings
         model_settings = get_model_settings('text_generator', 'TEXT_GENERATOR_MODEL')
