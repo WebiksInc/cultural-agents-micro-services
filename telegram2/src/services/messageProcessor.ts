@@ -1,4 +1,5 @@
 import logger from '../utils/logger';
+import entityResolver from './entityResolver';
 import { UnreadMessage } from '../types/messages';
 
 export const resolveEntity = async (client: any, target?: string, chatId?: string): Promise<any> => {
@@ -6,14 +7,18 @@ export const resolveEntity = async (client: any, target?: string, chatId?: strin
     throw new Error('Either target or chatId must be provided');
   }
   
+  // For entity resolution, we need to get the phone from somewhere
+  // This is a limitation of the current design - we'll use a placeholder
+  // In practice, the unreadService passes the client which already has session info
+  const phone = 'unknown'; // This will be improved in a future refactor
+  
   if (chatId) {
-    const idNum = BigInt(chatId);
-    const entity = await client.getEntity(idNum);
+    const entity = await entityResolver.getEntity(client, phone, chatId);
     logger.debug('Entity fetched by chatId', { chatId, entityId: entity.id.toString() });
     return entity;
   }
   
-  const entity = await client.getEntity(target!);
+  const entity = await entityResolver.getEntity(client, phone, target!);
   logger.debug('Entity fetched by target', { target, entityId: entity.id.toString() });
   return entity;
 }

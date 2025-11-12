@@ -1,11 +1,13 @@
 services:
 
   telegram2:
-    build: ./telegram2
+    image: telegram2:0.1.0
+
     ports:
       - "4000:4000"
+
     volumes:
-      - ./telegram2/data:/app/data
+      - ./volumes/telegram2:/app/data
 
     environment:
       - NODE_ENV=production
@@ -22,6 +24,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-volumes:
-  telegram2-data:
-    driver: local
+
+    lang_graph:
+     environment:
+       - PORT=4000
+       - TELEGRAM_HOST=telegram2

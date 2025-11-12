@@ -1,269 +1,223 @@
-# Telegram2 Microservice
-# Telegram2 Service (Simple Telegram MTProto Integration)
+# Telegram2 Service
 
+## Summary
 
+Telegram2 is a stateless REST API microservice that interfaces with Telegram's API using GramJS. It provides endpoints for authentication, chat management, messaging, and poll interactions. The service maintains session persistence through JSON files and serves as an API gateway for Telegram operations.
 
-A clean, functional TypeScript microservice for Telegram integration using GramJS library.
-Minimal service providing:
+**Base URL:** `http://localhost:4000`
 
-- Authentication (send code, verify code) using telegram (MTProto client)
-
-## Features- Send message between accounts and targets (phone numbers only)
-
-- Fetch unread messages (based on last fetched state)
-
-- **Authentication**: Phone verification with session persistence
-
-- **Message Sending**: Send messages to users, groups, and channels## Endpoints
-
-- **Unread Messages**: Fetch and auto-mark-as-read messages from any target1. POST /auth/send-code { apiId, apiHash, phone }
-
-- **Session Management**: Persistent sessions survive server restarts2. POST /auth/verify-code { phone, code }
-
-- **Clean Architecture**: Utils, Services, Routes separation3. POST /messages/send { fromPhone, toPhone, content }
-
-- **Smart Logging**: JSON-formatted logs for easy debugging4. GET /messages/unread?accountPhone=...&target=... (target can be phone or channel username like @mychannel)
-
-
-
-## Architecture## Running
-
-Install deps and start:
-
-``````
-
-telegram2/npm install
-
-├── src/npm run dev
-
-│   ├── utils/          # Utility functions```
-
-│   │   ├── logger.ts         # JSON logging
-
-│   │   ├── phoneStorage.ts   # Per-phone JSON files
-│   │   │                        # Set LOG_LEVEL=debug for verbose logs.
-│   │   └── validators.ts     # Input validation
-
-│   ├── services/       # Business logic
-│   │   │                  # Data Store
-│   │   ├── sessionManager.ts # Session lifecycle
-│   │   │                        # Single JSON file at data/store.json maintaining accounts, messages, and conversation state.
-│   │   ├── authService.ts    # Authentication
-
-│   │   ├── messageService.ts # Send messages
-│   │   │                        # Notes
-│   │   └── unreadService.ts  # Fetch unread
-│   │   │                        # Each file kept under 120 lines.
-│   ├── routes/         # API endpoints
-│   │   │                  # Sessions auto-loaded at startup.
-│   │   ├── authRoutes.ts
-│   │   │                        # Unread determined by last fetched message id per conversation.
-│   │   ├── messageRoutes.ts
-│   │   │                        # Channel support: pass channel username as target (e.g. @telegram). Messages filtered same way.
-│   │   ├── unreadRoutes.ts
-│   │   └── index.ts
-│   └── server.ts       # Express server
-└── data/               # Generated at runtime
-    └── phone_+123.json # Per-phone credentials
-```
+---
 
 ## Setup
 
-### Install Dependencies
+### Prerequisites
+- Node.js 20+
+- Telegram API credentials (API_ID and API_HASH from https://my.telegram.org)
+
+### Installation
 
 ```bash
-cd telegram2
 npm install
 ```
 
-### Environment Variables Configuration
-
-#### Setup
-
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit `.env` with your preferred settings:
-   ```bash
-   # Basic configuration
-   PORT=4000
-   NODE_ENV=development
-   LOG_LEVEL=info
-   DATA_DIR=./data
-   AUTO_LOAD_SESSIONS=true
-   ```
-
-#### Available Environment Variables
-
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `PORT` | number | `4000` | Port number for the HTTP server |
-| `NODE_ENV` | string | `development` | Node.js environment (development/production) |
-| `LOG_LEVEL` | string | `info` | Minimum log level: `debug`, `info`, `warn`, `error` |
-| `DATA_DIR` | string | `./data` | Directory to store phone session files |
-| `CONNECTION_RETRIES` | number | `3` | Number of connection retries for Telegram clients |
-| `SHUTDOWN_TIMEOUT` | number | `10000` | Graceful shutdown timeout (milliseconds) |
-| `AUTO_LOAD_SESSIONS` | boolean | `true` | Automatically load saved sessions on startup |
-| `SESSION_CLEANUP_INTERVAL` | number | `3600000` | Session cleanup interval (milliseconds, 1h default) |
-| `TELEGRAM_API_ID` | number | none | Optional: Default Telegram API ID (can be overridden per request) |
-| `TELEGRAM_API_HASH` | string | none | Optional: Default Telegram API Hash (can be overridden per request) |
-
-#### Environment Examples
-
-**Development Environment:**
-```bash
-PORT=4000
-NODE_ENV=development
-LOG_LEVEL=debug
-DATA_DIR=./data
-AUTO_LOAD_SESSIONS=true
-```
-
-**Production Environment:**
-```bash
-PORT=8080
-NODE_ENV=production
-LOG_LEVEL=info
-DATA_DIR=/app/data
-AUTO_LOAD_SESSIONS=true
-CONNECTION_RETRIES=5
-SHUTDOWN_TIMEOUT=15000
-```
-
-**Docker Environment:**
-```bash
-PORT=4000
-NODE_ENV=production
-LOG_LEVEL=warn
-DATA_DIR=/app/sessions
-AUTO_LOAD_SESSIONS=true
-TELEGRAM_API_ID=12345
-TELEGRAM_API_HASH=your_api_hash_here
-```
-
-#### Log Level Behavior
-
-- **`debug`**: All log messages (debug, info, warn, error)
-- **`info`**: Info, warn, and error messages
-- **`warn`**: Only warn and error messages  
-- **`error`**: Only error messages
-
-#### Data Directory
-
-The `DATA_DIR` variable controls where phone session files are stored:
-- Relative paths are resolved from the project root
-- Absolute paths are used as-is
-- Directory is created automatically if it doesn't exist
-- Files are named `phone_+1234567890.json`
-
-#### Default API Credentials
-
-If you set `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`, these will be used as defaults, but can still be overridden in individual API requests to `/api/auth/send-code`.
-
-### Get Telegram API Credentials
-
-1. Visit https://my.telegram.org
-2. Log in with your phone number
-3. Go to "API development tools"
-4. Create an application
-5. Copy your `api_id` and `api_hash`
-6. (Optional) Add them to `.env` as defaults:
-   ```bash
-   TELEGRAM_API_ID=your_api_id
-   TELEGRAM_API_HASH=your_api_hash
-   ```
-
-## Running the Service
-
-### Development Mode
-
-```bash
-npm run dev
-```
-
-### Production Mode
+### Build
 
 ```bash
 npm run build
+```
+
+### Run
+
+```bash
+# Development
+npm run dev
+
+# Production
 npm start
 ```
 
-Server runs on: `http://localhost:4000`
+---
 
-## API Endpoints
+## Docker
 
-### Base URL
+### Build Image
+
+```bash
+docker build -t telegram2-service .
 ```
-http://localhost:4000/api
+
+The Dockerfile uses a multi-stage build:
+- **Builder stage**: Compiles TypeScript to JavaScript
+- **Production stage**: Runs with minimal dependencies (Node.js 20 Alpine)
+- **Security**: Runs as non-root user (`node`)
+- **Health check**: Built-in health monitoring
+
+---
+
+### Run Container (Standalone)
+
+```bash
+docker run -d \
+  --name telegram2 \
+  -p 4000:4000 \
+  -e TELEGRAM_API_ID=your_api_id \
+  -e TELEGRAM_API_HASH=your_api_hash \
+  -e NODE_ENV=production \
+  -v $(pwd)/data:/app/data \
+  telegram2-service
 ```
 
-### 1. Health Check
+**Important:** Mount the `data` directory to persist session files between container restarts.
+
+---
+
+### Docker Compose (Recommended)
+
+The root directory contains a `docker-compose.yml` file for easy deployment:
+
+```yaml
+services:
+  telegram2:
+    build: ./telegram2
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./telegram2/data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - LOG_LEVEL=info
+      - DATA_DIR=/app/data
+      - AUTO_LOAD_SESSIONS=true
+      - CONNECTION_RETRIES=5
+      - SHUTDOWN_TIMEOUT=15000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+**Commands:**
+
+```bash
+# Start service
+docker-compose up -d telegram2
+
+# View logs
+docker-compose logs -f telegram2
+
+# Stop service
+docker-compose down
+
+# Rebuild and restart
+docker-compose up -d --build telegram2
+```
+
+---
+
+### Health Check
+
+The Docker container includes automatic health monitoring:
+- **Endpoint**: `/health`
+- **Interval**: Every 30 seconds
+- **Timeout**: 10 seconds
+- **Start period**: 40 seconds (allows startup time)
+- **Retries**: 3 attempts before marking unhealthy
+
+Check container health:
+```bash
+docker ps
+# Look for "healthy" status in the STATUS column
+```
+
+---
+
+### Volume Persistence
+
+Session files are stored in `/app/data` inside the container. **Always mount this directory** to persist authenticated sessions:
+
+```bash
+# Local directory mount
+-v $(pwd)/data:/app/data
+
+# Named volume (alternative)
+-v telegram2-data:/app/data
+```
+
+Without volume mounting, all sessions will be lost when the container restarts.
+
+---
+
+## Environment Variables
+
+Configure these in a `.env` file or through environment variables:
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `PORT` | number | `4000` | Server port |
+| `NODE_ENV` | string | `development` | Environment mode |
+| `LOG_LEVEL` | string | `info` | Logging level (error, warn, info, debug) |
+| `DATA_DIR` | string | `./data` | Directory for session files |
+| `CONNECTION_RETRIES` | number | `3` | Connection retry attempts |
+| `SHUTDOWN_TIMEOUT` | number | `10000` | Graceful shutdown timeout (ms) |
+| `AUTO_LOAD_SESSIONS` | boolean | `true` | Auto-load saved sessions on startup |
+| `SESSION_CLEANUP_INTERVAL` | number | `3600000` | Session cleanup interval (ms) |
+| `TELEGRAM_API_ID` | number | - | Telegram API ID (required) |
+| `TELEGRAM_API_HASH` | string | - | Telegram API Hash (required) |
+
+---
+
+## Routes
+
+### Health Check
 
 **GET** `/health`
 
-Response:
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Service is healthy",
   "version": "0.1.0",
   "environment": "development",
   "port": 4000
 }
 ```
 
-**GET** `/config`
+---
 
-Returns current configuration (excluding sensitive data):
-```json
-{
-  "success": true,
-  "config": {
-    "nodeEnv": "development",
-    "port": 4000,
-    "logLevel": "info",
-    "dataDir": "./data",
-    "autoLoadSessions": true,
-    "connectionRetries": 3,
-    "hasDefaultApiCredentials": false
-  }
-}
-```
+### Authentication
 
-Test your configuration:
-```bash
-curl http://localhost:4000/config
-```
-
-### 2. Send Verification Code
+#### Send Verification Code
 
 **POST** `/api/auth/send-code`
 
-Request body:
+**Request Body:**
 ```json
 {
   "phone": "+1234567890",
-  "apiId": 12345,
-  "apiHash": "your_api_hash"
+  "apiId": 12345678,
+  "apiHash": "your_api_hash_here"
 }
 ```
 
-Response:
+**Response:**
 ```json
 {
   "success": true,
-  "phoneCodeHash": "abc123...",
-  "message": "Verification code sent to Telegram"
+  "phoneCodeHash": "hash_string"
 }
 ```
 
-### 3. Verify Code
+---
+
+#### Verify Code
 
 **POST** `/api/auth/verify-code`
 
-Request body:
+**Request Body:**
 ```json
 {
   "phone": "+1234567890",
@@ -271,198 +225,303 @@ Request body:
 }
 ```
 
-Response:
+**Response:**
 ```json
 {
   "success": true,
-  "user": "John",
-  "message": "Authentication successful"
+  "user": {
+    "id": "123456789",
+    "firstName": "John",
+    "lastName": "Doe",
+    "username": "johndoe",
+    "phone": "+1234567890"
+  }
 }
 ```
 
-### 4. Send Message
+---
 
-**POST** `/api/messages/send`
+#### Get Active Sessions
 
-Request body:
-```json
-{
-  "fromPhone": "+1234567890",
-  "toTarget": "+9876543210",
-  "message": "Hello!"
-}
-```
+**GET** `/api/auth/debug/active-sessions`
 
-Target can be:
-- Phone number: `+1234567890`
-- Username: `@username`
-- Group: `@groupname`
-- Channel: `@channelname`
-
-Response:
-```json
-{
-  "success": true,
-  "sentTo": "+9876543210",
-  "message": "Message sent successfully"
-}
-```
-
-### 5. Get Unread Messages
-
-**GET** `/api/messages/unread`
-
-Query parameters:
-- `accountPhone`: Your authenticated phone number (required)
-- `target`: Phone/username/channel to fetch from (optional)
-- `chatId`: Chat ID to fetch from (optional)
-
-**Note**: Either `target` OR `chatId` must be provided, not both.
-
-**Example 1: Using target (phone/username)**
-```
-GET /api/messages/unread?accountPhone=%2B1234567890&target=%2B9876543210
-GET /api/messages/unread?accountPhone=%2B1234567890&target=@channelname
-```
-
-**Example 2: Using chat ID**
-```
-GET /api/messages/unread?accountPhone=%2B1234567890&chatId=123456789
-```
-
-Response:
+**Response:**
 ```json
 {
   "success": true,
   "count": 2,
-  "unread": [
+  "activePhones": ["+1234567890", "+9876543210"]
+}
+```
+
+---
+
+### Chats
+
+#### Get All Chats
+
+**GET** `/api/chats/all`
+
+**Query Parameters:**
+- `accountPhone` (required): Phone number
+
+**Response:**
+```json
+{
+  "success": true,
+  "chats": [
+    {
+      "id": "123456789",
+      "title": "Chat Name",
+      "type": "user | group | channel",
+      "username": "chatusername"
+    }
+  ],
+  "details": {
+    "totalChats": 5,
+    "users": 2,
+    "groups": 2,
+    "channels": 1
+  }
+}
+```
+
+---
+
+#### Get Groups Only
+
+**GET** `/api/chats/groups`
+
+**Query Parameters:**
+- `accountPhone` (required): Phone number
+
+**Response:**
+```json
+{
+  "success": true,
+  "chats": [
+    {
+      "id": "123456789",
+      "title": "Group Name",
+      "type": "group | channel",
+      "username": "groupusername"
+    }
+  ],
+  "details": {
+    "totalChats": 3,
+    "groups": 2,
+    "channels": 1
+  }
+}
+```
+
+---
+
+### Chat Messages
+
+#### Get Chat Messages
+
+**GET** `/api/chat-messages`
+
+**Query Parameters:**
+- `phone` (required): Phone number
+- `chatId` (required): Chat ID or username
+- `limit` (optional): Number of messages (1-1000, default: 100)
+
+**Response:**
+```json
+{
+  "success": true,
+  "chatId": "123456789",
+  "chatTitle": "Chat Name",
+  "phone": "+1234567890",
+  "messagesCount": 50,
+  "messages": [
     {
       "id": 12345,
-      "sender": "username",
-      "message": "Hello!",
-      "date": "2025-10-29T10:30:00.000Z",
-      "isOut": false
+      "chatId": "123456789",
+      "senderId": "987654321",
+      "senderUsername": "username",
+      "senderFirstName": "John",
+      "text": "Message content",
+      "date": "2025-11-11T10:30:00.000Z",
+      "isOutgoing": false,
+      "replyToMsgId": null,
+      "mediaType": null
     }
   ]
 }
 ```
 
-**Important Notes**:
-- Messages are automatically marked as read after fetching
-- Phone numbers in URL must be URL-encoded (`+` becomes `%2B`)
-- Use the `/api/chats/all` endpoint to get chat IDs
+---
 
-### 6. Get All Chats
+### Chat Participants
 
-**GET** `/api/chats/all?accountPhone=+1234567890`
+#### Get Chat Participants
 
-Returns all chats (users, groups, channels, bots) with their IDs.
+**GET** `/api/chat-participants`
 
-Query parameters:
-- `accountPhone`: Your authenticated phone number
+**Query Parameters:**
+- `phone` (required): Phone number
+- `chatId` (required): Chat ID or username
+- `limit` (optional): Number of participants (1-1000, default: 100)
 
-Response:
+**Response:**
 ```json
 {
   "success": true,
-  "chats": {
-    "John Doe": "123456789",
-    "My Group": "987654321",
-    "News Channel": "555555555"
-  },
-  "details": [
+  "chatId": "123456789",
+  "chatTitle": "Group Name",
+  "chatType": "group | channel",
+  "phone": "+1234567890",
+  "participantsCount": 15,
+  "participants": [
     {
-      "id": "123456789",
-      "name": "John Doe",
-      "type": "user",
-      "username": "johndoe"
+      "userId": "987654321",
+      "firstName": "John",
+      "lastName": "Doe",
+      "username": "johndoe",
+      "isBot": false,
+      "isSelf": false
     }
-  ],
-  "count": 3
+  ]
 }
 ```
 
-### 7. Get Groups and Channels Only
+---
 
-**GET** `/api/chats/groups?accountPhone=+1234567890`
+### Messages
 
-Returns only groups and channels (excludes users and bots).
+#### Send Message
 
-Query parameters:
-- `accountPhone`: Your authenticated phone number
+**POST** `/api/messages/send`
 
-Response:
+**Request Body:**
+```json
+{
+  "fromPhone": "+1234567890",
+  "toTarget": "username or +phone or chatId",
+  "content": "Message text",
+  "replyTo": 12345
+}
+```
+
+**Response:**
 ```json
 {
   "success": true,
-  "chats": {
-    "My Group": "987654321",
-    "News Channel": "555555555"
-  },
-  "details": [
-    {
-      "id": "987654321",
-      "name": "My Group",
-      "type": "group",
-      "username": "mygroup"
-    }
-  ],
-  "count": 2
+  "sentTo": "username",
+  "messageId": 67890
 }
 ```
 
-## Data Storage
+---
 
-### Phone Data Files
+#### Get Unread Messages
 
-Location: `telegram2/data/phone_+1234567890.json`
+**GET** `/api/messages/unread`
 
-Structure:
+**Query Parameters:**
+- `accountPhone` (required): Phone number
+- `target` OR `chatId` (one required): Username/phone or chat ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 5,
+  "unread": [
+    {
+      "id": 12345,
+      "chatId": "123456789",
+      "senderId": "987654321",
+      "senderUsername": "username",
+      "text": "Unread message",
+      "date": "2025-11-11T10:30:00.000Z",
+      "isOutgoing": false
+    }
+  ]
+}
+```
+
+**Note:** This endpoint automatically marks messages as read after fetching.
+
+---
+
+### Polls
+
+#### Get Polls
+
+**GET** `/api/polls`
+
+**Query Parameters:**
+- `phone` (required): Phone number
+- `chatId` (required): Chat ID or username
+- `limit` (optional): Number of polls (1-1000, default: 1)
+
+**Response:**
+```json
+{
+  "success": true,
+  "chatId": "123456789",
+  "chatTitle": "Chat Name",
+  "phone": "+1234567890",
+  "pollsCount": 1,
+  "polls": [
+    {
+      "id": "poll_id_123",
+      "question": "Poll question?",
+      "answers": [
+        {
+          "text": "Option 1",
+          "voters": 5,
+          "option": 0
+        },
+        {
+          "text": "Option 2",
+          "voters": 3,
+          "option": 1
+        }
+      ],
+      "closed": false,
+      "totalVoters": 8,
+      "messageId": 12345
+    }
+  ]
+}
+```
+
+---
+
+#### Vote on Poll
+
+**POST** `/api/polls/vote`
+
+**Request Body:**
 ```json
 {
   "phone": "+1234567890",
-  "apiId": 12345,
-  "apiHash": "abc123...",
-  "session": "session_string...",
-  "phoneCodeHash": "temp_hash...",
-  "verified": true,
-  "lastAuthAt": "2025-10-29T10:00:00.000Z"
+  "chatId": "123456789",
+  "messageId": 12345,
+  "optionIds": [0, 1]
 }
 ```
 
-## Testing with Postman
-
-1. Import the collection: `Telegram2-API.postman_collection.json`
-2. Update environment variables:
-   - `BASE_URL`: `http://localhost:4000`
-   - `PHONE_NUMBER`: Your phone number
-   - `API_ID`: Your Telegram API ID
-   - `API_HASH`: Your Telegram API hash
-   - `TARGET_PHONE`: Target phone for testing
-3. Follow the authentication flow:
-   - Send code
-   - Check Telegram app for code
-   - Verify code
-4. Test messaging and unread endpoints
-
-## Logging
-
-All logs are output in JSON format for easy parsing:
-
+**Response:**
 ```json
 {
-  "timestamp": "2025-10-29T10:30:00.000Z",
-  "level": "INFO",
-  "message": "Session loaded and connected",
-  "phone": "+1234567890"
+  "success": true,
+  "pollId": "poll_id_123",
+  "messageId": 12345,
+  "votedOptions": [0, 1]
 }
 ```
 
-Log levels: `DEBUG`, `INFO`, `WARN`, `ERROR`
+---
 
-## Error Handling
+## Error Responses
 
-All errors return a consistent format:
+All endpoints return errors in this format:
 
 ```json
 {
@@ -471,72 +530,23 @@ All errors return a consistent format:
 }
 ```
 
-Common errors:
-- `400`: Invalid input or authentication required
-- `500`: Internal server error
+### HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| `200` | Success |
+| `400` | Bad Request (validation error, missing parameters) |
+| `401` | Unauthorized (no authenticated session) |
+| `403` | Forbidden (not a member, insufficient permissions) |
+| `404` | Not Found (chat/user/poll not found) |
+| `500` | Internal Server Error |
+
+---
+
+
 
 ## Session Persistence
 
-- Sessions are saved to JSON files after authentication
-- On server restart, all sessions are automatically reloaded
-- No need to re-authenticate unless session is deleted
+Sessions are stored as JSON files in the `DATA_DIR` directory (default: `./data`). Each authenticated phone number creates a file: `phone_+1234567890.json`
 
-## Graceful Shutdown
-
-The service handles `SIGINT` and `SIGTERM` signals:
-1. Disconnects all Telegram clients
-2. Closes server connections
-3. Exits cleanly
-
-## Code Quality
-
-- ✅ No classes/OOP - pure functional approach
-- ✅ All files under 120 lines
-- ✅ Clean separation: Utils/Services/Routes
-- ✅ Full TypeScript typing
-- ✅ Input validation on all endpoints
-- ✅ Smart logging for debugging
-
-## Troubleshooting
-
-### "Phone data not found"
-Run `/api/auth/send-code` first to save credentials.
-
-### "Verification code has expired"
-**This is the most common issue!** Telegram verification codes expire after a few minutes.
-
-**Solution:**
-1. Call `/api/auth/send-code` to get a new code
-2. Check Telegram immediately for the new code
-3. Call `/api/auth/verify-code` **within 2-3 minutes**
-4. Don't wait too long between steps!
-
-**Important:** The verification code from Telegram expires quickly. You must enter it within a few minutes of receiving it. If you get a "PHONE_CODE_EXPIRED" error, just request a new code and try again faster.
-
-### "Invalid verification code"
-Double-check the code from your Telegram app. Make sure you're using the latest code.
-
-### "2FA is enabled on this account"
-Password authentication (2FA) is not yet supported. You'll need to temporarily disable 2FA or use an account without it.
-
-### "Sender not authenticated"
-Complete the authentication flow before sending messages.
-
-### "Failed to connect session"
-Session may be expired. Re-authenticate with `/api/auth/send-code` and `/api/auth/verify-code`.
-
-## Development
-
-### File Size Limits
-All files are kept under 120 lines for maintainability.
-
-### Adding New Features
-Follow the pattern:
-1. Add utility functions in `utils/`
-2. Add business logic in `services/`
-3. Add routes in `routes/`
-4. Update Postman collection
-
-## License
-
-Private - Internal Use Only
+Sessions are automatically loaded on startup when `AUTO_LOAD_SESSIONS=true`.
