@@ -12,6 +12,23 @@ export interface ChatsResponse {
   details: ChatInfo[];
 }
 
+export interface ChatParticipant {
+  userId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  isBot: boolean;
+  isSelf: boolean;
+}
+
+export interface ChatParticipantsResponse {
+  chatId: string;
+  chatTitle: string;
+  chatType: string;
+  participantsCount: number;
+  participants: ChatParticipant[];
+}
+
 export interface TelegramEntity {
   id: any;
   className?: string;
