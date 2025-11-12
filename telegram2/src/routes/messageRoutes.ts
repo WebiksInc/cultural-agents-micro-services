@@ -8,7 +8,7 @@ const router = Router();
 
 router.post('/send', async (req: Request, res: Response) => {
   try {
-    const { fromPhone, toTarget, content, replyTo } = req.body;
+    const { fromPhone, toTarget, content, replyTo, replyToTimestamp } = req.body;
 
     if (!fromPhone) {
       return res.status(400).json({
@@ -40,7 +40,8 @@ router.post('/send', async (req: Request, res: Response) => {
       validatedPhone, 
       validatedTarget, 
       validatedContent,
-      validatedReplyTo
+      validatedReplyTo,
+      replyToTimestamp
     );
     
     res.json({
@@ -57,6 +58,10 @@ router.post('/send', async (req: Request, res: Response) => {
     }
 
     if (error.message.includes('Target not found')) {
+      return res.status(404).json({ success: false, error: error.message });
+    }
+
+    if (error.message.includes('Could not find message with timestamp')) {  
       return res.status(404).json({ success: false, error: error.message });
     }
 

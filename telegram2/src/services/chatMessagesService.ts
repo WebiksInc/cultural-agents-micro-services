@@ -9,14 +9,6 @@ function extractMediaInfo(media: unknown): MediaInfo {
   
   let type: MediaInfo['type'] = 'unknown';
   if (className.includes('Photo')) type = 'photo';
-  else if (className.includes('Video')) type = 'video';
-  else if (className.includes('Audio')) type = 'audio';
-  else if (className.includes('Voice')) type = 'voice';
-  else if (className.includes('Document')) type = 'document';
-  else if (className.includes('Sticker')) type = 'sticker';
-  else if (className.includes('Animation') || className.includes('Gif')) type = 'animation';
-  else if (className.includes('Contact')) type = 'contact';
-  else if (className.includes('Location') || className.includes('Geo')) type = 'location';
   else if (className.includes('Poll')) type = 'poll';
 
   const document = mediaObj.document as Record<string, unknown> | undefined;
@@ -53,6 +45,47 @@ function transformMessage(msg: unknown): FullChatMessage {
     forwards: (message.forwards as number) || null,
   };
 }
+
+
+export const findMessageIdByTimestamp = async (
+  phone: string,
+  chatId: string,
+  targetTimestamp: string  // ISO string like "2025-11-11T14:30:00.000Z"
+): Promise<number | null> => {
+  const client = sessionManager.getClient(phone);
+  
+
+  logger.info('Finding message by timestamp', { phone, chatId, targetTimestamp });
+
+  try {
+    const entity = await entityResolver.getEntity(client, phone, chatId);
+    const targetDate = Math.floor(new Date(targetTimestamp).getTime() / 1000);
+    const messages = await client.getMessages(entity, {
+      limit: 3,  
+      offsetDate: targetDate + 1,
+    });
+
+    if (messages.length === 0) {
+      logger.warn('No messages found near timestamp', { phone, chatId, targetTimestamp });
+      return null;
+    }
+
+    const transformedMessages = messages.map((msg: unknown) => transformMessage(msg));
+    const exactMatch = transformedMessages.find((msg: FullChatMessage) => msg.date === targetTimestamp);
+    if (exactMatch) {
+      logger.info('Message found by timestamp', { phone, chatId, messageId: exactMatch.id });
+      return exactMatch.id;
+    }
+
+    logger.warn('Exact timestamp match not found', { phone, chatId, targetTimestamp });
+    return null;
+
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.error('Failed to find message by timestamp', { phone, chatId, error: error.message });
+    throw err;
+  }
+};
 
 export const getMessages = async (
   phone: string,
@@ -108,4 +141,5 @@ export const getMessages = async (
 
 export default {
   getMessages,
+  findMessageIdByTimestamp
 };
