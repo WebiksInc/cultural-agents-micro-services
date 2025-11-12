@@ -114,6 +114,22 @@ def replay_to_telegram_message():
     print_response(response)
     return response.json()
 
+def reply_to_telegram_message_by_timestamp():
+    postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
+    payload = {
+      "fromPhone": MATAN_NUMBER,
+      "toTarget": PETACH_TIKVA_CHAT_ID,
+      "content": {
+        "type": "text",
+        "value": "This is a reply to your message by timestamp from the python API."
+      },
+      "replyToTimestamp": "2025-11-12T13:38:46.000Z"
+    }
+    print('Replying to message by timestamp at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
 
 
 # get_unread_telegram_messages()
@@ -122,3 +138,4 @@ def replay_to_telegram_message():
 # get_all_group_participants()
 # send_telegram_message()
 # replay_to_telegram_message()
+reply_to_telegram_message_by_timestamp()
