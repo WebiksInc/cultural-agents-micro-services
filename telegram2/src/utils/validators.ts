@@ -74,11 +74,51 @@ export const validateTarget = (target: any): string => {
   return cleaned;
 }
 
+export const validateContent = (content: any): { type: 'text' | 'emoji'; value: string } => {
+  if (!content || typeof content !== 'object') {
+    throw new Error('Content is required and must be an object');
+  }
+
+  const { type, value } = content;
+
+  if (!type || (type !== 'text' && type !== 'emoji')) {
+    throw new Error('Content type must be either "text" or "emoji"');
+  }
+
+  if (!value || typeof value !== 'string') {
+    throw new Error('Content value is required and must be a string');
+  }
+
+  const cleanedValue = value.trim();
+
+  if (cleanedValue.length === 0) {
+    throw new Error('Content value cannot be empty');
+  }
+
+  return { type, value: cleanedValue };
+}
+
+export const validateReplyTo = (replyTo: any): number | undefined => {
+  if (replyTo === undefined || replyTo === null) {
+    return undefined;
+  }
+
+  const messageId = Number(replyTo);
+
+  if (isNaN(messageId) || messageId <= 0) {
+    throw new Error('replyTo must be a positive number');
+  }
+
+  return messageId;
+}
+
 
 export default {
   validatePhone,
   validateApiCredentials,
   validateCode,
   validateMessage,
-  validateTarget
+  validateTarget,
+  validateContent,
+  validateReplyTo
 };
