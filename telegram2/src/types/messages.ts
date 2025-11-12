@@ -45,3 +45,22 @@ export interface GetChatMessagesResponse {
   messagesCount: number;
   messages: FullChatMessage[];
 }
+
+// Send message types
+export interface SendMessageContent {
+  type: 'text' | 'emoji';
+  value: string;
+}
+
+export interface SendMessageRequest {
+  fromPhone: string;
+  toTarget: string;
+  content: SendMessageContent;
+  replyTo?: number;
+}
+
+export interface SendMessageResponse {
+  success: true;
+  sentTo: string;
+  messageId?: number;
+}
