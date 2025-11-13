@@ -1,0 +1,18 @@
+{
+  "phone_number": "+1925 208 8164",
+  "user_name": "",
+  "first_name": "Matan",
+  "last_name": "Dotan",
+  "age": 32,
+  "gender": "Male",
+  "city": "Tel Aviv",
+  "occupation": "Software Engineer",
+  "bio_short": "",
+  "writing_style": "",
+  "interests": [],
+  "big5_openness": 0.0,
+  "big5_conscientiousness": 0.0,
+  "big5_extraversion": 0.0,
+  "big5_agreeableness": 0.0,
+  "big5_neuroticism": 0.0
+}

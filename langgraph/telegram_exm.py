@@ -15,7 +15,7 @@ MATAN_PHONE_ENCODED = "%2B1925 208 8164"
 MATAN_NUMBER = "+1925 208 8164"
 MATAN_API_HASH = "82efd609e785a46bb8c98cbe5052d473"
 MATAN_API_ID = 34480201
-PETACH_TIKVA_CHAT_ID = "5035974640"
+PETACH_TIKVA_CHAT_ID = "3175400700"
 REPLIED_MESSAGE_ID = 13
 
 def print_response(response):
@@ -57,7 +57,7 @@ def get_unread_telegram_messages():
     return response.json()
 
 def get_all_chats():
-    getUrl = f"{TELEGRAM_API_URL}/api/chats/all?accountPhone={TAMAR_NUMBER_ENCODED}"
+    getUrl = f"{TELEGRAM_API_URL}/api/chats/all?accountPhone={MATAN_PHONE_ENCODED}"
     print('Fetching all chats from:', getUrl)
     response = requests.get(getUrl)
     print_response(response)
@@ -85,7 +85,7 @@ def get_all_group_participants():
 def send_telegram_message():
     postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
     payload = {
-      "fromPhone": MATAN_NUMBER,
+      "fromPhone": TAMAR_NUMBER,
       "toTarget": PETACH_TIKVA_CHAT_ID,
       "content": {
         "type": "text",
@@ -117,13 +117,13 @@ def replay_to_telegram_message():
 def reply_to_telegram_message_by_timestamp():
     postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
     payload = {
-      "fromPhone": MATAN_NUMBER,
+      "fromPhone": TAMAR_NUMBER,
       "toTarget": PETACH_TIKVA_CHAT_ID,
       "content": {
         "type": "text",
         "value": "This is a reply to your message by timestamp from the python API."
       },
-      "replyToTimestamp": "2025-11-12T13:38:46.000Z"
+      "replyToTimestamp": "2025-11-13T07:13:48.000Z"
     }
     print('Replying to message by timestamp at:', postUrl)
     response = requests.post(postUrl, json=payload)
@@ -136,6 +136,6 @@ def reply_to_telegram_message_by_timestamp():
 # get_all_chats()
 # get_chat_messages()
 # get_all_group_participants()
-# send_telegram_message()
+#send_telegram_message()
 # replay_to_telegram_message()
-reply_to_telegram_message_by_timestamp()
+# reply_to_telegram_message_by_timestamp()

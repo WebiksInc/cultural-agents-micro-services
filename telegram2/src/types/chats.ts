@@ -25,6 +25,7 @@ export interface ChatParticipantsResponse {
   chatId: string;
   chatTitle: string;
   chatType: string;
+  chatDescription: string | null;
   participantsCount: number;
   participants: ChatParticipant[];
 }

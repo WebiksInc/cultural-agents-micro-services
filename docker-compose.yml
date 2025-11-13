@@ -26,7 +26,7 @@ services:
       start_period: 40s
 
   langgraph:
-    image: langgraph:0.1.7
+    image: langgraph:0.1.8
     environment:
       - TELEGRAM_PORT=4000
       - TELEGRAM_HOST=telegram2
