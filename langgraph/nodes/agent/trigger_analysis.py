@@ -20,15 +20,18 @@ from utils import load_prompt, get_model_settings, format_message_for_prompt
 logger = logging.getLogger(__name__)
 
 
-def trigger_analysis_node(state: Dict[str, Any]) -> None:
+def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Trigger Analysis Node
     
     Analyzes recent messages to detect which trigger condition applies.
-    Modifies the state in-place by setting detected_trigger.
+    Returns detected_trigger and current_node updates.
     
     Args:
-        state: AgentState dict containing recent_messages, triggers, selected_persona, etc.
+        state: AgentState dict
+        
+    Returns:
+        Dict with detected_trigger and current_node updates
     """
     logger.info("Starting Trigger Analysis")
     
@@ -38,25 +41,36 @@ def trigger_analysis_node(state: Dict[str, Any]) -> None:
     agent_type = state.get('agent_type', 'unknown')
     agent_goal = state.get('agent_goal', 'No goal specified')
     
+    # DEBUG: Print recent messages
+    logger.info("=" * 80)
+    logger.info("RECENT MESSAGES BEING ANALYZED:")
+    for i, msg in enumerate(recent_messages, 1):
+        logger.info(f"  [{i}] ID:{msg.get('message_id')} From:{msg.get('sender_first_name')} Text:{msg.get('text')[:100]}")
+    logger.info("=" * 80)
+    
     # Extract agent name from persona
-    agent_name = selected_persona.get('name', 'Agent')
+    agent_name = selected_persona.get('first_name', 'Agent')
     
     # Validate inputs
     if not recent_messages:
         logger.warning("No recent messages provided")
-        state['detected_trigger'] = {
-            'id': 'neutral',
-            'justification': 'No recent messages to analyze'
+        return {
+            'detected_trigger': {
+                'id': 'neutral',
+                'justification': 'No recent messages to analyze'
+            },
+            'current_node': 'trigger_analysis'
         }
-        return
     
     if not triggers:
         logger.warning("No triggers provided")
-        state['detected_trigger'] = {
-            'id': 'ERROR',
-            'justification': 'No triggers configuration available'
+        return {
+            'detected_trigger': {
+                'id': 'ERROR',
+                'justification': 'No triggers configuration available'
+            },
+            'current_node': 'trigger_analysis'
         }
-        return
     
     logger.info(f"Analyzing {len(recent_messages)} messages for agent '{agent_name}' (type: {agent_type})")
     
@@ -78,6 +92,12 @@ def trigger_analysis_node(state: Dict[str, Any]) -> None:
         triggers_json=triggers_json,
         recent_messages=recent_messages_text
     )
+    
+    # DEBUG: Print the complete prompt
+    logger.info("=" * 80)
+    logger.info("TRIGGER ANALYSIS PROMPT:")
+    logger.info(prompt)
+    logger.info("=" * 80)
     
     try:
         # Get model settings
@@ -105,30 +125,37 @@ def trigger_analysis_node(state: Dict[str, Any]) -> None:
             trigger_id = result.get('id', 'neutral')
             justification = result.get('justification', 'No justification provided')
             
-            # Update state
-            state['detected_trigger'] = {
-                'id': trigger_id,
-                'justification': justification
-            }
-            
             logger.info(f"Detected trigger: {trigger_id}")
             logger.info(f"Justification: {justification}")
+            
+            # Return detected trigger
+            return {
+                'detected_trigger': {
+                    'id': trigger_id,
+                    'justification': justification
+                },
+                'current_node': 'trigger_analysis'
+            }
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
             logger.error(f"Response text: {response_text}")
             
-            state['detected_trigger'] = {
-                'id': 'ERROR',
-                'justification': f'JSON parsing failed: {str(e)}'
+            return {
+                'detected_trigger': {
+                    'id': 'ERROR',
+                    'justification': f'JSON parsing failed: {str(e)}'
+                },
+                'current_node': 'trigger_analysis'
             }
             
     except Exception as e:
         logger.error(f"Error in trigger analysis: {e}", exc_info=True)
         
-        state['detected_trigger'] = {
-            'id': 'ERROR',
-            'justification': f'Analysis failed: {str(e)}'
+        return {
+            'detected_trigger': {
+                'id': 'ERROR',
+                'justification': f'Analysis failed: {str(e)}'
+            },
+            'current_node': 'trigger_analysis'
         }
-    
-    logger.info("Trigger Analysis completed")

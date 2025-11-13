@@ -1,0 +1,23 @@
+{
+  "telegram": {
+    "chat_id": "3175400700",
+    "api_host": "telegram2",
+    "api_port": 4000
+  },
+  "polling": {
+    "message_check_interval_seconds": 10,
+    "executor_check_interval_seconds": 2,
+    "max_recent_messages": 10
+  },
+  "agents": [
+    {
+      "type": "active",
+      "persona_file": "agents_personas/tamar_persona.json"
+    }
+  ],
+  "group_metadata": {
+    "name": "Petach Tikva Chat",
+    "topic": "General discussion",
+    "members": 5
+  }
+}

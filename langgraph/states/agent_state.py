@@ -13,6 +13,7 @@ class Message(TypedDict):
     date: datetime
     message_emotion: Optional[str]  # Filled by Component B (Emotion Analysis)
     sender_personality: Optional[dict]  # Filled by Component C on-demand (Personality Analysis)
+    processed: Optional[bool]  # Track if message has been analyzed for triggers
 
 
 class AgentState(TypedDict):

@@ -135,29 +135,37 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             
             if not action_id:
                 logger.error("LLM did not return an action ID")
-                state['selected_action'] = None
-                return
+                return {
+                    'selected_action': None,
+                    'current_node': 'decision_maker'
+                }
             
             # Verify the selected action is in the suggested actions
             if action_id not in suggested_action_ids:
                 logger.warning(f"LLM selected action '{action_id}' not in suggested actions. Using it anyway.")
             
-            # Update state
-            state['selected_action'] = {
-                'id': action_id,
-                'purpose': purpose
-            }
-            
             logger.info(f"Selected action: {action_id}")
             logger.info(f"Purpose: {purpose}")
+            
+            return {
+                'selected_action': {
+                    'id': action_id,
+                    'purpose': purpose
+                },
+                'current_node': 'decision_maker'
+            }
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
             logger.error(f"Response text: {response_text}")
-            state['selected_action'] = None
+            return {
+                'selected_action': None,
+                'current_node': 'decision_maker'
+            }
             
     except Exception as e:
         logger.error(f"Error in decision maker: {e}", exc_info=True)
-        state['selected_action'] = None
-    
-    logger.info("Decision Maker completed")
+        return {
+            'selected_action': None,
+            'current_node': 'decision_maker'
+        }

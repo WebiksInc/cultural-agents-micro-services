@@ -18,7 +18,7 @@ MIN_DELAY_SECONDS = 2  # Minimum delay between actions
 MAX_DELAY_SECONDS = 10  # Maximum delay between actions
 
 
-def scheduler_node(state: Dict[str, Any]) -> None:
+def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Scheduler Node
     
@@ -41,7 +41,7 @@ def scheduler_node(state: Dict[str, Any]) -> None:
     if not selected_actions:
         logger.info("No selected_actions to schedule")
         state['execution_queue'] = []
-        return
+        return state
     
     logger.info(f"Processing {len(selected_actions)} selected actions")
     
@@ -68,7 +68,7 @@ def scheduler_node(state: Dict[str, Any]) -> None:
     if not valid_actions:
         logger.info("No valid actions to schedule")
         state['execution_queue'] = []
-        return
+        return state
     
     # Schedule actions with random delays (FIFO order)
     execution_queue = []
@@ -90,6 +90,7 @@ def scheduler_node(state: Dict[str, Any]) -> None:
         queue_item = {
             "agent_name": action.get('agent_name', 'unknown'),
             "agent_type": action.get('agent_type', 'unknown'),
+            "phone_number": action.get('phone_number', ''),
             "action": {
                 "id": action.get('id', 'unknown'),
                 "purpose": action.get('purpose', '')
@@ -114,7 +115,17 @@ def scheduler_node(state: Dict[str, Any]) -> None:
     # Update state with execution queue
     state['execution_queue'] = execution_queue
     
-    logger.info(f"Scheduler completed - {len(execution_queue)} actions queued")
+    # Mark all recent messages as processed so we don't analyze them again
+    for msg in state.get('recent_messages', []):
+        msg['processed'] = True
+    
+    # Clear selected_actions after scheduling (they're now in execution_queue)
+    state['selected_actions'] = []
+    
+    logger.info(f"Scheduler completed - {len(execution_queue)} actions queued, {len(state.get('recent_messages', []))} messages marked as processed")
+    
+    # CRITICAL: Return the updated state
+    return state
 
 
 def get_ready_actions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -149,19 +160,20 @@ def get_ready_actions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     return ready_actions
 
 
-def mark_action_sent(state: Dict[str, Any], action_index: int) -> None:
+def mark_action_sent(execution_queue: List[Dict[str, Any]], action: Dict[str, Any]) -> None:
     """
     Helper function to mark an action as sent in the execution queue.
     
     Args:
-        state: SupervisorState dict containing execution_queue
-        action_index: Index of the action in execution_queue to mark as sent
+        execution_queue: List of actions in the execution queue
+        action: The specific action dict to mark as sent
     """
-    execution_queue = state.get('execution_queue', [])
+    # Find the action in the queue and mark it as sent
+    for item in execution_queue:
+        if item is action:  # Same object reference
+            item['status'] = 'sent'
+            item['sent_time'] = datetime.now().isoformat()
+            logger.info(f"Marked action {action.get('action', {}).get('id', 'unknown')} as sent")
+            return
     
-    if 0 <= action_index < len(execution_queue):
-        execution_queue[action_index]['status'] = 'sent'
-        execution_queue[action_index]['sent_time'] = datetime.now().isoformat()
-        logger.info(f"Marked action {action_index} as sent")
-    else:
-        logger.error(f"Invalid action_index: {action_index}")
+    logger.error(f"Action not found in execution_queue")

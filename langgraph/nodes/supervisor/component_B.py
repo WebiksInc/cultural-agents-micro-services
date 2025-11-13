@@ -113,6 +113,12 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
             temperature=temperature
         )
         
+        # DEBUG: Print the prompt
+        logger.info("=" * 80)
+        logger.info("COMPONENT B PROMPT:")
+        logger.info(prompt)
+        logger.info("=" * 80)
+        
         # Call LLM
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content

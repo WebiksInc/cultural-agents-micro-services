@@ -20,7 +20,7 @@ from utils import load_prompt, get_model_settings
 logger = logging.getLogger(__name__)
 
 
-def styler_node(state: Dict[str, Any]) -> None:
+def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Component E.2: Styler Node
     
@@ -40,8 +40,10 @@ def styler_node(state: Dict[str, Any]) -> None:
     # Validate generated_response
     if not generated_response:
         logger.error("No generated_response - cannot apply styling")
-        state['styled_response'] = None
-        return
+        return {
+            'styled_response': None,
+            'current_node': 'styler'
+        }
     
     logger.info(f"Styling response ({len(generated_response)} chars)")
     
@@ -80,11 +82,17 @@ def styler_node(state: Dict[str, Any]) -> None:
         
         logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...")
         
-        # Update state with styled response
-        state['styled_response'] = response_text
+        # Return styled response
+        return {
+            'styled_response': response_text,
+            'current_node': 'styler'
+        }
         
     except Exception as e:
         logger.error(f"Error in styler: {e}", exc_info=True)
-        state['styled_response'] = None
     
-    logger.info("Styler (E.2) completed")
+    # Return None if error occurred
+    return {
+        'styled_response': None,
+        'current_node': 'styler'
+    }

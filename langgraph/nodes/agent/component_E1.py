@@ -20,7 +20,7 @@ from utils import load_prompt, get_model_settings
 logger = logging.getLogger(__name__)
 
 
-def text_generator_node(state: Dict[str, Any]) -> None:
+def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Component E.1: Text Generator Node
     
@@ -125,11 +125,17 @@ Focus on fixing the specific problem mentioned above.
         
         logger.info(f"Generated response ({len(response_text)} chars): {response_text[:100]}...")
         
-        # Update state with generated response
-        state['generated_response'] = response_text
+        # Return generated response
+        return {
+            'generated_response': response_text,
+            'current_node': 'text_generator'
+        }
         
     except Exception as e:
         logger.error(f"Error in text generator: {e}", exc_info=True)
-        state['generated_response'] = None
     
-    logger.info("Text Generator (E.1) completed")
+    # Return None if error occurred
+    return {
+        'generated_response': None,
+        'current_node': 'text_generator'
+    }

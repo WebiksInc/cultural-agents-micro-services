@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 3
 
 
-def validator_node(state: Dict[str, Any]) -> None:
+def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validator Node
     
@@ -125,42 +125,52 @@ def validator_node(state: Dict[str, Any]) -> None:
             
             if approved:
                 logger.info("✓ Response APPROVED")
-                state['validation'] = {
-                    "approved": True,
-                    "styled_response": styled_response
+                return {
+                    'validation': {
+                        "approved": True,
+                        "styled_response": styled_response
+                    },
+                    'validation_feedback': None,
+                    'retry_count': 0,
+                    'current_node': 'validator'
                 }
-                state['validation_feedback'] = None
-                state['retry_count'] = 0  # Reset for next action
             else:
                 logger.warning(f"✗ Response NOT APPROVED: {explanation}")
-                state['validation'] = {
-                    "approved": False,
-                    "explanation": explanation,
-                    "styled_response": styled_response
+                return {
+                    'validation': {
+                        "approved": False,
+                        "explanation": explanation,
+                        "styled_response": styled_response
+                    },
+                    'validation_feedback': explanation,
+                    'retry_count': retry_count + 1,
+                    'current_node': 'validator'
                 }
-                state['validation_feedback'] = explanation
-                state['retry_count'] = retry_count + 1
                 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse validator JSON response: {e}")
             logger.error(f"Raw response: {response_text}")
             # Default to not approved if we can't parse
-            state['validation'] = {
-                "approved": False,
-                "explanation": "Validator response could not be parsed",
-                "styled_response": styled_response
+            return {
+                'validation': {
+                    "approved": False,
+                    "explanation": "Validator response could not be parsed",
+                    "styled_response": styled_response
+                },
+                'validation_feedback': "Validator response could not be parsed",
+                'retry_count': retry_count + 1,
+                'current_node': 'validator'
             }
-            state['validation_feedback'] = "Validator response could not be parsed"
-            state['retry_count'] = retry_count + 1
         
     except Exception as e:
         logger.error(f"Error in validator: {e}", exc_info=True)
-        state['validation'] = {
-            "approved": False,
-            "explanation": f"Validator error: {str(e)}",
-            "styled_response": styled_response
+        return {
+            'validation': {
+                "approved": False,
+                "explanation": f"Validator error: {str(e)}",
+                "styled_response": styled_response
+            },
+            'validation_feedback': f"Validator error: {str(e)}",
+            'retry_count': retry_count + 1,
+            'current_node': 'validator'
         }
-        state['validation_feedback'] = f"Validator error: {str(e)}"
-        state['retry_count'] = retry_count + 1
-    
-    logger.info("Validator completed")

@@ -27,6 +27,8 @@ services:
 
   langgraph:
     image: langgraph:0.1.7
+    env_file:
+      - ./langgraph/.env
     environment:
       - TELEGRAM_PORT=4000
       - TELEGRAM_HOST=telegram2
