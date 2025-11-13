@@ -3,6 +3,6 @@
   "version": "0.1.7",
   "type": "commonjs",
   "scripts": {
-    "buildImage": "docker build -t langgraph:$npm_package_version ."
+    "buildImage": "docker build -t langgraph:0.1.7 ."
   }
 }
