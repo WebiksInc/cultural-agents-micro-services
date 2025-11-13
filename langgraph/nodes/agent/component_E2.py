@@ -1,0 +1,90 @@
+"""
+Component E.2 - Styler Node
+
+Applies persona-specific styling to generated response while preserving content.
+"""
+
+import json
+import logging
+from typing import Dict, Any
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain.chat_models import init_chat_model
+
+# Import utilities
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils import load_prompt, get_model_settings
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+def styler_node(state: Dict[str, Any]) -> None:
+    """
+    Component E.2: Styler Node
+    
+    Stylizes the generated response to match the agent's persona.
+    Modifies the state in-place by setting styled_response.
+    
+    Args:
+        state: AgentState dict containing generated_response, selected_persona, agent_prompt, etc.
+    """
+    logger.info("Starting Styler (E.2)")
+    
+    # Get required inputs
+    generated_response = state.get('generated_response')
+    selected_persona = state.get('selected_persona', {})
+    agent_prompt = state.get('agent_prompt', '')
+    
+    # Validate generated_response
+    if not generated_response:
+        logger.error("No generated_response - cannot apply styling")
+        state['styled_response'] = None
+        return
+    
+    logger.info(f"Styling response ({len(generated_response)} chars)")
+    
+    # Format selected_persona as JSON
+    selected_persona_json = json.dumps(selected_persona, indent=2)
+    
+    # Build the main prompt
+    prompt_template = load_prompt("agent_graph/E2/component_E2_prompt.txt")
+    main_prompt = prompt_template.format(
+        generated_response=generated_response,
+        selected_persona=selected_persona_json
+    )
+    
+    try:
+        # Get model settings
+        model_settings = get_model_settings('styler', 'STYLER_MODEL')
+        model_name = model_settings['model']
+        temperature = model_settings['temperature']
+        
+        logger.info(f"Using model: {model_name} (temperature: {temperature})")
+        
+        model = init_chat_model(
+            model=model_name,
+            model_provider="openai",
+            temperature=temperature
+        )
+        
+        # Call LLM with system message (agent_prompt) and user message (styling task)
+        messages = [
+            SystemMessage(content=agent_prompt),
+            HumanMessage(content=main_prompt)
+        ]
+        
+        response = model.invoke(messages)
+        response_text = response.content.strip()
+        
+        logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...")
+        
+        # Update state with styled response
+        state['styled_response'] = response_text
+        
+    except Exception as e:
+        logger.error(f"Error in styler: {e}", exc_info=True)
+        state['styled_response'] = None
+    
+    logger.info("Styler (E.2) completed")

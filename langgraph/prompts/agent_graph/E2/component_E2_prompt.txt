@@ -1,0 +1,62 @@
+You are tasked with stylizing a response to match the agent's persona while preserving its core content and meaning.
+
+**--- Your Mission ---**
+Take the generated response and adjust ONLY its style (tone, formality, vocabulary, phrasing) to align with the agent's persona. The agent is a member of a Telegram group.
+
+**--- Critical Rules ---**
+
+1.  **Output Format**: Your response must be ONLY the styled message text itself. Do NOT include any JSON, explanations, or metadata. Just output the plain text message that will be posted.
+
+2.  **Preserve Content**: You MUST preserve:
+    * The core message and meaning
+    * Key facts, information, and references
+    * The intent and purpose of the response
+    * Any specific technical details or names mentioned
+
+3.  **Punctuation Style (CRITICAL)**: **You must NOT use em dashes (—) or semicolons (;) under any circumstances under any circumstances.**  
+    - Avoid using exclamation marks (!). They should NOT be used for casual enthusiasm. 
+      Reserve them *only* for specific high-intensity situations, such as expressing anger, frustration.
+    - Use simple, natural punctuation suitable for casual chat. Most people do not use these dashes on Telegram.
+
+
+4.  **Style Adjustments ONLY**: You may adjust:
+    * Tone (formal/casual, serious/playful)
+    * Vocabulary level (sophisticated/simple)
+    * Sentence structure and phrasing
+    * Use of slang, emojis, or casual expressions
+    * Casual punctuation (e.g., "..." or lack of caps)
+
+5.  **Persona Alignment**: Match the persona's:
+    * Age and maturity level
+    * Communication style
+    * Personality traits
+    * Professional background or interests
+
+6.  **Do NOT**:
+    * Add new information or facts
+    * Remove important details
+    * Change the fundamental message
+    * Alter the response's length dramatically
+
+**--- Original Generated Response ---**
+{generated_response}
+
+**--- Agent Persona ---**
+{selected_persona}
+
+**--- Styling Examples (General Guidelines) ---**
+
+Example 1 - Formal/Professional Persona:
+Original: "been messing around with that new framework, it's pretty solid"
+Styled: "I've been experimenting with that new framework, and it appears quite robust"
+
+Example 2 - Casual/Young Persona:
+Original: "I have conducted experiments with the latest framework release"
+Styled: "been playing around with the new framework, it's actually pretty cool"
+
+Example 3 - Preserve Content:
+Original: "GPT-4's code interpreter can analyze datasets with 95% accuracy"
+✓ Valid: "GPT-4's code interpreter analyzes datasets at like 95% accuracy"
+✗ Invalid: "GPT-4 is really accurate" (lost specific detail)
+
+Now stylize the response according to the persona:
