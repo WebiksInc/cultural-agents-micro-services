@@ -9,9 +9,10 @@ import logging
 import random
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
+from logs.logfire_config import get_logger
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Configuration for demo scheduling
 MIN_DELAY_SECONDS = 2  # Minimum delay between actions

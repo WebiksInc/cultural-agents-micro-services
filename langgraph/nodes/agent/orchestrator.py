@@ -7,9 +7,11 @@ Acts as the central routing logic for the agent graph.
 
 import logging
 from typing import Dict, Any
+from logs.logfire_config import get_logger
+from logs import log_flow_transition
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Constants
 MAX_RETRIES = 3
@@ -39,11 +41,12 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     current_node = state.get('current_node')
     
-    logger.info(f"Orchestrator running - current_node: {current_node}")
+    # logger.info(f"Orchestrator running - current_node: {current_node}")
     
     # Entry point - first node to run
     if current_node is None or current_node == 'orchestrator':
         logger.info("→ Routing to trigger_analysis (entry point)")
+        log_flow_transition("orchestrator", "trigger_analysis", "entry point")
         return {
             'current_node': 'orchestrator',
             'next_node': 'trigger_analysis'
@@ -57,6 +60,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         if detected_trigger is None:
             logger.info("→ No trigger detected - routing to END (no action needed)")
+            log_flow_transition("trigger_analysis", "END", "no trigger detected")
             return {
                 'selected_action': {
                     "status": "no_action_needed",
@@ -72,6 +76,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         trigger_id = detected_trigger.get('id', '')
         if trigger_id == 'neutral' or 'neutral' in trigger_id.lower():
             logger.info("→ Neutral trigger detected - routing to END (no action needed)")
+            log_flow_transition("trigger_analysis", "END", "neutral trigger")
             return {
                 'selected_action': {
                     "status": "no_action_needed",
@@ -84,6 +89,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             }
         
         logger.info(f"→ Trigger detected: {trigger_id} - routing to decision_maker")
+        log_flow_transition("trigger_analysis", "decision_maker", f"trigger: {trigger_id}")
         return {
             'current_node': 'orchestrator',
             'next_node': 'decision_maker'
@@ -97,6 +103,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         if selected_action is None:
             logger.info("→ No action selected - routing to END (no action needed)")
+            log_flow_transition("decision_maker", "END", "no action selected")
             return {
                 'selected_action': {
                     "status": "no_action_needed",
@@ -110,6 +117,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         action_id = selected_action.get('id', '')
         logger.info(f"→ Action selected: {action_id} - routing to text_generator")
+        log_flow_transition("decision_maker", "text_generator", f"action: {action_id}")
         return {
             'current_node': 'orchestrator',
             'next_node': 'text_generator'
@@ -136,6 +144,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             }
         
         logger.info("→ Text generated successfully - routing to styler")
+        log_flow_transition("text_generator", "styler", "text generated")
         return {
             'current_node': 'orchestrator',
             'next_node': 'styler'
@@ -162,6 +171,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             }
         
         logger.info("→ Response styled successfully - routing to validator")
+        log_flow_transition("styler", "validator", "styled response ready")
         return {
             'current_node': 'orchestrator',
             'next_node': 'validator'
@@ -177,6 +187,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         if approved:
             logger.info("✓ Validation PASSED - routing to END")
+            log_flow_transition("validator", "END", "validation approved")
             # Ensure selected_action has the final styled_response and agent info
             selected_action = state.get('selected_action', {})
             selected_persona = state.get('selected_persona', {})
@@ -216,6 +227,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         logger.warning(f"✗ Validation FAILED (attempt {retry_count}/{MAX_RETRIES}): {explanation}")
         logger.info("→ Routing back to text_generator for retry")
+        log_flow_transition("validator", "text_generator", f"retry {retry_count+1}/{MAX_RETRIES}")
         return {
             'current_node': 'orchestrator',
             'next_node': 'text_generator'

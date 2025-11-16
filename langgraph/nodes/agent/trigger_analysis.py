@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings, format_message_for_prompt
+from logs.logfire_config import get_logger
+from logs import log_node_start, log_prompt, log_state, log_node_output
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -33,6 +35,13 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict with detected_trigger and current_node updates
     """
+    # Log to Logfire
+    log_node_start("trigger_analysis", {
+        "message_count": len(state.get('recent_messages', [])),
+        "agent_type": state.get('agent_type', 'unknown')
+    })
+    log_state("trigger_analysis_entry", state, "agent")
+    
     logger.info("Starting Trigger Analysis")
     
     recent_messages = state.get('recent_messages', [])
@@ -40,13 +49,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     selected_persona = state.get('selected_persona', {})
     agent_type = state.get('agent_type', 'unknown')
     agent_goal = state.get('agent_goal', 'No goal specified')
-    
-    # DEBUG: Print recent messages
-    logger.info("=" * 80)
-    logger.info("RECENT MESSAGES BEING ANALYZED:")
-    for i, msg in enumerate(recent_messages, 1):
-        logger.info(f"  [{i}] ID:{msg.get('message_id')} From:{msg.get('sender_first_name')} Text:{msg.get('text')[:100]}")
-    logger.info("=" * 80)
     
     # Extract agent name from persona
     agent_name = selected_persona.get('first_name', 'Agent')
@@ -72,7 +74,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'current_node': 'trigger_analysis'
         }
     
-    logger.info(f"Analyzing {len(recent_messages)} messages for agent '{agent_name}' (type: {agent_type})")
+    # logger.info(f"Analyzing {len(recent_messages)} messages for agent '{agent_name}' (type: {agent_type})")
     
     # Format recent messages for prompt
     message_lines = []
@@ -93,11 +95,11 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         recent_messages=recent_messages_text
     )
     
-    # DEBUG: Print the complete prompt
-    logger.info("=" * 80)
-    logger.info("TRIGGER ANALYSIS PROMPT:")
-    logger.info(prompt)
-    logger.info("=" * 80)
+    # # DEBUG: Print the complete prompt
+    # logger.info("=" * 80)
+    # logger.info("TRIGGER ANALYSIS PROMPT:")
+    # logger.info(prompt)
+    # logger.info("=" * 80)
     
     try:
         # Get model settings
@@ -105,7 +107,10 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_name = model_settings['model']
         temperature = model_settings['temperature']
         
-        logger.info(f"Using model: {model_name} (temperature: {temperature})")
+        # Log prompt to Logfire
+        log_prompt("trigger_analysis", prompt, model_name, temperature)
+        
+        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
             model=model_name,
@@ -117,7 +122,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
         
-        logger.info(f"Received LLM response: {response_text[:200]}...")
+        # logger.info(f"Received LLM response: {response_text[:200]}...")
         
         # Parse JSON response
         try:
@@ -125,17 +130,25 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             trigger_id = result.get('id', 'neutral')
             justification = result.get('justification', 'No justification provided')
             
-            logger.info(f"Detected trigger: {trigger_id}")
-            logger.info(f"Justification: {justification}")
+            # logger.info(f"Detected trigger: {trigger_id}")
+            # logger.info(f"Justification: {justification}")
             
-            # Return detected trigger
-            return {
+            # Log output to Logfire
+            output_data = {
                 'detected_trigger': {
                     'id': trigger_id,
                     'justification': justification
                 },
                 'current_node': 'trigger_analysis'
             }
+            log_node_output("trigger_analysis", {
+                "trigger_id": trigger_id,
+                "justification": justification
+            })
+            log_state("trigger_analysis_exit", {**state, **output_data}, "agent")
+            
+            # Return detected trigger
+            return output_data
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")

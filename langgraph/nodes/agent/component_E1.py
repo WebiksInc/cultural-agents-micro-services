@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings
+from logs.logfire_config import get_logger
+from logs import log_node_start, log_prompt, log_node_output, log_state
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -30,6 +32,11 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         state: AgentState dict containing agent_prompt, selected_action, recent_messages, etc.
     """
+    log_node_start("text_generator", {
+        "action_id": state.get('selected_action', {}).get('id', 'none')
+    })
+    log_state("text_generator_entry", state, "agent")
+    
     logger.info("Starting Text Generator (E.1)")
     
     # Get required inputs
@@ -88,13 +95,13 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if validation_feedback:
         logger.info(f"Retry attempt - including validation feedback")
         feedback_note = f"""
-⚠️ IMPORTANT - PREVIOUS ATTEMPT FAILED VALIDATION ⚠️
+                            IMPORTANT - PREVIOUS ATTEMPT FAILED VALIDATION 
 
-Your previous response was rejected for the following reason:
-{validation_feedback}
+                            Your previous response was rejected for the following reason:
+                            {validation_feedback}
 
-Please generate a NEW response that addresses this issue while still fulfilling the action purpose.
-Focus on fixing the specific problem mentioned above.
+                            Please generate a NEW response that addresses this issue while still fulfilling the action purpose.
+                            Focus on fixing the specific problem mentioned above.
 
 ---
 """
@@ -105,6 +112,9 @@ Focus on fixing the specific problem mentioned above.
         model_settings = get_model_settings('text_generator', 'TEXT_GENERATOR_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
+        
+        # Log prompt to Logfire
+        log_prompt("text_generator", main_prompt, model_name, temperature)
         
         logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
@@ -124,6 +134,11 @@ Focus on fixing the specific problem mentioned above.
         response_text = response.content.strip()
         
         logger.info(f"Generated response ({len(response_text)} chars): {response_text[:100]}...")
+        print(("=" * 100))
+        
+        # Log output to Logfire
+        log_node_output("text_generator", {"generated_response": response_text})
+        log_state("text_generator", state, "exit")
         
         # Return generated response
         return {

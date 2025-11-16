@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings
+from logs.logfire_config import get_logger
+from logs import log_node_start, log_prompt, log_node_output, log_state
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -30,6 +32,8 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         state: AgentState dict containing generated_response, selected_persona, agent_prompt, etc.
     """
+    log_node_start("styler")
+    log_state("styler", state, "entry")
     logger.info("Starting Styler (E.2)")
     
     # Get required inputs
@@ -63,6 +67,9 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_name = model_settings['model']
         temperature = model_settings['temperature']
         
+        # Log prompt to Logfire
+        log_prompt("styler", main_prompt, model_name, temperature)
+        
         logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
@@ -80,7 +87,12 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         response = model.invoke(messages)
         response_text = response.content.strip()
         
-        logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...")
+        logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...\n")
+        print(("-" * 80))
+        
+        # Log output to Logfire
+        log_node_output("styler", {"styled_response": response_text})
+        log_state("styler", state, "exit")
         
         # Return styled response
         return {

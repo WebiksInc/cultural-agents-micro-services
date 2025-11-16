@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings
+from logs.logfire_config import get_logger
+from logs import log_node_start, log_prompt, log_node_output
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def format_message_for_prompt(msg: Dict[str, Any], include_emotion: bool = True) -> str:
@@ -46,7 +48,11 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
     Args:
         state: SupervisorState dict containing recent_messages and group_metadata
     """
-    logger.info("Starting Component B - Emotion + Sentiment Analysis")
+    log_node_start("component_b", {
+        "total_messages": len(state.get('recent_messages', []))
+    })
+    
+    # logger.info("Starting Component B - Emotion + Sentiment Analysis")
     
     recent_messages = state.get('recent_messages', [])
     group_metadata = state.get('group_metadata', {})
@@ -105,7 +111,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
         model_name = model_settings['model']
         temperature = model_settings['temperature']
         
-        logger.info(f"Using model: {model_name} (temperature: {temperature})")
+        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
             model=model_name,
@@ -113,17 +119,14 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
             temperature=temperature
         )
         
-        # DEBUG: Print the prompt
-        logger.info("=" * 80)
-        logger.info("COMPONENT B PROMPT:")
-        logger.info(prompt)
-        logger.info("=" * 80)
+        # Log prompt to Logfire
+        log_prompt("component_b", prompt, model_name, temperature)
         
         # Call LLM
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
         
-        logger.info(f"Received LLM response: {response_text[:200]}...")
+        # logger.info(f"Received LLM response: {response_text[:200]}...")
         
         # Parse JSON response
         try:
@@ -133,6 +136,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
             
             # Update state with emotions
             emotion_map = {item['message_id']: item for item in message_emotions}
+            classified_results = []
             
             for idx in unclassified_indices:
                 msg = recent_messages[idx]
@@ -144,17 +148,34 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                         'emotion': emotion_data.get('emotion', 'neutral'),
                         'justification': emotion_data.get('justification', 'No justification provided')
                     }
-                    logger.info(f"Classified message {msg_id}: {emotion_data.get('emotion')}")
+                    classified_results.append({
+                        "message_id": msg_id,
+                        "emotion": emotion_data.get('emotion'),
+                        "text_preview": msg.get('text', '')[:50]
+                    })
                 else:
                     logger.warning(f"No emotion returned for message {msg_id}")
                     msg['message_emotion'] = {
                         'emotion': 'ERROR',
                         'justification': 'LLM did not return emotion for this message'
                     }
+                    classified_results.append({
+                        "message_id": msg_id,
+                        "emotion": "ERROR",
+                        "text_preview": msg.get('text', '')[:50]
+                    })
             
             # Update group sentiment
             state['group_sentiment'] = group_sentiment
-            logger.info(f"Group sentiment: {group_sentiment}")
+            
+            # Log structured output to Logfire
+            log_node_output("component_b", {
+                "messages_analyzed": len(unclassified_messages),
+                "classified_messages": classified_results,
+                "group_sentiment": group_sentiment
+            })
+            
+            # logger.info(f"Group sentiment: {group_sentiment}")
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
@@ -179,4 +200,4 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
             }
         state['group_sentiment'] = f'ERROR: {str(e)}'
     
-    logger.info("Component B - Emotion/Sentiment Analysis completed")
+    logger.info("Component B - Emotion/Sentiment Analysis completed\n")

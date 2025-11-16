@@ -32,9 +32,12 @@ from telegram_exm import (
     send_telegram_message
 )
 
+# Import Logfire configuration
+from logs.logfire_config import get_logger
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Load configuration
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "supervisor_config.json"

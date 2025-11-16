@@ -39,12 +39,18 @@ from nodes.agent.component_E1 import text_generator_node
 from nodes.agent.component_E2 import styler_node
 from nodes.agent.validator import validator_node
 
-# Configure logging
+# Configure logging with Logfire
+from logs.logfire_config import setup_logfire, get_logger
+
+# Setup Logfire first (captures all subsequent logging)
+setup_logfire(service_name="supervisor-graph")
+
+# Configure basic logging format for console output
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Load configuration
 CONFIG_PATH = Path(__file__).parent / "config" / "supervisor_config.json"
@@ -126,7 +132,7 @@ def build_agent_subgraph(agent_type: str, agent_config: Dict[str, Any]) -> State
         next_node = state.get("next_node")
         
         # DEBUG
-        logger.info(f"route_from_orchestrator called - next_node={next_node}, current_node={state.get('current_node')}")
+        # logger.info(f"route_from_orchestrator called - next_node={next_node}, current_node={state.get('current_node')}")
         
         # Handle None or empty next_node
         if not next_node:
@@ -185,7 +191,7 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
         Returns:
             Updated supervisor state with agent's selected_action
         """
-        logger.info(f"Running {agent_type} agent ({agent_config['persona']['first_name']})")
+        logger.info(f"Running {agent_type} agent ({agent_config['persona']['first_name']})\n")
         
         # Create agent state from supervisor state (COPY data)
         agent_state = AgentState(
@@ -197,7 +203,7 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
             # Agent configuration
             selected_persona=agent_config["persona"],
             agent_type=agent_type,
-            agent_goal=agent_config["persona"].get("agent_goal", "Engage naturally in the conversation"),
+            agent_goal=agent_config["persona"].get("agent_goal", "You are an active member of the group."),
             triggers=agent_config["triggers"],
             actions=agent_config["actions"],
             
@@ -247,7 +253,7 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
     Returns:
         Compiled supervisor StateGraph
     """
-    logger.info("Building supervisor graph...")
+    logger.info("Building supervisor graph...\n")
     
     # Create supervisor graph
     supervisor_graph = StateGraph(SupervisorState)
@@ -316,7 +322,11 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
             return "component_b"
         
         # No pending actions and no unprocessed messages - loop back to supervisor
-        logger.info("No pending actions or unprocessed messages, looping back to supervisor")
+        # Add delay to prevent tight loop when waiting for new messages
+        # This is where we control the polling frequency
+        logger.info("No pending actions or unprocessed messages, sleeping 20s before next poll")
+        time.sleep(60)  # Wait before next message poll cycle
+        logger.info("Looping back to supervisor for next message check\n")
         return "supervisor"
     
     # Conditional edge from supervisor
@@ -344,8 +354,9 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
     supervisor_graph.add_edge("scheduler", "supervisor")
     
     # Compile supervisor graph
+    # Recursion limit will be set at runtime via invoke() config parameter
     compiled_supervisor = supervisor_graph.compile()
-    logger.info("Supervisor graph compiled successfully")
+    logger.info("Supervisor graph compiled successfully\n")
     
     return compiled_supervisor
 
@@ -359,7 +370,7 @@ def run_supervisor_graph():
     logger.info("=" * 80)
     
     # Load agent personas once at startup
-    logger.info("Loading agent personas...")
+    # logger.info("Loading agent personas...")
     agent_personas = load_agent_personas()
     
     # Build the complete graph
@@ -377,10 +388,10 @@ def run_supervisor_graph():
         next_nodes=None
     )
     
-    logger.info("=" * 80)
+    # logger.info("=" * 80)
     logger.info("GRAPH BUILT SUCCESSFULLY - STARTING INFINITE LOOP")
-    logger.info("Press Ctrl+C to stop")
-    logger.info("=" * 80)
+    # logger.info("Press Ctrl+C to stop")
+    # logger.info("=" * 80)
     
     # Run for 2 iterations (for testing)
     state = initial_state
@@ -394,12 +405,17 @@ def run_supervisor_graph():
             logger.info(f"ITERATION {iteration} of {MAX_ITERATIONS}")
             logger.info(f"{'=' * 80}")
             
-            # Invoke the graph (one cycle)
-            state = supervisor_graph.invoke(state)
+            # Invoke the graph with increased recursion limit
+            # The supervisor loops continuously (supervisor -> supervisor), so we need a higher limit
+            # With the sleep delays added, each loop takes ~5 seconds, so 100 iterations = ~500 seconds
+            state = supervisor_graph.invoke(
+                state, 
+                config={"recursion_limit": 100}
+            )
             
             # Brief sleep to avoid tight loop
             import time
-            time.sleep(0.1)
+            time.sleep(1)
         
         logger.info(f"\n{'=' * 80}")
         logger.info(f"COMPLETED {MAX_ITERATIONS} ITERATIONS SUCCESSFULLY")

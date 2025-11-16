@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings, format_message_for_prompt
+from logs.logfire_config import get_logger
+from logs import log_node_start, log_prompt, log_node_output, log_state
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def decision_maker_node(state: Dict[str, Any]) -> None:
@@ -30,6 +32,11 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     Args:
         state: AgentState dict containing detected_trigger, actions, recent_messages, etc.
     """
+    log_node_start("decision_maker", {
+        "trigger_id": state.get('detected_trigger', {}).get('id', 'none')
+    })
+    log_state("decision_maker_entry", state, "agent")
+    
     logger.info("Starting Decision Maker")
     
     detected_trigger = state.get('detected_trigger', {})
@@ -70,7 +77,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         state['selected_action'] = None
         return
     
-    logger.info(f"Trigger '{trigger_id}' suggests {len(suggested_action_ids)} actions: {suggested_action_ids}")
+    # logger.info(f"Trigger '{trigger_id}' suggests {len(suggested_action_ids)} actions: {suggested_action_ids}")
     
     # Get full details for suggested actions
     all_actions = actions.get('actions', [])
@@ -113,7 +120,10 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         model_name = model_settings['model']
         temperature = model_settings['temperature']
         
-        logger.info(f"Using model: {model_name} (temperature: {temperature})")
+        # Log prompt to Logfire
+        log_prompt("decision_maker", prompt, model_name, temperature)
+        
+        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
             model=model_name,
@@ -125,7 +135,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
         
-        logger.info(f"Received LLM response: {response_text[:200]}...")
+        # logger.info(f"Received LLM response: {response_text[:200]}...")
         
         # Parse JSON response
         try:
@@ -146,6 +156,21 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             
             logger.info(f"Selected action: {action_id}")
             logger.info(f"Purpose: {purpose}")
+            
+            # Log output to Logfire
+            output_data = {
+                'selected_action': {
+                    'id': action_id,
+                    'purpose': purpose
+                },
+                'current_node': 'decision_maker'
+            }
+            log_node_output("decision_maker", {
+                "action_id": action_id,
+                "purpose": purpose,
+                "suggested_actions": suggested_action_ids
+            })
+            log_state("decision_maker_exit", {**state, **output_data}, "agent")
             
             return {
                 'selected_action': {

@@ -8,8 +8,9 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
+from logs.logfire_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Base paths - utils.py is in langgraph/ folder
 LANGGRAPH_DIR = Path(__file__).parent

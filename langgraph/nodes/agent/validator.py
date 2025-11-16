@@ -16,9 +16,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings, format_message_for_prompt
+from logs.logfire_config import get_logger
+from logs import log_node_start, log_prompt, log_node_output, log_state
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Maximum number of retries before accepting the response
 MAX_RETRIES = 3
@@ -39,6 +41,8 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         state: AgentState dict containing styled_response, agent_goal, selected_action, etc.
     """
+    log_node_start("validator")
+    log_state("validator", state, "entry")
     logger.info("Starting Validator")
     
     # Get required inputs
@@ -102,6 +106,9 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_name = model_settings['model']
         temperature = model_settings['temperature']
         
+        # Log prompt to Logfire
+        log_prompt("validator", validation_prompt, model_name, temperature)
+        
         logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
@@ -125,7 +132,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             
             if approved:
                 logger.info("✓ Response APPROVED")
-                return {
+                output = {
                     'validation': {
                         "approved": True,
                         "styled_response": styled_response
@@ -134,9 +141,12 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'retry_count': 0,
                     'current_node': 'validator'
                 }
+                log_node_output("validator", output['validation'])
+                log_state("validator", state, "exit")
+                return output
             else:
                 logger.warning(f"✗ Response NOT APPROVED: {explanation}")
-                return {
+                output = {
                     'validation': {
                         "approved": False,
                         "explanation": explanation,
@@ -146,6 +156,9 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'retry_count': retry_count + 1,
                     'current_node': 'validator'
                 }
+                log_node_output("validator", output['validation'])
+                log_state("validator", state, "exit")
+                return output
                 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse validator JSON response: {e}")

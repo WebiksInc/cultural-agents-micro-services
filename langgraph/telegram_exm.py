@@ -182,7 +182,7 @@ def send_telegram_message(from_phone=None, to_target=None, content_value=None, r
     Returns:
         JSON response from Telegram API
     """
-    from_phone = from_phone or MATAN_NUMBER
+    from_phone = from_phone or TAMAR_NUMBER
     to_target = to_target or PETACH_TIKVA_CHAT_ID
     content_value = content_value or "Test message from Python API"
     
@@ -251,7 +251,7 @@ def reply_to_telegram_message_by_timestamp(from_phone=None, to_target=None, cont
 
 # get_unread_telegram_messages()
 # get_all_chats()
-get_chat_messages()
+# get_chat_messages()
 # get_all_group_participants()
 # send_telegram_message()
 # replay_to_telegram_message()
