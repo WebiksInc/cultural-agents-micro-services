@@ -8,6 +8,15 @@
         "answer_direct_question"
       ]
     },
+     {
+      "id": "implicit_follow_up",
+      "description": "The most recent message is a clear, contextual follow-up (e.g., a question, a request for more details, or a direct continuation) aimed at the agent's *immediately preceding* message, even if the agent's name is not used.",
+      "suggested_actions": [
+        "answer_direct_question",
+        "show_interest",
+        "expand_discussion"
+      ]
+    },
     {
       "id": "prolonged_silence",
       "description": "The group has been inactive for a predefined period (e.g., no messages for X hours). This is a proactive, time-based trigger.",
