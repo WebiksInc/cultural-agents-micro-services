@@ -7,8 +7,9 @@
   "polling": {
     "message_check_interval_seconds": 10,
     "executor_check_interval_seconds": 2,
-    "max_recent_messages": 10
+    "max_recent_messages": 7
   },
+  "no_action_sleep_duration": 10,
   "agents": [
     {
       "type": "active",

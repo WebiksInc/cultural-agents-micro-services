@@ -176,12 +176,42 @@ def supervisor_node(state: SupervisorState, agent_personas: Dict[str, Dict[str, 
                 current_ids = {msg["message_id"] for msg in updated_state.get("recent_messages", [])}
                 truly_new = [msg for msg in new_messages if msg["message_id"] not in current_ids]
                 
+                # Filter out messages sent by our agents
+                def is_agent_message(msg: Message) -> bool:
+                    """Check if message was sent by one of our agents."""
+                    sender_username = msg.get("sender_username", "").lower()
+                    sender_first = msg.get("sender_first_name", "").lower()
+                    sender_last = msg.get("sender_last_name", "").lower()
+                    
+                    for persona in agent_personas.values():
+                        agent_username = persona.get("username", "").lower()
+                        agent_first = persona.get("first_name", "").lower()
+                        agent_last = persona.get("last_name", "").lower()
+                        
+                        # Match by username (most reliable)
+                        if sender_username and agent_username and sender_username == agent_username:
+                            return True
+                        
+                        # Match by full name
+                        if sender_first and sender_last and agent_first and agent_last:
+                            if sender_first == agent_first and sender_last == agent_last:
+                                return True
+                    
+                    return False
+                
                 if truly_new:
-                    logger.info(f"Found {len(truly_new)} new messages")
+                    # Add ALL new messages to recent_messages (including agent messages for context)
                     updated_state["recent_messages"] = update_recent_messages(
                         updated_state.get("recent_messages", []),
                         truly_new
                     )
+                    logger.info(f"Found {len(truly_new)} new messages")
+                    
+                    # Mark agent messages as already processed (don't need to analyze them)
+                    for msg in updated_state["recent_messages"]:
+                        if is_agent_message(msg) and not msg.get('processed', False):
+                            msg['processed'] = True
+                            logger.info(f"Marked agent message as processed: {msg.get('message_id', 'unknown')}")
         
         _last_message_check = current_time
     
@@ -210,6 +240,7 @@ def supervisor_node(state: SupervisorState, agent_personas: Dict[str, Dict[str, 
                     action_id = action.get("action", {}).get("id", "unknown")
                     
                     logger.info(f"Executing action '{action_id}' for {agent_name}")
+
                     
                     if not phone_number:
                         logger.error(f"No phone number found for agent {agent_name} (type: {agent_type})")

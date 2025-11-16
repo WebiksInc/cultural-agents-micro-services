@@ -116,6 +116,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         model_settings = get_model_settings('decision_maker', 'DECISION_MAKER_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
+        provider = model_settings['provider']
         
         # Log prompt to Logfire
         log_prompt("decision_maker", prompt, model_name, temperature)
@@ -123,7 +124,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         

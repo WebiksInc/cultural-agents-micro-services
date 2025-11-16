@@ -12,10 +12,13 @@ You are analyzing messages on behalf of an agent with a specific role and goal. 
 2.  **Select ONE Trigger**: Choose the single most dominant trigger that best describes the current situation. Even if multiple triggers could apply, select the most relevant one.
 
 3.  **Default to Neutral**: If no specific trigger condition is met, select the "neutral" trigger. This indicates that no action is currently required from the agent.
+4.  **Check for Self-Reply (Critical):** Pay close attention to the **most recent message** (the first one in the list). 
+      If the most recent message was sent by the agent (check if the sender's name matches the Agent Name provided below), it means the agent has just spoken (which is you).
+      In this case, the trigger is almost always `"neutral"` because the agent just provided a response.
+      Do not select a trigger (like 'direct_mention') based on an older message that the agent *already responded to*.
+5.  **Consider Full Context**: Analyze message timing, content, emotions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
 
-4.  **Consider Full Context**: Analyze message timing, content, emotions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
-
-5.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
+6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
 
 **--- Agent Context ---**
 Agent Name: {agent_name}

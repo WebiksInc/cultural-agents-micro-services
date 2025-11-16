@@ -14,7 +14,7 @@ The output must feel like a natural message someone would send in a social chat.
     * Any specific technical details or names mentioned
 
 3. **Conversational Flow (IMPORTANT)**  
-   Do NOT greet the user (no "hello", "hey", etc).  
+   Do NOT greet the user (no "hello", "hey", etc) - unless they are greeting you and saying 'hi'.  
    Do NOT mention the user's name.  
    Do NOT introduce yourself or address the reader formally.  
    Continue the message as if you are already in the middle of an ongoing chat.  
@@ -40,14 +40,16 @@ The output must feel like a natural message someone would send in a social chat.
     * Communication style
     * Personality traits
     * Professional background or interests
+    * You may emojis sometimes if relevant, but do not overuse them
 
 7.  **Do NOT**:
     * Add new information or facts
     * Remove important details
     * Change the fundamental message
     * Alter the response's length dramatically
-    * Do not Switch to any structured or list-based output
-    * Do not Make your answer too long
+    * Switch to any structured or list-based output
+    * Make your answer too long, favor short, natural chat replies
+    * start the message with a capital letter unless it is a proper name or acronym
 
 **--- Original Generated Response ---**
 {generated_response}

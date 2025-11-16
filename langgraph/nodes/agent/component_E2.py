@@ -66,6 +66,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_settings = get_model_settings('styler', 'STYLER_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
+        provider = model_settings['provider']
         
         # Log prompt to Logfire
         log_prompt("styler", main_prompt, model_name, temperature)
@@ -74,7 +75,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         

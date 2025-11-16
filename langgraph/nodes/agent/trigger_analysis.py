@@ -49,7 +49,9 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     agent_goal = state.get('agent_goal', 'No goal specified')
     
     # Extract agent name from persona
-    agent_name = selected_persona.get('first_name', 'Agent')
+    first_name = selected_persona.get('first_name')
+    last_name = selected_persona.get('last_name')
+    agent_name = first_name + (" " + last_name if last_name else "")
     
     # Validate inputs
     if not recent_messages:
@@ -97,13 +99,14 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_settings = get_model_settings('trigger_analysis', 'TRIGGER_ANALYSIS_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
+        provider = model_settings['provider']
         
         # Log prompt to Logfire
         log_prompt("trigger_analysis", prompt, model_name, temperature)
                 
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         

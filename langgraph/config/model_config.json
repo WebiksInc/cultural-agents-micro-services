@@ -2,36 +2,43 @@
   "nodes": {
     "component_B": {
       "model": "gpt-5-nano",
+      "provider": "openai",
       "temperature": 0,
       "description": "Emotion and sentiment analysis for supervisor"
     },
     "trigger_analysis": {
       "model": "gpt-5-nano",
+      "provider": "openai",
       "temperature": 0,
       "description": "Trigger detection for agent"
     },
     "relevance_validator": {
       "model": "gpt-5-nano",
+      "provider": "openai",
       "temperature": 0,
       "description": "Validates if scheduled actions are still relevant"
     },
     "decision_maker": {
       "model": "gpt-5-nano",
+      "provider": "openai",
       "temperature": 0,
       "description": "Selects appropriate action based on detected trigger"
     },
     "text_generator": {
-      "model": "gpt-5-nano",
-      "temperature": 0.7,
+      "model": "gpt-5-mini",
+      "provider": "openai",
+      "temperature": 0.8,
       "description": "Generates agent response content"
     },
     "styler": {
-      "model": "gpt-5-nano",
+      "model": "gpt-5-mini",
+      "provider": "openai",
       "temperature": 0.8,
       "description": "Applies persona styling to generated text"
     },
     "validator": {
       "model": "gpt-5-nano",
+      "provider": "openai",
       "temperature": 0,
       "description": "Validates generated response quality"
     }

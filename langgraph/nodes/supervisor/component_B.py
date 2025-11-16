@@ -14,28 +14,12 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings
+from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output
 
 # Configure logging
 logger = get_logger(__name__)
-
-
-def format_message_for_prompt(msg: Dict[str, Any], include_emotion: bool = True) -> str:
-    """Format a single message for the prompt (without timestamp for component B)."""
-    sender = msg.get('sender_username', msg.get('sender_first_name', 'Unknown'))
-    text = msg.get('text', '')
-    emotion_str = ""
-    
-    if include_emotion and msg.get('message_emotion'):
-        emotion = msg['message_emotion']
-        if isinstance(emotion, dict):
-            emotion_str = f" [CLASSIFIED: {emotion.get('emotion', 'unknown')}]"
-        else:
-            emotion_str = f" [CLASSIFIED: {emotion}]"
-    
-    return f"{sender}: {text}{emotion_str}"
 
 
 def emotion_analysis_node(state: Dict[str, Any]) -> None:
@@ -71,7 +55,39 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
             state['group_sentiment'] = "No recent messages to analyze."
         return
     
-    logger.info(f"Found {len(unclassified_messages)} unclassified messages")
+    
+    # Log new messages to Logfire with detailed information
+    try:
+        import logfire
+        new_messages_data = []
+        for msg in unclassified_messages:
+            sender_username = msg.get('sender_username', '').strip()
+            sender_first_name = msg.get('sender_first_name', '').strip()
+            sender_last_name = msg.get('sender_last_name', '').strip()
+            
+            if sender_username:
+                sender = sender_username
+            elif sender_first_name and sender_last_name:
+                sender = f"{sender_first_name} {sender_last_name}"
+            elif sender_first_name:
+                sender = sender_first_name
+            else:
+                sender = 'Unknown'
+            
+            new_messages_data.append({
+                "message_id": msg.get('message_id', 'unknown'),
+                "sender": sender,
+                "text": msg.get('text', ''),
+                "time": str(msg.get('date', 'unknown'))
+            })
+
+        logfire.info(f"New {len(unclassified_messages)} unclassified messages", **{
+            "component": "component_b",
+            "count": len(unclassified_messages),
+            "new_messages": new_messages_data
+        })
+    except Exception as e:
+        logger.debug(f"Failed to log new messages to Logfire: {e}")
     
     # Extract group metadata
     group_name = group_metadata.get('name', 'Unknown Group')
@@ -81,13 +97,26 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
     # Format conversation history (all messages for context)
     conversation_lines = []
     for msg in recent_messages:
-        conversation_lines.append(format_message_for_prompt(msg, include_emotion=True))
+        conversation_lines.append(format_message_for_prompt(msg, include_timestamp=False, include_emotion=True))
     conversation_history = "\n".join(conversation_lines)
     
     # Format unclassified messages
     unclassified_lines = []
     for msg in unclassified_messages:
-        sender = msg.get('sender_username', msg.get('sender_first_name', 'Unknown'))
+        # Get sender name (prefer username, fall back to first_name + last_name, then just first_name)
+        sender_username = msg.get('sender_username', '').strip()
+        sender_first_name = msg.get('sender_first_name', '').strip()
+        sender_last_name = msg.get('sender_last_name', '').strip()
+        
+        if sender_username:
+            sender = sender_username
+        elif sender_first_name and sender_last_name:
+            sender = f"{sender_first_name} {sender_last_name}"
+        elif sender_first_name:
+            sender = sender_first_name
+        else:
+            sender = 'Unknown'
+        
         text = msg.get('text', '')
         msg_id = msg.get('message_id', 'unknown')
         unclassified_lines.append(f"[ID: {msg_id}] {sender}: {text}")
@@ -108,10 +137,11 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
         model_settings = get_model_settings('component_B', 'COMPONENT_B_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
+        provider = model_settings['provider']
                 
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         
@@ -145,7 +175,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                     classified_results.append({
                         "message_id": msg_id,
                         "emotion": emotion_data.get('emotion'),
-                        "text_preview": msg.get('text', '')[:50]
+                        "text": msg.get('text', '')
                     })
                 else:
                     logger.warning(f"No emotion returned for message {msg_id}")
@@ -156,7 +186,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                     classified_results.append({
                         "message_id": msg_id,
                         "emotion": "ERROR",
-                        "text_preview": msg.get('text', '')[:50]
+                        "text": msg.get('text', '')
                     })
             
             # Update group sentiment

@@ -106,6 +106,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_settings = get_model_settings('text_generator', 'TEXT_GENERATOR_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
+        provider = model_settings['provider']
         
         # Log prompt to Logfire (including system prompt)
         try:
@@ -124,7 +125,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         

@@ -94,10 +94,12 @@ def get_model_settings(node_name: str, env_var_name: Optional[str] = None) -> Di
         model = os.getenv(env_var_name)
     
     temperature = node_config.get('temperature', default_temperature)
+    model_provider = node_config.get('provider', '')
     
     return {
         'model': model,
-        'temperature': temperature
+        'temperature': temperature,
+        'provider': model_provider
     }
 
 

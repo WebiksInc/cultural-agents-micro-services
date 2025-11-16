@@ -26,6 +26,7 @@ You must evaluate the response against these FOUR criteria:
    - Is it harmful, nonsensical, or completely out of place?
    - Does it create confusion or break conversation flow?
 
+- Make sure the output is social media appropriate: for example the answer should not be sturctured.
 **--- Your Decision ---**
 
 Based on these criteria, you must decide: **APPROVED** or **NOT APPROVED**

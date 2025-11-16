@@ -224,20 +224,46 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
         # Extract selected_action from agent result
         selected_action = result.get("selected_action")
         
+        # Track whether any agent took a real action
+        action_taken = False
+        
         if selected_action:
-            logger.info(f"{agent_type} agent produced action: {selected_action.get('id', 'unknown')}")
-            
-            # Add to supervisor's selected_actions list
-            if "selected_actions" not in state:
-                state["selected_actions"] = []
-            
-            state["selected_actions"].append(selected_action)
+            status = selected_action.get('status', '')
+            # Check if this is a real action (not no_action_needed or error)
+            if status == 'success' or status == 'max_retries_reached':
+                action_taken = True
+                logger.info(f"{agent_type} agent produced action: {selected_action.get('id', 'unknown')}")
+                
+                # Add to supervisor's selected_actions list
+                if "selected_actions" not in state:
+                    state["selected_actions"] = []
+                
+                state["selected_actions"].append(selected_action)
+            else:
+                logger.info(f"{agent_type} agent decided not to take action (status: {status})")
         else:
             logger.info(f"{agent_type} agent decided not to take action")
+        
+        # Set flag in state to indicate if any action was taken
+        if "any_action_taken" not in state:
+            state["any_action_taken"] = False
+        state["any_action_taken"] = state["any_action_taken"] or action_taken
         
         return state
     
     return agent_node
+
+
+def no_action_delay_node(state: SupervisorState) -> SupervisorState:
+    """
+    Sleep node that adds delay when no action was taken (neutral trigger detected).
+    This prevents tight polling loops when there's no activity.
+    """
+    import time
+    sleep_duration = CONFIG.get("no_action_sleep_duration", 60)  # Default 60 seconds
+    logger.info(f"No action needed - sleeping for {sleep_duration}s before checking for new messages")
+    time.sleep(sleep_duration)
+    return state
 
 
 def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGraph:
@@ -280,6 +306,7 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
     supervisor_graph.add_node("supervisor", supervisor_wrapper)
     supervisor_graph.add_node("component_b", emotion_analysis_node)
     supervisor_graph.add_node("scheduler", scheduler_node)
+    supervisor_graph.add_node("no_action_delay", no_action_delay_node)
     
     # Set entry point
     supervisor_graph.set_entry_point("supervisor")
@@ -316,14 +343,15 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
         unprocessed_messages = [m for m in recent_messages if not m.get('processed', False)]
         if unprocessed_messages:
             logger.info(f"{len(unprocessed_messages)} unprocessed messages detected, routing to component_b")
+            # Initialize any_action_taken flag before agents run
+            state["any_action_taken"] = False
             return "component_b"
         
-        # No pending actions and no unprocessed messages - loop back to supervisor
-        # Add delay to prevent tight loop when waiting for new messages
-        # This is where we control the polling frequency
-        sleep_time = 60
-        logger.info(f"No pending actions or unprocessed messages, sleeping {sleep_time} before next poll")
-        time.sleep(sleep_time)  # Wait before next message poll cycle
+        # No pending actions and no unprocessed messages
+        # Sleep before polling again to prevent tight loop
+        sleep_duration = CONFIG.get("no_action_sleep_duration", 60)
+        logger.info(f"No pending actions or unprocessed messages, sleeping {sleep_duration}s before next poll")
+        time.sleep(sleep_duration)
         logger.info("Looping back to supervisor for next message check\n")
         return "supervisor"
     
@@ -348,8 +376,40 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
         agent_type = agent_config_item["type"]
         supervisor_graph.add_edge(f"{agent_type}_agent", "scheduler")
     
-    # From scheduler, loop back to supervisor
-    supervisor_graph.add_edge("scheduler", "supervisor")
+    # Define routing from scheduler based on whether actions were taken
+    def route_from_scheduler(state: SupervisorState) -> str:
+        """
+        Route from scheduler based on whether ANY agent took action.
+        This runs AFTER all agents complete (they run in parallel from component_b).
+        
+        - If ANY agent took action: go directly back to supervisor (scheduler will execute it)
+        - If NO agents took action: go to no_action_delay to sleep before checking for new messages
+        """
+        any_action_taken = state.get("any_action_taken", False)
+        
+        if any_action_taken:
+            logger.info("At least one agent took action - routing back to supervisor (no delay)")
+            # Reset the flag for next cycle
+            state["any_action_taken"] = False
+            return "supervisor"
+        else:
+            logger.info("No agents took action (all neutral triggers) - routing to no_action_delay")
+            # Reset flag for next cycle
+            state["any_action_taken"] = False
+            return "no_action_delay"
+    
+    # Conditional edge from scheduler
+    supervisor_graph.add_conditional_edges(
+        "scheduler",
+        route_from_scheduler,
+        {
+            "supervisor": "supervisor",
+            "no_action_delay": "no_action_delay"
+        }
+    )
+    
+    # From no_action_delay, loop back to supervisor to check for new messages
+    supervisor_graph.add_edge("no_action_delay", "supervisor")
     
     # Compile supervisor graph
     # Recursion limit will be set at runtime via invoke() config parameter
@@ -369,7 +429,6 @@ def run_supervisor_graph():
     agent_personas = load_agent_personas()
     
     # Build the complete graph
-    logger.info("Building supervisor graph with agent subgraphs...")
     supervisor_graph = build_supervisor_graph(agent_personas)
     
     # Initialize supervisor state
@@ -382,9 +441,7 @@ def run_supervisor_graph():
         current_nodes=None,
         next_nodes=None
     )
-    
-    logger.info("GRAPH BUILT SUCCESSFULLY - STARTING INFINITE LOOP")
-    
+        
     # Run for 2 iterations (for testing)
     state = initial_state
     iteration = 0
@@ -407,10 +464,7 @@ def run_supervisor_graph():
         
       
     except KeyboardInterrupt:
-        logger.info("\n" + "=" * 80)
-        logger.info("SUPERVISOR STOPPED BY USER (Ctrl+C)")
-        logger.info(f"Total iterations: {iteration}")
-        logger.info("=" * 80)
+        logger.info("SUPERVISOR STOPPED BY USER")
     except Exception as e:
         logger.error(f"ERROR in supervisor loop: {e}", exc_info=True)
         raise
