@@ -74,7 +74,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'current_node': 'trigger_analysis'
         }
     
-    # logger.info(f"Analyzing {len(recent_messages)} messages for agent '{agent_name}' (type: {agent_type})")
     
     # Format recent messages for prompt
     message_lines = []
@@ -95,12 +94,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         recent_messages=recent_messages_text
     )
     
-    # # DEBUG: Print the complete prompt
-    # logger.info("=" * 80)
-    # logger.info("TRIGGER ANALYSIS PROMPT:")
-    # logger.info(prompt)
-    # logger.info("=" * 80)
-    
     try:
         # Get model settings
         model_settings = get_model_settings('trigger_analysis', 'TRIGGER_ANALYSIS_MODEL')
@@ -109,9 +102,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         # Log prompt to Logfire
         log_prompt("trigger_analysis", prompt, model_name, temperature)
-        
-        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
-        
+                
         model = init_chat_model(
             model=model_name,
             model_provider="openai",
@@ -121,17 +112,12 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Call LLM
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
-        
-        # logger.info(f"Received LLM response: {response_text[:200]}...")
-        
+                
         # Parse JSON response
         try:
             result = json.loads(response_text)
             trigger_id = result.get('id', 'neutral')
             justification = result.get('justification', 'No justification provided')
-            
-            # logger.info(f"Detected trigger: {trigger_id}")
-            # logger.info(f"Justification: {justification}")
             
             # Log output to Logfire
             output_data = {

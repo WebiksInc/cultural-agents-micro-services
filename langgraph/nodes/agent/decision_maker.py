@@ -77,8 +77,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         state['selected_action'] = None
         return
     
-    # logger.info(f"Trigger '{trigger_id}' suggests {len(suggested_action_ids)} actions: {suggested_action_ids}")
-    
+
     # Get full details for suggested actions
     all_actions = actions.get('actions', [])
     suggested_actions = []
@@ -123,7 +122,6 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         # Log prompt to Logfire
         log_prompt("decision_maker", prompt, model_name, temperature)
         
-        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
             model=model_name,
@@ -135,7 +133,6 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
         
-        # logger.info(f"Received LLM response: {response_text[:200]}...")
         
         # Parse JSON response
         try:
@@ -153,9 +150,6 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             # Verify the selected action is in the suggested actions
             if action_id not in suggested_action_ids:
                 logger.warning(f"LLM selected action '{action_id}' not in suggested actions. Using it anyway.")
-            
-            logger.info(f"Selected action: {action_id}")
-            logger.info(f"Purpose: {purpose}")
             
             # Log output to Logfire
             output_data = {

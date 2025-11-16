@@ -108,9 +108,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         # Log prompt to Logfire
         log_prompt("validator", validation_prompt, model_name, temperature)
-        
-        logger.info(f"Using model: {model_name} (temperature: {temperature})")
-        
+                
         model = init_chat_model(
             model=model_name,
             model_provider="openai",
@@ -121,8 +119,6 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         messages = [HumanMessage(content=validation_prompt)]
         response = model.invoke(messages)
         response_text = response.content.strip()
-        
-        logger.info(f"Validator response: {response_text[:200]}...")
         
         # Parse JSON response
         try:

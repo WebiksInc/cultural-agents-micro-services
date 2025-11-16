@@ -40,12 +40,9 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         Dict with current_node and next_node updates
     """
     current_node = state.get('current_node')
-    
-    # logger.info(f"Orchestrator running - current_node: {current_node}")
-    
+        
     # Entry point - first node to run
     if current_node is None or current_node == 'orchestrator':
-        logger.info("→ Routing to trigger_analysis (entry point)")
         log_flow_transition("orchestrator", "trigger_analysis", "entry point")
         return {
             'current_node': 'orchestrator',

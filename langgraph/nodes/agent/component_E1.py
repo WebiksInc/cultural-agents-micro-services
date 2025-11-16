@@ -69,9 +69,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         if action['id'] == action_id:
             action_description = action.get('description', 'No description available')
             break
-    
-    logger.info(f"Generating response for action '{action_id}'")
-    
+        
     # Format recent messages as JSON
     recent_messages_json = json.dumps(recent_messages, indent=2, default=str)
     
@@ -101,10 +99,8 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             {validation_feedback}
 
                             Please generate a NEW response that addresses this issue while still fulfilling the action purpose.
-                            Focus on fixing the specific problem mentioned above.
-
----
-"""
+                            Focus on fixing the specific problem mentioned above."""
+                                                                  
         main_prompt = feedback_note + main_prompt
     
     try:
@@ -115,9 +111,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         # Log prompt to Logfire
         log_prompt("text_generator", main_prompt, model_name, temperature)
-        
-        logger.info(f"Using model: {model_name} (temperature: {temperature})")
-        
+                
         model = init_chat_model(
             model=model_name,
             model_provider="openai",
@@ -132,9 +126,6 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         response = model.invoke(messages)
         response_text = response.content.strip()
-        
-        logger.info(f"Generated response ({len(response_text)} chars): {response_text[:100]}...")
-        print(("=" * 100))
         
         # Log output to Logfire
         log_node_output("text_generator", {"generated_response": response_text})

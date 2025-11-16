@@ -130,10 +130,7 @@ def build_agent_subgraph(agent_type: str, agent_config: Dict[str, Any]) -> State
     def route_from_orchestrator(state: AgentState) -> str:
         """Route based on orchestrator's decision."""
         next_node = state.get("next_node")
-        
-        # DEBUG
-        # logger.info(f"route_from_orchestrator called - next_node={next_node}, current_node={state.get('current_node')}")
-        
+                
         # Handle None or empty next_node
         if not next_node:
             logger.warning(f"Orchestrator returned None for next_node, defaulting to END")
@@ -324,8 +321,9 @@ def build_supervisor_graph(agent_personas: Dict[str, Dict[str, Any]]) -> StateGr
         # No pending actions and no unprocessed messages - loop back to supervisor
         # Add delay to prevent tight loop when waiting for new messages
         # This is where we control the polling frequency
-        logger.info("No pending actions or unprocessed messages, sleeping 20s before next poll")
-        time.sleep(60)  # Wait before next message poll cycle
+        sleep_time = 60
+        logger.info(f"No pending actions or unprocessed messages, sleeping {sleep_time} before next poll")
+        time.sleep(sleep_time)  # Wait before next message poll cycle
         logger.info("Looping back to supervisor for next message check\n")
         return "supervisor"
     
@@ -370,7 +368,6 @@ def run_supervisor_graph():
     logger.info("=" * 80)
     
     # Load agent personas once at startup
-    # logger.info("Loading agent personas...")
     agent_personas = load_agent_personas()
     
     # Build the complete graph
@@ -388,10 +385,7 @@ def run_supervisor_graph():
         next_nodes=None
     )
     
-    # logger.info("=" * 80)
     logger.info("GRAPH BUILT SUCCESSFULLY - STARTING INFINITE LOOP")
-    # logger.info("Press Ctrl+C to stop")
-    # logger.info("=" * 80)
     
     # Run for 2 iterations (for testing)
     state = initial_state
@@ -401,10 +395,6 @@ def run_supervisor_graph():
     try:
         while iteration < MAX_ITERATIONS:
             iteration += 1
-            logger.info(f"\n{'=' * 80}")
-            logger.info(f"ITERATION {iteration} of {MAX_ITERATIONS}")
-            logger.info(f"{'=' * 80}")
-            
             # Invoke the graph with increased recursion limit
             # The supervisor loops continuously (supervisor -> supervisor), so we need a higher limit
             # With the sleep delays added, each loop takes ~5 seconds, so 100 iterations = ~500 seconds
@@ -417,10 +407,7 @@ def run_supervisor_graph():
             import time
             time.sleep(1)
         
-        logger.info(f"\n{'=' * 80}")
-        logger.info(f"COMPLETED {MAX_ITERATIONS} ITERATIONS SUCCESSFULLY")
-        logger.info(f"{'=' * 80}")
-            
+      
     except KeyboardInterrupt:
         logger.info("\n" + "=" * 80)
         logger.info("SUPERVISOR STOPPED BY USER (Ctrl+C)")

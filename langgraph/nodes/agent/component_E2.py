@@ -34,7 +34,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     log_node_start("styler")
     log_state("styler", state, "entry")
-    logger.info("Starting Styler (E.2)")
+    # logger.info("Starting Styler (E.2)")
     
     # Get required inputs
     generated_response = state.get('generated_response')
@@ -49,7 +49,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'current_node': 'styler'
         }
     
-    logger.info(f"Styling response ({len(generated_response)} chars)")
+    # logger.info(f"Styling response ({len(generated_response)} chars)")
     
     # Format selected_persona as JSON
     selected_persona_json = json.dumps(selected_persona, indent=2)
@@ -70,7 +70,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Log prompt to Logfire
         log_prompt("styler", main_prompt, model_name, temperature)
         
-        logger.info(f"Using model: {model_name} (temperature: {temperature})")
+        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
         model = init_chat_model(
             model=model_name,
@@ -87,7 +87,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         response = model.invoke(messages)
         response_text = response.content.strip()
         
-        logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...\n")
+        # logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...\n")
         print(("-" * 80))
         
         # Log output to Logfire

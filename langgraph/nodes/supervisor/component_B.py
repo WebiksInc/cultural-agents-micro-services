@@ -51,9 +51,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
     log_node_start("component_b", {
         "total_messages": len(state.get('recent_messages', []))
     })
-    
-    # logger.info("Starting Component B - Emotion + Sentiment Analysis")
-    
+        
     recent_messages = state.get('recent_messages', [])
     group_metadata = state.get('group_metadata', {})
     
@@ -110,9 +108,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
         model_settings = get_model_settings('component_B', 'COMPONENT_B_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
-        
-        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
-        
+                
         model = init_chat_model(
             model=model_name,
             model_provider="openai",
@@ -125,9 +121,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
         # Call LLM
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
-        
-        # logger.info(f"Received LLM response: {response_text[:200]}...")
-        
+                
         # Parse JSON response
         try:
             result = json.loads(response_text)
@@ -174,9 +168,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                 "classified_messages": classified_results,
                 "group_sentiment": group_sentiment
             })
-            
-            # logger.info(f"Group sentiment: {group_sentiment}")
-            
+                        
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
             logger.error(f"Response text: {response_text}")
@@ -200,4 +192,3 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
             }
         state['group_sentiment'] = f'ERROR: {str(e)}'
     
-    logger.info("Component B - Emotion/Sentiment Analysis completed\n")
