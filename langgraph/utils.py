@@ -117,8 +117,20 @@ def format_message_for_prompt(msg: Dict[str, Any],
     """
     from datetime import datetime
     
-    # Get sender name
-    sender = msg.get('sender_username', msg.get('sender_first_name', 'Unknown'))
+    # Get sender name (prefer username, fall back to first_name + last_name, then just first_name)
+    sender_username = msg.get('sender_username', '').strip()
+    sender_first_name = msg.get('sender_first_name', '').strip()
+    sender_last_name = msg.get('sender_last_name', '').strip()
+    
+    if sender_username:
+        sender = sender_username
+    elif sender_first_name and sender_last_name:
+        sender = f"{sender_first_name} {sender_last_name}"
+    elif sender_first_name:
+        sender = sender_first_name
+    else:
+        sender = 'Unknown'
+    
     text = msg.get('text', '')
     
     parts = []

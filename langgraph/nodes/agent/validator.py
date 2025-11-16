@@ -43,7 +43,6 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     log_node_start("validator")
     log_state("validator", state, "entry")
-    logger.info("Starting Validator")
     
     # Get required inputs
     styled_response = state.get('styled_response')

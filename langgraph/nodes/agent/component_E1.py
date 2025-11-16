@@ -37,8 +37,6 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     })
     log_state("text_generator_entry", state, "agent")
     
-    logger.info("Starting Text Generator (E.1)")
-    
     # Get required inputs
     agent_prompt = state.get('agent_prompt', '')
     selected_action = state.get('selected_action')
@@ -109,8 +107,20 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_name = model_settings['model']
         temperature = model_settings['temperature']
         
-        # Log prompt to Logfire
-        log_prompt("text_generator", main_prompt, model_name, temperature)
+        # Log prompt to Logfire (including system prompt)
+        try:
+            import logfire
+            logfire.info(f"📝 Prompt for text_generator", **{
+                "component": "text_generator",
+                "system_prompt": agent_prompt,
+                "user_prompt": main_prompt,
+                "prompt_length": len(main_prompt),
+                "system_prompt_length": len(agent_prompt),
+                "model": model_name,
+                "temperature": temperature
+            })
+        except Exception as e:
+            logger.debug(f"Failed to log prompt to Logfire: {e}")
                 
         model = init_chat_model(
             model=model_name,

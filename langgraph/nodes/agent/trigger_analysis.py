@@ -42,8 +42,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     })
     log_state("trigger_analysis_entry", state, "agent")
     
-    logger.info("Starting Trigger Analysis")
-    
     recent_messages = state.get('recent_messages', [])
     triggers = state.get('triggers', {})
     selected_persona = state.get('selected_persona', {})

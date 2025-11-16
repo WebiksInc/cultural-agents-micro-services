@@ -36,9 +36,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         "trigger_id": state.get('detected_trigger', {}).get('id', 'none')
     })
     log_state("decision_maker_entry", state, "agent")
-    
-    logger.info("Starting Decision Maker")
-    
+        
     detected_trigger = state.get('detected_trigger', {})
     actions = state.get('actions', {})
     triggers = state.get('triggers', {})

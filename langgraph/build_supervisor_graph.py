@@ -363,9 +363,7 @@ def run_supervisor_graph():
     """
     Main entry point: Load personas, build graph, and run infinite loop.
     """
-    logger.info("=" * 80)
     logger.info("STARTING SUPERVISOR GRAPH SYSTEM")
-    logger.info("=" * 80)
     
     # Load agent personas once at startup
     agent_personas = load_agent_personas()
