@@ -25,9 +25,12 @@ services:
       retries: 3
       start_period: 40s
 
-    lang_graph:
-     environment:
-       - PORT=4000
-       - TELEGRAM_HOST=telegram2
-       
-       
+  langgraph:
+    image: langgraph:0.1.8
+    environment:
+      - TELEGRAM_PORT=4000
+      - TELEGRAM_HOST=telegram2
+    depends_on:
+      telegram2:
+        condition: service_healthy
+  

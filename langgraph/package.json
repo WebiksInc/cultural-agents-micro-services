@@ -1,0 +1,8 @@
+{
+  "name": "langgraph",
+  "version": "0.1.8",
+  "type": "commonjs",
+  "scripts": {
+    "buildImage": "docker build -t langgraph:$npm_package_version ."
+  }
+}

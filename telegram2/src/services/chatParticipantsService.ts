@@ -29,6 +29,21 @@ export const getChatParticipants = async (
     const chatType = entity.className === 'User' ? 'user' : 
                      entity.broadcast ? 'channel' : 'group';
     
+
+    let chatDescription = null;
+    if (entity.className !== 'User') {
+      try {
+        const fullChat = await client.invoke(
+          new (await import('telegram')).Api.channels.GetFullChannel({
+            channel: entity,
+          })
+        );
+        chatDescription = fullChat.fullChat.about || null;
+      } catch (e) {
+        logger.warn('Could not fetch full chat info', { phone, chatId, error: (e as Error).message });
+      }
+    }
+
     if (entity.className === 'User') {
       const participant: ChatParticipant = {
         userId: entity.id?.toString() || null,
@@ -45,6 +60,7 @@ export const getChatParticipants = async (
         chatId: entity.id?.toString() || chatId,
         chatTitle,
         chatType,
+        chatDescription,
         participantsCount: 1,
         participants: [participant],
       };
@@ -75,6 +91,7 @@ export const getChatParticipants = async (
     return {
       chatId: entity.id?.toString() || chatId,
       chatTitle,
+      chatDescription,
       chatType,
       participantsCount: transformedParticipants.length,
       participants: transformedParticipants,

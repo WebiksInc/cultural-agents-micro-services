@@ -42,6 +42,7 @@ router.get('/', async (req: Request, res: Response) => {
       success: true,
       chatId: result.chatId,
       chatTitle: result.chatTitle,
+      chatDescription: result.chatDescription,
       chatType: result.chatType,
       phone,
       participantsCount: result.participantsCount,
