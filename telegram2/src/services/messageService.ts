@@ -10,8 +10,16 @@ export const sendMessage = async (
   content: SendMessageContent,
   replyTo?: number
 ): Promise<{ sentTo: string; messageId?: number }> => {
+  content: SendMessageContent,
+  replyTo?: number
+): Promise<{ sentTo: string; messageId?: number }> => {
   validators.validatePhone(fromPhone);
   validators.validateTarget(toTarget);
+  validators.validateContent(content);
+
+  if (replyTo !== undefined) {
+    validators.validateReplyTo(replyTo);
+  }
   validators.validateContent(content);
 
   if (replyTo !== undefined) {
@@ -23,6 +31,12 @@ export const sendMessage = async (
     throw new Error(`No authenticated session found for ${fromPhone}`);
   }
 
+  logger.info('Sending message', { 
+    fromPhone, 
+    toTarget, 
+    contentType: content.type,
+    isReply: !!replyTo 
+  });
   logger.info('Sending message', { 
     fromPhone, 
     toTarget, 
@@ -49,7 +63,26 @@ export const sendMessage = async (
       messageId: result?.id,
       contentType: content.type 
     });
+    logger.info('Message sent successfully', { 
+      fromPhone, 
+      toTarget,
+      messageId: result?.id,
+      contentType: content.type 
+    });
     
+    return { 
+      sentTo: toTarget,
+      messageId: result?.id 
+    };
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.error('Send message failed', { 
+      fromPhone, 
+      toTarget, 
+      error: error.message 
+    });
+    
+    if (error.message.includes('Could not find the input entity')) {
     return { 
       sentTo: toTarget,
       messageId: result?.id 
