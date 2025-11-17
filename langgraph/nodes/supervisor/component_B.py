@@ -1,16 +1,9 @@
-"""
-Component B - Emotion/Sentiment Analysis Node
-
-Analyzes emotions in group messages and generates overall group sentiment.
-"""
-
 import json
-import logging
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
 
-# Import utilities
+# utilities
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -152,64 +145,74 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
                 
-        # Parse JSON response
-        try:
-            result = json.loads(response_text)
-            message_emotions = result.get('message_emotions', [])
-            group_sentiment = result.get('group_sentiment', 'ERROR: No sentiment provided')
-            
-            # Update state with emotions
-            emotion_map = {item['message_id']: item for item in message_emotions}
-            classified_results = []
-            
-            for idx in unclassified_indices:
-                msg = recent_messages[idx]
-                msg_id = msg.get('message_id')
+        # Parse JSON response with retry logic
+        for attempt in range(2):
+            try:
+                result = json.loads(response_text)
+                message_emotions = result.get('message_emotions', [])
+                group_sentiment = result.get('group_sentiment', 'ERROR: No sentiment provided')
                 
-                if msg_id in emotion_map:
-                    emotion_data = emotion_map[msg_id]
-                    msg['message_emotion'] = {
-                        'emotion': emotion_data.get('emotion', 'neutral'),
-                        'justification': emotion_data.get('justification', 'No justification provided')
-                    }
-                    classified_results.append({
-                        "message_id": msg_id,
-                        "emotion": emotion_data.get('emotion'),
-                        "text": msg.get('text', '')
-                    })
-                else:
-                    logger.warning(f"No emotion returned for message {msg_id}")
-                    msg['message_emotion'] = {
-                        'emotion': 'ERROR',
-                        'justification': 'LLM did not return emotion for this message'
-                    }
-                    classified_results.append({
-                        "message_id": msg_id,
-                        "emotion": "ERROR",
-                        "text": msg.get('text', '')
-                    })
-            
-            # Update group sentiment
-            state['group_sentiment'] = group_sentiment
-            
-            # Log structured output to Logfire
-            log_node_output("component_b", {
-                "messages_analyzed": len(unclassified_messages),
-                "classified_messages": classified_results,
-                "group_sentiment": group_sentiment
-            })
+                # Update state with emotions
+                emotion_map = {item['message_id']: item for item in message_emotions}
+                classified_results = []
+                
+                for idx in unclassified_indices:
+                    msg = recent_messages[idx]
+                    msg_id = msg.get('message_id')
+                    
+                    if msg_id in emotion_map:
+                        emotion_data = emotion_map[msg_id]
+                        msg['message_emotion'] = {
+                            'emotion': emotion_data.get('emotion', 'neutral'),
+                            'justification': emotion_data.get('justification', 'No justification provided')
+                        }
+                        classified_results.append({
+                            "message_id": msg_id,
+                            "emotion": emotion_data.get('emotion'),
+                            "text": msg.get('text', '')
+                        })
+                    else:
+                        logger.warning(f"No emotion returned for message {msg_id}")
+                        msg['message_emotion'] = {
+                            'emotion': 'ERROR',
+                            'justification': 'LLM did not return emotion for this message'
+                        }
+                        classified_results.append({
+                            "message_id": msg_id,
+                            "emotion": "ERROR",
+                            "text": msg.get('text', '')
+                        })
+                
+                # Update group sentiment
+                state['group_sentiment'] = group_sentiment
+                
+                # Log structured output to Logfire
+                log_node_output("component_b", {
+                    "messages_analyzed": len(unclassified_messages),
+                    "classified_messages": classified_results,
+                    "group_sentiment": group_sentiment
+                })
+                
+                if attempt == 1:
+                    logger.info("Retry successful")
+                break
                         
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            logger.error(f"Response text: {response_text}")
-            
-            # Set ERROR for all unclassified messages
-            for idx in unclassified_indices:
-                recent_messages[idx]['message_emotion'] = {
-                    'emotion': 'ERROR',
-                    'justification': 'JSON parsing failed'
-                }
-            state['group_sentiment'] = 'ERROR: Failed to parse LLM response'
+            except json.JSONDecodeError as e:
+                if attempt == 0:
+                    logger.warning(f"JSON parsing failed on first attempt: {e}. Retrying...")
+                    response = model.invoke([HumanMessage(content=prompt)])
+                    response_text = response.content
+                else:
+                    logger.error(f"JSON parsing failed after retry: {e}")
+                    logger.error(f"Response text: {response_text}")
+                    
+                    # Set ERROR for all unclassified messages
+                    for idx in unclassified_indices:
+                        recent_messages[idx]['message_emotion'] = {
+                            'emotion': 'ERROR',
+                            'justification': 'JSON parsing failed'
+                        }
+                    state['group_sentiment'] = 'ERROR: Failed to parse LLM response'
             
     except Exception as e:
         logger.error(f"Error in emotion analysis: {e}", exc_info=True)

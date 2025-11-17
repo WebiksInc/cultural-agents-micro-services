@@ -13,12 +13,13 @@
   "agents": [
     {
       "type": "active",
-      "persona_file": "agents_personas/tamar_persona.json"
+      "persona_file": "agents_personas/tamar_persona.json",
+      "agent_goal": "Recommend places to visit specifically in Petah Tikva, engage group members in discussions about local attractions in the city, and foster an active community focused on exploring Petah Tikva, avoiding suggestions from other cities."
     }
   ],
   "group_metadata": {
     "name": "Petach Tikva Chat",
-    "topic": "General discussion",
+    "topic": "A group dedicated to sharing recommendations and information about notable sites, attractions, and places to visit in Petah Tikva.",
     "members": 4
   }
 }

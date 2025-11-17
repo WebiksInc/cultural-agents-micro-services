@@ -1,16 +1,9 @@
-"""
-Component E.2 - Styler Node
-
-Applies persona-specific styling to generated response while preserving content.
-"""
-
 import json
-import logging
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.chat_models import init_chat_model
 
-# Import utilities
+# utilities
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))

@@ -1,16 +1,9 @@
-"""
-Component E.1 - Text Generator Node
-
-Generates natural, human-like response content based on selected action and context.
-"""
-
 import json
-import logging
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.chat_models import init_chat_model
 
-# Import utilities
+# utilities
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -45,6 +38,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     agent_goal = state.get('agent_goal', 'No goal specified')
     group_sentiment = state.get('group_sentiment', 'No sentiment analysis available')
     actions = state.get('actions', {})
+    group_metadata = state.get('group_metadata', {})
     
     # Validate selected_action
     if not selected_action:
@@ -81,6 +75,8 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         action_id=action_id,
         action_description=action_description,
         action_purpose=action_purpose,
+        name=group_metadata.get('name', 'Unknown'),
+        topic=group_metadata.get('topic', 'No topic provided'),
         group_sentiment=group_sentiment,
         recent_messages_json=recent_messages_json,
         persona_json=persona_json

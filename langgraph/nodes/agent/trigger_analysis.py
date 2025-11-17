@@ -1,11 +1,4 @@
-"""
-Trigger Analysis Node
-
-Analyzes recent messages to detect which trigger condition applies to the agent.
-"""
-
 import json
-import logging
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model

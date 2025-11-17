@@ -66,7 +66,7 @@ def load_agent_config(agent_type: str) -> Dict[str, Any]:
         agent_type: Type of agent (e.g., "active", "off_the_radar")
         
     Returns:
-        Dict with triggers, actions, and persona data
+        Dict with triggers, actions, persona data, and agent_goal
     """
     base_path = Path(__file__).parent
     
@@ -81,8 +81,8 @@ def load_agent_config(agent_type: str) -> Dict[str, Any]:
         actions_data = json.load(f)
     
     # Load persona (from config)
-    agent_config = next(a for a in CONFIG["agents"] if a["type"] == agent_type)
-    persona_path = base_path / agent_config["persona_file"]
+    agent_config_item = next(a for a in CONFIG["agents"] if a["type"] == agent_type)
+    persona_path = base_path / agent_config_item["persona_file"]
     with open(persona_path, 'r') as f:
         persona_data = json.load(f)
     
@@ -92,7 +92,8 @@ def load_agent_config(agent_type: str) -> Dict[str, Any]:
         "triggers": triggers_data,
         "actions": actions_data,
         "persona": persona_data,
-        "agent_type": agent_type
+        "agent_type": agent_type,
+        "agent_goal": agent_config_item.get("agent_goal", "You are an active member of the group.")
     }
 
 
@@ -200,7 +201,7 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
             # Agent configuration
             selected_persona=agent_config["persona"],
             agent_type=agent_type,
-            agent_goal=agent_config["persona"].get("agent_goal", "You are an active member of the group."),
+            agent_goal=agent_config.get("agent_goal", "You are an active member of the group."),
             triggers=agent_config["triggers"],
             actions=agent_config["actions"],
             

@@ -1,17 +1,9 @@
-"""
-Scheduler Node (Supervisor)
-
-Arranges actions from multiple agents and schedules them for execution.
-Creates an execution queue with timing information.
-"""
-
-import logging
 import random
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from logs.logfire_config import get_logger
 
-# Configure logging
+# logging
 logger = get_logger(__name__)
 
 # Configuration for demo scheduling
