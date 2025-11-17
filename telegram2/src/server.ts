@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express from 'express';
 import sessions from './services/sessionManager.js';
 import logger from './utils/logger.js';
