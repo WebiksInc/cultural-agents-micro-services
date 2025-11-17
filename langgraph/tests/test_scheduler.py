@@ -1,12 +1,11 @@
 """
 Test Scheduler Node
 
-Tests the scheduler's ability to arrange and time actions from multiple agents.
+Tests the scheduler's ability to queue actions and manage execution.
 """
 
 import sys
 from pathlib import Path
-from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -23,229 +22,198 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-def test_scheduler_basic():
-    """Test scheduler with multiple successful actions."""
-    print("=" * 70)
-    print("TEST 1: BASIC SCHEDULING - Multiple successful actions")
-    print("=" * 70)
-    
-    state: SupervisorState = {
-        "group_sentiment": "positive",
-        "group_metadata": {},
-        "recent_messages": [],
-        "selected_actions": [
-            {
-                "status": "success",
-                "agent_name": "TrollBot_Alpha",
-                "agent_type": "troll",
-                "id": "casual_joke",
-                "purpose": "Add humor",
-                "styled_response": "lol that's hilarious 😂"
-            },
-            {
-                "status": "success",
-                "agent_name": "ActiveUser_Beta",
-                "agent_type": "active",
-                "id": "thoughtful_comment",
-                "purpose": "Share insight",
-                "styled_response": "I think this raises an interesting point about community engagement."
-            },
-            {
-                "status": "success",
-                "agent_name": "ManagerBot_Gamma",
-                "agent_type": "manager",
-                "id": "moderate_discussion",
-                "purpose": "Keep discussion on track",
-                "styled_response": "Great discussion everyone! Let's make sure we stay on topic."
-            }
-        ],
-        "execution_queue": [],
-        "current_nodes": None,
-        "next_nodes": None
-    }
-    
-    scheduler_node(state)
-    
-    execution_queue = state.get('execution_queue', [])
-    
-    print(f"\n--- Execution Queue ({len(execution_queue)} items) ---")
-    for i, item in enumerate(execution_queue):
-        print(f"\n{i+1}. Agent: {item['agent_name']} ({item['agent_type']})")
-        print(f"   Action: {item['action']['id']}")
-        print(f"   Content: {item['action_content'][:50]}...")
-        print(f"   Scheduled: {item['scheduled_time']}")
-        print(f"   Status: {item['status']}")
-    
-    assert len(execution_queue) == 3, "Should have 3 actions in queue"
-    assert all(item['status'] == 'pending' for item in execution_queue), "All should be pending"
-    print("\n✓ PASSED\n")
-
-
-def test_scheduler_filtering():
-    """Test scheduler filtering out no_action_needed and errors."""
-    print("=" * 70)
-    print("TEST 2: FILTERING - Skip no_action_needed and errors")
-    print("=" * 70)
-    
-    state: SupervisorState = {
-        "group_sentiment": "neutral",
-        "group_metadata": {},
-        "recent_messages": [],
-        "selected_actions": [
-            {
-                "status": "success",
-                "agent_name": "TrollBot_Alpha",
-                "agent_type": "troll",
-                "id": "casual_joke",
-                "purpose": "Add humor",
-                "styled_response": "lol that's funny 😄"
-            },
-            {
-                "status": "no_action_needed",
-                "reason": "neutral_trigger",
-                "agent_name": "ActiveUser_Beta",
-                "agent_type": "active"
-            },
-            {
-                "status": "error",
-                "reason": "text_generation_failed",
-                "error": "LLM timeout",
-                "agent_name": "ManagerBot_Gamma",
-                "agent_type": "manager"
-            },
-            {
-                "status": "success",
-                "agent_name": "TrollBot_Delta",
-                "agent_type": "troll",
-                "id": "react_to_meme",
-                "purpose": "Engage with meme",
-                "styled_response": "this is gold 🔥"
-            }
-        ],
-        "execution_queue": [],
-        "current_nodes": None,
-        "next_nodes": None
-    }
-    
-    scheduler_node(state)
-    
-    execution_queue = state.get('execution_queue', [])
-    
-    print(f"\n--- Execution Queue ({len(execution_queue)} items) ---")
-    for i, item in enumerate(execution_queue):
-        print(f"{i+1}. {item['agent_name']} - {item['action']['id']}")
-    
-    assert len(execution_queue) == 2, "Should only have 2 successful actions"
-    assert execution_queue[0]['agent_name'] == 'TrollBot_Alpha', "First should be TrollBot_Alpha"
-    assert execution_queue[1]['agent_name'] == 'TrollBot_Delta', "Second should be TrollBot_Delta"
-    print("\n✓ PASSED\n")
-
-
-def test_scheduler_max_retries():
-    """Test scheduler including max_retries_reached actions."""
-    print("=" * 70)
-    print("TEST 3: MAX RETRIES - Include max_retries_reached actions")
-    print("=" * 70)
-    
-    state: SupervisorState = {
-        "group_sentiment": "neutral",
-        "group_metadata": {},
-        "recent_messages": [],
-        "selected_actions": [
-            {
-                "status": "max_retries_reached",
-                "agent_name": "TrollBot_Alpha",
-                "agent_type": "troll",
-                "id": "casual_comment",
-                "purpose": "Engage casually",
-                "styled_response": "That is most intriguing indeed.",
-                "validation_note": "Failed validation after 3 attempts"
-            },
-            {
-                "status": "success",
-                "agent_name": "ActiveUser_Beta",
-                "agent_type": "active",
-                "id": "share_insight",
-                "purpose": "Contribute meaningfully",
-                "styled_response": "This aligns with what I've observed in similar communities."
-            }
-        ],
-        "execution_queue": [],
-        "current_nodes": None,
-        "next_nodes": None
-    }
-    
-    scheduler_node(state)
-    
-    execution_queue = state.get('execution_queue', [])
-    
-    print(f"\n--- Execution Queue ({len(execution_queue)} items) ---")
-    for i, item in enumerate(execution_queue):
-        print(f"\n{i+1}. {item['agent_name']} - {item['action']['id']}")
-        if 'validation_note' in item:
-            print(f"   Note: {item['validation_note']}")
-    
-    assert len(execution_queue) == 2, "Should include both actions"
-    assert 'validation_note' in execution_queue[0], "Should have validation note"
-    print("\n✓ PASSED\n")
-
-
-def test_scheduler_empty():
+def test_empty_selected_actions():
     """Test scheduler with no actions."""
     print("=" * 70)
-    print("TEST 4: EMPTY INPUT - No actions to schedule")
+    print("TEST 1: EMPTY SELECTED ACTIONS")
     print("=" * 70)
     
     state: SupervisorState = {
+        "recent_messages": [],
         "group_sentiment": "neutral",
         "group_metadata": {},
-        "recent_messages": [],
         "selected_actions": [],
         "execution_queue": [],
         "current_nodes": None,
         "next_nodes": None
     }
     
-    scheduler_node(state)
+    result = scheduler_node(state)
     
-    execution_queue = state.get('execution_queue', [])
-    
-    print(f"Execution queue length: {len(execution_queue)}")
-    assert len(execution_queue) == 0, "Should have empty queue"
+    print(f"Execution queue: {result['execution_queue']}")
+    assert result['execution_queue'] == [], "Should have empty queue"
     print("✓ PASSED\n")
 
 
-def test_helper_functions():
-    """Test helper functions for execution queue management."""
+def test_no_action_needed_filtered():
+    """Test that neutral triggers are filtered out."""
     print("=" * 70)
-    print("TEST 5: HELPER FUNCTIONS - get_ready_actions and mark_action_sent")
+    print("TEST 2: FILTER NO_ACTION_NEEDED STATUS")
     print("=" * 70)
-    
-    # Create a state with pre-scheduled actions (one in past, one in future)
-    from datetime import timedelta
-    past_time = (datetime.now() - timedelta(seconds=5)).isoformat()
-    future_time = (datetime.now() + timedelta(seconds=60)).isoformat()
     
     state: SupervisorState = {
+        "recent_messages": [],
         "group_sentiment": "neutral",
         "group_metadata": {},
+        "selected_actions": [
+            {
+                "agent_name": "Tamar",
+                "agent_type": "active",
+                "status": "no_action_needed",
+                "selected_action": {"id": "none"},
+                "styled_response": "",
+                "phone_number": "+123456789"
+            },
+            {
+                "agent_name": "Matan",
+                "agent_type": "off_radar",
+                "status": "no_action_needed",
+                "selected_action": {"id": "none"},
+                "styled_response": "",
+                "phone_number": "+987654321"
+            }
+        ],
+        "execution_queue": [],
+        "current_nodes": None,
+        "next_nodes": None
+    }
+    
+    result = scheduler_node(state)
+    
+    print(f"Input actions: {len(state['selected_actions'])}")
+    print(f"Execution queue size: {len(result['execution_queue'])}")
+    assert len(result['execution_queue']) == 0, "Should filter out no_action_needed"
+    print("✓ PASSED\n")
+
+
+def test_queue_multiple_actions():
+    """Test queueing multiple actions from different agents."""
+    print("=" * 70)
+    print("TEST 3: QUEUE MULTIPLE ACTIONS")
+    print("=" * 70)
+    
+    state: SupervisorState = {
         "recent_messages": [],
+        "group_sentiment": "neutral",
+        "group_metadata": {},
+        "selected_actions": [
+            {
+                "agent_name": "Tamar",
+                "agent_type": "active",
+                "status": "success",
+                "selected_action": {
+                    "id": "initiate_discussion",
+                    "purpose": "Start conversation about travel"
+                },
+                "styled_response": "Hey everyone! Has anyone been to Jerusalem lately?",
+                "phone_number": "+37379276083"
+            },
+            {
+                "agent_name": "Matan",
+                "agent_type": "off_radar",
+                "status": "success",
+                "selected_action": {
+                    "id": "express_consensus_agreement",
+                    "purpose": "Show agreement"
+                },
+                "styled_response": "agree",
+                "phone_number": "+19252088164"
+            }
+        ],
+        "execution_queue": [],
+        "current_nodes": None,
+        "next_nodes": None
+    }
+    
+    result = scheduler_node(state)
+    
+    print(f"Input actions: {len(state['selected_actions'])}")
+    print(f"Execution queue size: {len(result['execution_queue'])}")
+    print("\nQueued actions:")
+    for action in result['execution_queue']:
+        print(f"  - {action['agent_name']}: {action['action']['id']}")
+    
+    assert len(result['execution_queue']) == 2, "Should queue both actions"
+    assert result['execution_queue'][0]['agent_name'] == "Tamar", "First action should be Tamar"
+    assert result['execution_queue'][1]['agent_name'] == "Matan", "Second action should be Matan"
+    print("✓ PASSED\n")
+
+
+def test_mixed_actions():
+    """Test with mix of actionable and no_action_needed."""
+    print("=" * 70)
+    print("TEST 4: MIXED ACTIONS (ACTIONABLE + NO ACTION)")
+    print("=" * 70)
+    
+    state: SupervisorState = {
+        "recent_messages": [],
+        "group_sentiment": "neutral",
+        "group_metadata": {},
+        "selected_actions": [
+            {
+                "agent_name": "Tamar",
+                "agent_type": "active",
+                "status": "success",
+                "selected_action": {
+                    "id": "show_interest",
+                    "purpose": "Engage with user"
+                },
+                "styled_response": "That sounds amazing! Tell me more!",
+                "phone_number": "+37379276083"
+            },
+            {
+                "agent_name": "Matan",
+                "agent_type": "off_radar",
+                "status": "no_action_needed",
+                "selected_action": None,
+                "styled_response": "",
+                "phone_number": "+19252088164"
+            }
+        ],
+        "execution_queue": [],
+        "current_nodes": None,
+        "next_nodes": None
+    }
+    
+    result = scheduler_node(state)
+    
+    print(f"Input actions: {len(state['selected_actions'])}")
+    print(f"Execution queue size: {len(result['execution_queue'])}")
+    print("\nQueued actions:")
+    for action in result['execution_queue']:
+        print(f"  - {action['agent_name']}: {action['action']['id']}")
+    
+    assert len(result['execution_queue']) == 1, "Should queue only actionable items"
+    assert result['execution_queue'][0]['agent_name'] == "Tamar", "Should be Tamar's action"
+    print("✓ PASSED\n")
+
+
+def test_get_ready_actions():
+    """Test getting ready actions from queue."""
+    print("=" * 70)
+    print("TEST 5: GET READY ACTIONS")
+    print("=" * 70)
+    
+    state: SupervisorState = {
+        "recent_messages": [],
+        "group_sentiment": "neutral",
+        "group_metadata": {},
         "selected_actions": [],
         "execution_queue": [
             {
-                "agent_name": "TrollBot_Alpha",
-                "agent_type": "troll",
-                "action": {"id": "joke", "purpose": "humor"},
-                "action_content": "lol nice",
-                "scheduled_time": past_time,
+                "agent_name": "Tamar",
+                "agent_type": "active",
+                "action": {"id": "initiate_discussion"},
+                "action_content": "Test message",
+                "phone_number": "+37379276083",
                 "status": "pending"
             },
             {
-                "agent_name": "ActiveUser_Beta",
-                "agent_type": "active",
-                "action": {"id": "comment", "purpose": "insight"},
-                "action_content": "Interesting point",
-                "scheduled_time": future_time,
+                "agent_name": "Matan",
+                "agent_type": "off_radar",
+                "action": {"id": "post_neutral_response"},
+                "action_content": "ok",
+                "phone_number": "+19252088164",
                 "status": "pending"
             }
         ],
@@ -253,23 +221,52 @@ def test_helper_functions():
         "next_nodes": None
     }
     
-    # Test get_ready_actions
     ready = get_ready_actions(state)
-    print(f"\nReady actions: {len(ready)}")
-    assert len(ready) == 1, "Only one action should be ready (past time)"
-    assert ready[0]['agent_name'] == 'TrollBot_Alpha', "Should be the past action"
     
-    # Test mark_action_sent
-    mark_action_sent(state, 0)
-    assert state['execution_queue'][0]['status'] == 'sent', "Should mark as sent"
-    assert 'sent_time' in state['execution_queue'][0], "Should add sent_time"
+    print(f"Ready actions: {len(ready)}")
+    for action in ready:
+        print(f"  - {action['agent_name']}: {action['action']['id']}")
     
-    # Ready actions should now be empty (the ready one was marked sent)
-    ready_after = get_ready_actions(state)
-    print(f"Ready actions after marking sent: {len(ready_after)}")
-    assert len(ready_after) == 0, "No actions should be ready after marking sent"
+    assert len(ready) == 2, "Should return all pending actions"
+    print("✓ PASSED\n")
+
+
+def test_mark_action_sent():
+    """Test marking an action as sent."""
+    print("=" * 70)
+    print("TEST 6: MARK ACTION AS SENT")
+    print("=" * 70)
     
-    print("\n✓ PASSED\n")
+    execution_queue = [
+        {
+            "agent_name": "Tamar",
+            "agent_type": "active",
+            "action": {"id": "initiate_discussion"},
+            "action_content": "Test message",
+            "phone_number": "+37379276083",
+            "status": "pending"
+        },
+        {
+            "agent_name": "Matan",
+            "agent_type": "off_radar",
+            "action": {"id": "post_neutral_response"},
+            "action_content": "ok",
+            "phone_number": "+19252088164",
+            "status": "pending"
+        }
+    ]
+    
+    print(f"Queue size before: {len(execution_queue)}")
+    
+    # Mark first action as sent
+    mark_action_sent(execution_queue, execution_queue[0])
+    
+    print(f"Queue size after: {len(execution_queue)}")
+    print(f"Remaining action: {execution_queue[0]['agent_name']}")
+    
+    assert len(execution_queue) == 1, "Should have 1 action remaining"
+    assert execution_queue[0]['agent_name'] == "Matan", "Matan's action should remain"
+    print("✓ PASSED\n")
 
 
 if __name__ == "__main__":
@@ -277,11 +274,12 @@ if __name__ == "__main__":
     print("SCHEDULER TEST SUITE")
     print("=" * 70 + "\n")
     
-    test_scheduler_basic()
-    test_scheduler_filtering()
-    test_scheduler_max_retries()
-    test_scheduler_empty()
-    test_helper_functions()
+    test_empty_selected_actions()
+    test_no_action_needed_filtered()
+    test_queue_multiple_actions()
+    test_mixed_actions()
+    test_get_ready_actions()
+    test_mark_action_sent()
     
     print("=" * 70)
     print("ALL TESTS PASSED! ✓")

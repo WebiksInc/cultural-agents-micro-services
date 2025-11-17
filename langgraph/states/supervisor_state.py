@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Optional, Annotated
+from typing import TypedDict, List, Optional
 from .agent_state import Message
 import operator
 
@@ -17,7 +17,7 @@ class SupervisorState(TypedDict):
     
     # Action tracking
     # Use Annotated with operator.add to allow multiple agents to append actions in parallel
-    selected_actions: Annotated[List[dict], operator.add]  # actions, e.g., [{"agent": "manager", "action": ...}]
+    selected_actions: List[dict]
     execution_queue: List[dict]  # Output of Scheduler, e.g., [{"agent": "troll", "action": ..., "time": ...}]
     
     # Internal tracking

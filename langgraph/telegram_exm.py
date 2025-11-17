@@ -250,8 +250,8 @@ def reply_to_telegram_message_by_timestamp(from_phone=None, to_target=None, cont
 
 
 # get_unread_telegram_messages()
-# get_all_chats()
-# get_chat_messages()
+get_all_chats()
+get_chat_messages()
 # get_all_group_participants()
 # send_telegram_message()
 # replay_to_telegram_message()

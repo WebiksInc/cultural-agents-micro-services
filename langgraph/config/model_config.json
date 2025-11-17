@@ -25,14 +25,14 @@
       "description": "Selects appropriate action based on detected trigger"
     },
     "text_generator": {
-      "model": "gemini-2.5-flash",
-      "provider": "google_genai",
+      "model": "gpt-5-mini",
+      "provider": "openai",
       "temperature": 0.8,
       "description": "Generates agent response content"
     },
     "styler": {
-      "model": "gemini-2.5-flash",
-      "provider": "google_genai",
+      "model": "gpt-5-mini",
+      "provider": "openai",
       "temperature": 0.7,
       "description": "Applies persona styling to generated text"
     },
