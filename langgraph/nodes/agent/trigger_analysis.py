@@ -28,16 +28,19 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict with detected_trigger and current_node updates
     """
+    # Get agent name for logging
+    selected_persona = state.get('selected_persona', {})
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
+    
     # Log to Logfire
     log_node_start("trigger_analysis", {
         "message_count": len(state.get('recent_messages', [])),
         "agent_type": state.get('agent_type', 'unknown')
-    })
+    }, agent_name=agent_name)
     log_state("trigger_analysis_entry", state, "agent")
     
     recent_messages = state.get('recent_messages', [])
     triggers = state.get('triggers', {})
-    selected_persona = state.get('selected_persona', {})
     agent_type = state.get('agent_type', 'unknown')
     agent_goal = state.get('agent_goal', 'No goal specified')
     
@@ -95,7 +98,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         provider = model_settings['provider']
         
         # Log prompt to Logfire
-        log_prompt("trigger_analysis", prompt, model_name, temperature)
+        log_prompt("trigger_analysis", prompt, model_name, temperature, agent_name=agent_name)
                 
         model = init_chat_model(
             model=model_name,

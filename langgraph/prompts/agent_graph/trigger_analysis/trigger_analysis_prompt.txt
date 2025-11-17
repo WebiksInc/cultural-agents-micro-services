@@ -19,7 +19,8 @@ You are analyzing messages on behalf of an agent with a specific role and goal. 
 5.  **Consider Full Context**: Analyze message timing, content, emotions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
 
 6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
-
+7.  **Check for Other-Mention (Critical):** Before selecting a trigger (especially `implicit_follow_up`), check if the most recent message contains **another user's name** that is not you. 
+      If the message is clearly directed at *another person* and not you, the trigger **MUST** be `"neutral"`.
 **--- Agent Context ---**
 Agent Name: {agent_name}
 Agent Type: {agent_type}

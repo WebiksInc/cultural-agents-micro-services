@@ -25,9 +25,13 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         state: AgentState dict containing agent_prompt, selected_action, recent_messages, etc.
     """
+    # Get agent name for logging
+    selected_persona = state.get('selected_persona', {})
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
+    
     log_node_start("text_generator", {
         "action_id": state.get('selected_action', {}).get('id', 'none')
-    })
+    }, agent_name=agent_name)
     log_state("text_generator_entry", state, "agent")
     
     # Get required inputs
@@ -107,8 +111,10 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Log prompt to Logfire (including system prompt)
         try:
             import logfire
-            logfire.info(f"📝 Prompt for text_generator", **{
+            display_name = f"text_generator ({agent_name})"
+            logfire.info(f"📝 Prompt for {display_name}", **{
                 "component": "text_generator",
+                "agent_name": agent_name,
                 "system_prompt": agent_prompt,
                 "user_prompt": main_prompt,
                 "prompt_length": len(main_prompt),
@@ -135,7 +141,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         response_text = response.content.strip()
         
         # Log output to Logfire
-        log_node_output("text_generator", {"generated_response": response_text})
+        log_node_output("text_generator", {"generated_response": response_text}, agent_name=agent_name)
         log_state("text_generator", state, "exit")
         
         # Return generated response

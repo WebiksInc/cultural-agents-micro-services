@@ -137,7 +137,6 @@ def build_agent_subgraph(agent_type: str, agent_config: Dict[str, Any]) -> State
             logger.warning(f"Orchestrator returned None for next_node, defaulting to END")
             return END
             
-        logger.debug(f"Orchestrator routing to: {next_node}")
         return next_node
     
     # Orchestrator routes to all possible next nodes
@@ -191,6 +190,10 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
         """
         logger.info(f"Running {agent_type} agent ({agent_config['persona']['first_name']})\n")
         
+        # Load agent type system prompt
+        from utils import load_prompt
+        agent_prompt = load_prompt(f"agent_types/{agent_type}_prompt.txt")
+        
         # Create agent state from supervisor state (COPY data)
         agent_state = AgentState(
             # Data from supervisor
@@ -208,7 +211,7 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
             # Processing outputs (initialized)
             detected_trigger=None,
             selected_action=None,
-            agent_prompt="",
+            agent_prompt=agent_prompt,
             generated_response=None,
             styled_response=None,
             validation=None,
@@ -234,23 +237,25 @@ def create_agent_wrapper(agent_type: str, agent_config: Dict[str, Any], agent_gr
             if status == 'success' or status == 'max_retries_reached':
                 action_taken = True
                 logger.info(f"{agent_type} agent produced action: {selected_action.get('id', 'unknown')}")
-                
-                # Add to supervisor's selected_actions list
-                if "selected_actions" not in state:
-                    state["selected_actions"] = []
-                
-                state["selected_actions"].append(selected_action)
+                actions_to_add = [selected_action]
             else:
                 logger.info(f"{agent_type} agent decided not to take action (status: {status})")
+                actions_to_add = []
         else:
             logger.info(f"{agent_type} agent decided not to take action")
+            actions_to_add = []
         
         # Set flag in state to indicate if any action was taken
         if "any_action_taken" not in state:
             state["any_action_taken"] = False
-        state["any_action_taken"] = state["any_action_taken"] or action_taken
+        any_action_taken_value = state["any_action_taken"] or action_taken
         
-        return state
+        # Return only the fields this agent modified
+        # selected_actions uses operator.add, so return a list that will be concatenated
+        return {
+            "any_action_taken": any_action_taken_value,
+            "selected_actions": actions_to_add
+        }
     
     return agent_node
 
@@ -456,7 +461,7 @@ def run_supervisor_graph():
             # With the sleep delays added, each loop takes ~5 seconds, so 100 iterations = ~500 seconds
             state = supervisor_graph.invoke(
                 state, 
-                config={"recursion_limit": 100}
+                config={"recursion_limit": 100000}
             )
             
             # Brief sleep to avoid tight loop

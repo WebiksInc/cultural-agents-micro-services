@@ -25,9 +25,13 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     Args:
         state: AgentState dict containing detected_trigger, actions, recent_messages, etc.
     """
+    # Get agent name for logging
+    selected_persona = state.get('selected_persona', {})
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
+    
     log_node_start("decision_maker", {
         "trigger_id": state.get('detected_trigger', {}).get('id', 'none')
-    })
+    }, agent_name=agent_name)
     log_state("decision_maker_entry", state, "agent")
         
     detected_trigger = state.get('detected_trigger', {})
@@ -112,7 +116,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         provider = model_settings['provider']
         
         # Log prompt to Logfire
-        log_prompt("decision_maker", prompt, model_name, temperature)
+        log_prompt("decision_maker", prompt, model_name, temperature, agent_name=agent_name)
         
         
         model = init_chat_model(
@@ -155,7 +159,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
                 "action_id": action_id,
                 "purpose": purpose,
                 "suggested_actions": suggested_action_ids
-            })
+            }, agent_name=agent_name)
             log_state("decision_maker_exit", {**state, **output_data}, "agent")
             
             return {

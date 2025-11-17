@@ -41,8 +41,12 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         state: AgentState dict containing styled_response, agent_goal, selected_action, etc.
     """
-    log_node_start("validator")
-    log_state("validator", state, "entry")
+    # Get agent name for logging
+    selected_persona = state.get('selected_persona', {})
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
+    
+    log_node_start("validator", agent_name=agent_name)
+    log_state("validator_entry", state, "agent")
     
     # Get required inputs
     styled_response = state.get('styled_response')
@@ -106,7 +110,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         temperature = model_settings['temperature']
         
         # Log prompt to Logfire
-        log_prompt("validator", validation_prompt, model_name, temperature)
+        log_prompt("validator", validation_prompt, model_name, temperature, agent_name=agent_name)
                 
         model = init_chat_model(
             model=model_name,

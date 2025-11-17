@@ -25,13 +25,16 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         state: AgentState dict containing generated_response, selected_persona, agent_prompt, etc.
     """
-    log_node_start("styler")
+    # Get agent name for logging
+    selected_persona = state.get('selected_persona', {})
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
+    
+    log_node_start("styler", agent_name=agent_name)
     log_state("styler", state, "entry")
     # logger.info("Starting Styler (E.2)")
     
     # Get required inputs
     generated_response = state.get('generated_response')
-    selected_persona = state.get('selected_persona', {})
     agent_prompt = state.get('agent_prompt', '')
     
     # Validate generated_response
@@ -62,7 +65,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         provider = model_settings['provider']
         
         # Log prompt to Logfire
-        log_prompt("styler", main_prompt, model_name, temperature)
+        log_prompt("styler", main_prompt, model_name, temperature, agent_name=agent_name)
         
         # logger.info(f"Using model: {model_name} (temperature: {temperature})")
         
@@ -85,7 +88,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         print(("-" * 80))
         
         # Log output to Logfire
-        log_node_output("styler", {"styled_response": response_text})
+        log_node_output("styler", {"styled_response": response_text}, agent_name=agent_name)
         log_state("styler", state, "exit")
         
         # Return styled response
