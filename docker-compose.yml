@@ -29,3 +29,4 @@ services:
      environment:
        - PORT=4000
        - TELEGRAM_HOST=telegram2
+       
