@@ -14,7 +14,7 @@
     {
       "type": "active",
       "persona_file": "agents_personas/tamar_persona.json",
-      "agent_goal": "Encourage tourism in Israel only by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
+      "agent_goal": "Encourage tourism in Israel only, by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
     },
     {
       "type": "off_radar",

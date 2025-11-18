@@ -18,6 +18,15 @@
       ]
     },
     {
+      "id": "goal_opportunity",
+      "description": "A user's message, while not directed at the agent, contains keywords or topics that are highly relevant to the agent's goal (e.g., mentioning a related topic). This is an opportunistic moment to join the conversation and promote the goal.",
+      "suggested_actions": [
+        "initiate_discussion",
+        "change_narrative",
+        "expand_discussion"
+      ]
+    },
+    {
       "id": "prolonged_silence",
       "description": "The group has been inactive for a predefined period (e.g., no messages for X hours). This is a proactive, time-based trigger.",
       "suggested_actions": [

@@ -129,7 +129,7 @@ def run_supervisor_loop():
     
     logger.info("Building supervisor graph...")
     graph = build_supervisor_graph()
-    logger.info("✓ Supervisor graph built successfully")
+    logger.info("Supervisor graph built successfully")
     
     # Load agent personas for filtering
     agent_personas = load_agent_personas()
@@ -149,8 +149,8 @@ def run_supervisor_loop():
         next_nodes=None
     )
     
-    logger.info("Starting supervisor polling loop...")
-    logger.info(f"Polling interval: {MESSAGE_CHECK_INTERVAL}s")
+    logger.info("Starting supervisor pulling loop...")
+    logger.info(f"Pulling interval: {MESSAGE_CHECK_INTERVAL}s")
     logger.info(f"Chat ID: {CHAT_ID}")
     
     try:
@@ -160,7 +160,7 @@ def run_supervisor_loop():
             
             # Check if it's time to poll
             if time_since_check >= MESSAGE_CHECK_INTERVAL:
-                logger.info(f"Polling for messages...")
+                logger.info(f"Pulling messages...")
                 
                 if _first_run:
                     logger.info("First run: Initializing group metadata")
@@ -231,7 +231,7 @@ def run_supervisor_loop():
                             unprocessed = [msg for msg in state["recent_messages"] if not msg.get('processed', False)]
                             
                             if unprocessed:
-                                logger.info(f"Running graph for {len(unprocessed)} unprocessed messages...")
+                                logger.info(f"Running graph for {len(unprocessed)} unprocessed messages")
                                 
                                 # Run the graph
                                 state = graph.invoke(state)
@@ -254,7 +254,7 @@ def run_supervisor_loop():
                     logger.info(f"Idle... Next poll in {remaining}s")
             
             # Sleep briefly before next check
-            time.sleep(2)
+            time.sleep(10)
     
     except KeyboardInterrupt:
         logger.info("Supervisor loop stopped by user")

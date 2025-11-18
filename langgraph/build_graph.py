@@ -1,10 +1,3 @@
-"""
-Build LangGraph Hierarchical Agent System
-
-Constructs the Supervisor graph with embedded Agent subgraphs.
-Follows the Hierarchical Agent Teams pattern from LangGraph.
-"""
-
 import json
 import logging
 from pathlib import Path
@@ -101,10 +94,10 @@ def build_agent_graph(agent_config: Dict[str, Any]) -> StateGraph:
     # Create agent graph
     agent_builder = StateGraph(AgentState)
     
-    # Add orchestrator node (routing hub)
+    # Adding orchestrator node (routing hub)
     agent_builder.add_node("orchestrator", orchestrator_node)
     
-    # Add agent processing nodes
+    # Adding agent processing nodes
     agent_builder.add_node("trigger_analysis", trigger_analysis_node)
     agent_builder.add_node("decision_maker", decision_maker_node)
     agent_builder.add_node("text_generator", text_generator_node)

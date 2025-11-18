@@ -48,7 +48,6 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     
     # Handle neutral trigger - no action needed
     if trigger_id == 'neutral':
-        logger.info("Trigger is neutral - no action needed")
         state['selected_action'] = None
         return
     

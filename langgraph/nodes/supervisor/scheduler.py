@@ -58,7 +58,7 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'status': 'pending'  # pending, sent
         }
         execution_queue.append(queue_item)
-        logger.info(f"  - Queued action from {queue_item['agent_name']}: {queue_item['action'].get('id', 'unknown')}")
+        logger.info(f"Queued action from {queue_item['agent_name']}: {queue_item['action'].get('id', 'unknown')}")
     
     return {
         'execution_queue': execution_queue
