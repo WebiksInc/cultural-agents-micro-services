@@ -127,7 +127,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             log_node_output("trigger_analysis", {
                 "trigger_id": trigger_id,
                 "justification": justification
-            })
+            }, agent_name=agent_name)
             log_state("trigger_analysis_exit", {**state, **output_data}, "agent")
             
             # Return detected trigger

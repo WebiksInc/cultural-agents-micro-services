@@ -140,7 +140,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'retry_count': 0,
                     'current_node': 'validator'
                 }
-                log_node_output("validator", output['validation'])
+                log_node_output("validator", output['validation'], agent_name=agent_name)
                 log_state("validator", state, "exit")
                 return output
             else:
@@ -155,7 +155,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'retry_count': retry_count + 1,
                     'current_node': 'validator'
                 }
-                log_node_output("validator", output['validation'])
+                log_node_output("validator", output['validation'], agent_name=agent_name)
                 log_state("validator", state, "exit")
                 return output
                 
