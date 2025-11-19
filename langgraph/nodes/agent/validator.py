@@ -67,11 +67,11 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         state['validation_feedback'] = "No styled response was generated"
         return
     
-    logger.info(f"Validating response (retry_count: {retry_count}/{MAX_RETRIES})")
+    logger.info(f"Validating response (retry_count: {retry_count}/{MAX_RETRIES}) {agent_name}")
     
     # Check if we've exceeded max retries - if so, approve by default
     if retry_count >= MAX_RETRIES:
-        logger.warning(f"Max retries ({MAX_RETRIES}) reached - approving response by default")
+        logger.warning(f"Max retries ({MAX_RETRIES}) reached - approving response by default {agent_name}")
         state['validation'] = {
             "approved": True,
             "styled_response": styled_response
@@ -130,7 +130,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             explanation = validation_result.get('explanation', '')
             
             if approved:
-                logger.info("✓ Response APPROVED")
+                logger.info(f"Response APPROVED {agent_name}")
                 output = {
                     'validation': {
                         "approved": True,
@@ -144,7 +144,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 log_state("validator", state, "exit")
                 return output
             else:
-                logger.warning(f"✗ Response NOT APPROVED: {explanation}")
+                logger.warning(f"Response NOT APPROVED {agent_name}", explanation=explanation)
                 output = {
                     'validation': {
                         "approved": False,

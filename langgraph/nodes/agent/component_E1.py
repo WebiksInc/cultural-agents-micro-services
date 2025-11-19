@@ -43,7 +43,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     group_sentiment = state.get('group_sentiment', 'No sentiment analysis available')
     actions = state.get('actions', {})
     group_metadata = state.get('group_metadata', {})
-    
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
     # Validate selected_action
     if not selected_action:
         logger.error("No selected_action - cannot generate response")
@@ -89,11 +89,15 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # If there's validation feedback, prepend it to the prompt for retry
     validation_feedback = state.get('validation_feedback')
     if validation_feedback:
-        logger.info(f"Retry attempt - including validation feedback")
+        logger.info(f"Retry attempt - including validation feedback {agent_name}")
+        previous_response = state.get('generated_response', 'No previous response available')
         feedback_note = f"""
                             IMPORTANT - PREVIOUS ATTEMPT FAILED VALIDATION 
 
-                            Your previous response was rejected for the following reason:
+                            Your previous response was:
+                            "{previous_response}"
+
+                            It was rejected for the following reason:
                             {validation_feedback}
 
                             Please generate a NEW response that addresses this issue while still fulfilling the action purpose.

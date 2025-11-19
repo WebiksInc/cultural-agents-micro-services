@@ -127,7 +127,7 @@ def run_supervisor_loop():
     """
     global _first_run, _last_message_check
     
-    logger.info("Building supervisor graph...")
+    logger.info("Building supervisor graph")
     graph = build_supervisor_graph()
     logger.info("Supervisor graph built successfully")
     
@@ -149,8 +149,8 @@ def run_supervisor_loop():
         next_nodes=None
     )
     
-    logger.info("Starting supervisor pulling loop...")
-    logger.info(f"Pulling interval: {MESSAGE_CHECK_INTERVAL}s")
+    # logger.info("Starting supervisor pulling loop...")
+    # logger.info(f"Pulling interval: {MESSAGE_CHECK_INTERVAL}s")
     logger.info(f"Chat ID: {CHAT_ID}")
     
     try:

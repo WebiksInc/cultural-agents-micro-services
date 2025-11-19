@@ -69,7 +69,8 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
         "actions": actions,
         "agent_prompt": agent_prompt,
         "agent_goal": agent_config["agent_goal"],
-        "agent_type": agent_type
+        "agent_type": agent_type,
+        "name": agent_config["name"]
     }
 
 
@@ -89,7 +90,8 @@ def build_agent_graph(agent_config: Dict[str, Any]) -> StateGraph:
         Compiled StateGraph for the agent
     """
     agent_type = agent_config["agent_type"]
-    logger.info(f"Building agent graph for type: {agent_type}")
+    agent_name = agent_config["name"]
+    logger.info(f"Building agent graph for type: {agent_type}, name: {agent_name}")
     
     # Create agent graph
     agent_builder = StateGraph(AgentState)
@@ -190,7 +192,7 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
         
         # Check if action should be ignored (neutral trigger or error)
         if not selected_action or selected_action.get("status") == "no_action_needed":
-            logger.info(f"Agent {agent_name}: No action needed (neutral trigger or no trigger detected)")
+            logger.info(f"Agent {agent_name}: No action needed (neutral trigger)")
             return Command(
                 update={},
                 goto="scheduler"
@@ -236,7 +238,6 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     with open(config_path, 'r') as f:
         config = json.load(f)
     
-    logger.info("Building supervisor graph")
     
     # Create supervisor graph
     supervisor_builder = StateGraph(SupervisorState)
@@ -286,7 +287,6 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     # executor → END
     supervisor_builder.add_edge("executor", END)
     
-    logger.info("Supervisor graph built successfully")
     return supervisor_builder.compile()
 
 

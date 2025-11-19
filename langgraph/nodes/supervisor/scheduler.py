@@ -44,7 +44,7 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'execution_queue': []
         }
     
-    logger.info(f"Scheduler: Queuing {len(actionable_items)} actions")
+    logger.info(f"Scheduler: Queuing {len(actionable_items)} actions", selected_actions=actionable_items)
     
     # Build execution queue with all necessary fields
     execution_queue = []

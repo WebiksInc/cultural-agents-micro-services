@@ -193,7 +193,12 @@ def log_state(node_name: str, state: dict, state_type: str = "agent"):
                 "state_type": state_type,
                 "state": state,  # Logfire will make this expandable in UI
             }
+            first_name = state.get('selected_persona', {}).get('first_name', 'Unknown')
+            last_name = state.get('selected_persona', {}).get('last_name', 'Unknown')
             
+            if first_name != "Unknown" or last_name != "Unknown":
+                agent_name = first_name + (" " + last_name if last_name else "")
+                attrs["agent_name"] = agent_name
             # Add quick summary fields for easy filtering
             if "recent_messages" in state:
                 attrs["message_count"] = len(state.get("recent_messages", []))
@@ -210,7 +215,7 @@ def log_state(node_name: str, state: dict, state_type: str = "agent"):
                 if action:
                     attrs["action_id"] = action.get("id")
             
-            logfire.info(f"📊 State snapshot at {node_name}", **attrs)
+            logfire.info(f"📊 State snapshot at {node_name} ({attrs["agent_name"]})", **attrs)
         except Exception as e:
             logging.debug(f"Failed to log state: {e}")
 
@@ -235,7 +240,7 @@ def log_node_output(node_name: str, output_data: dict, agent_name: str = None):
             pass
 
 
-def log_flow_transition(from_node: str, to_node: str, reason: str = None):
+def log_flow_transition(from_node: str, to_node: str, reason: str = None, agent_name: str = None):
     """
     Log a flow transition between nodes.
     
@@ -243,6 +248,7 @@ def log_flow_transition(from_node: str, to_node: str, reason: str = None):
         from_node: Current node
         to_node: Next node
         reason: Optional reason for transition
+        agent_name: Optional agent name to display in brackets
     """
     if _logfire_configured:
         try:
@@ -252,7 +258,9 @@ def log_flow_transition(from_node: str, to_node: str, reason: str = None):
             }
             if reason:
                 attrs["reason"] = reason
+            if agent_name:
+                attrs["agent_name"] = agent_name
             
-            logfire.info(f"➡️ Flow: {from_node} → {to_node}", **attrs)
+            logfire.info(f"➡️ Flow: {from_node} → {to_node} ({agent_name})", **attrs)
         except Exception:
             pass
