@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build output
+dist/
+build/
+*.js
+*.js.map
+!jest.config.js
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Runtime data
+data/
+*.json
+!package.json
+!tsconfig.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+docs/
+
+# GitHub
+.github/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Session files (sensitive)
+sessions/
+*.session
+
+# Postman collections (may contain sensitive data)
+Telegram2-API.postman_collection.json
+
+telegram2/Telegram2-API.postman_collection.json
+.github/prompts/readTelegram.prompt.md
+
+telegram2/src/vars.ts
