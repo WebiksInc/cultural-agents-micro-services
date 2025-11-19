@@ -1,0 +1,75 @@
+NEUROTICISM_PROMPT = """
+You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Neuroticism**.
+
+## Trait Definition: Neuroticism (N)
+
+Neuroticism is the tendency to have strong negative emotions, such as anger, anxiety, or depression. It is sometimes called emotional instability, or is reversed and referred to as emotional stability.
+
+Neuroticism is a classic temperament trait. Neurotic people are emotionally volatile, emotionally reactive and vulnerable to stress. They are more likely to spontaneously experience negative emotions 
+and their negative emotional reactions tend to stay for unusually long periods of time, which means they are often in a bad mood. 
+They are more likely to interpret ordinary situations as threatening and perceive minor frustrations as hopelessly difficult. 
+For instance, neuroticism is connected to pessimism toward work and higher levels of anxiety from work pressures. 
+These problems in emotional regulation can make a neurotic person think less clearly, make worse decisions, and cope less effectively with stress. 
+Neurotic people tend to have worse psychological well-being.
+
+At the other end of the scale, less neurotic individuals (those high in emotional stability) are less easily upset and are less emotionally reactive. 
+They tend to be calm, emotionally stable, and free from persistent negative feelings. 
+Freedom from negative feelings does not mean that low scorers experience a lot of positive feelings; that is related to extraversion instead.
+
+## Your Instructions
+
+1.  You must return a JSON object with two keys: `"neuroticism"` and `"justification"`.
+2.  The `"neuroticism"` key must be a binary integer: `1` or `0`.
+3.   The presence of one or more of the following criteria entails assigning a `1` for Neuroticism:
+    * Experiencing strong negative emotions (anger, anxiety, sadness, depression)
+    * Emotional volatility, mood swings, high irritability
+    * Getting stressed easily, worrying
+    * Interpreting situations as threatening, pessimism
+    * Difficulty coping with stress or frustrations
+    This corresponds to a trait strength above 0.5.
+   
+4. Otherwise assign `0`.
+5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
+6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+
+## Examples of Analysis
+
+**Example 1:**
+* **Text:** "I just know I'm going to fail this test. I've been a nervous wreck all week and I can't stop worrying. Why does everything always go wrong?"
+* **Output:**
+    ```json
+    {
+      "neuroticism": 1,
+      "justification": "The user demonstrates high Neuroticism by expressing intense anxiety ('nervous wreck', 'can't stop worrying'), pessimism ('know I'm going to fail'), and vulnerability to stress."
+    }
+    ```
+
+**Example 2:**
+* **Text:** "The project deadline got moved up, which is a bit of a challenge, but it's no big deal. I'm calm and I'll just re-prioritize my tasks. We'll get it done."
+* **Output:**
+    ```json
+    {
+      "neuroticism": 0,
+      "justification": "The user isn't rattled by the stressful news. Instead of worrying, they describe the problem as 'no big deal' and stay 'calm', immediately focusing on a solution ('re-prioritize'). This indicates emotional stability."
+    }
+    ```
+
+**Example 3:**
+* **Text:** "I'm pretty sure that store is on 5th Street, not 6th."
+* **Output:**
+    ```json
+    {
+      "neuroticism": 0,
+      "justification": "The text is a simple statement of fact and provides no insight into the user's emotional state, anxiety, moodiness, or stress response. Therefore, the trait cannot be confirmed."
+    }
+    ```
+
+## Your Task
+
+Analyze the following text and provide your JSON output:
+
+**Text:**
+"{{USER_TEXT}}"
+
+**Output:**
+"""

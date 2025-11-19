@@ -1,0 +1,72 @@
+OPENNESS_PROMPT = """
+You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Openness**.
+
+## Trait Definition: Openness (O)
+Openness as a trait is characterized by **intrinsic intellectual curiosity**, openness to emotion, sensitivity to beauty, and a willingness to try new things. 
+Openness to experience is a general appreciation for art, emotion, adventure, unusual ideas, imagination, curiosity, and variety of experience. 
+People with high Openness tend to be, when compared to closed people, more creative and more aware of their feelings. 
+
+Open people can be perceived as unpredictable or lacking focus, and more likely to engage in risky behaviour or drug-taking. 
+Moreover, individuals with high openness are said to pursue self-actualisation specifically by seeking out intense, euphoric experiences. 
+Conversely, those with low openness want to be fulfilled by persevering and are characterised as pragmatic and data-driven - sometimes even perceived 
+to be dogmatic and closed-minded.
+
+## Your Instructions
+
+1.  You must return a JSON object with two keys: `"openness"` and `"justification"`.
+2.  The `"openness"` key must be a binary integer: `1` or `0`.
+3.  The presence of one or more of the following criteria entails assigning a `1` for Openness:
+    * Evidence of **actively seeking** new things, willingness to adopt new ideas, seeking adventure or variety
+    * Creative thinking, very active imagination
+    * Intrinsic Intellectual curiosity, engaging with abstract ideas
+    * Interest and appreciation for art and for the human emotional experience
+    This corresponds to a trait strength above 0.5.
+4.  Otherwise assign `0`:
+* **Emotion vs. Reflection:** Simply *experiencing* or *describing* a strong emotion (like sadness, anger, or loneliness). Experiencing emotion is universal; Openness is the tendency to be intellectually curious about or reflect abstractly upon these experiences.
+     **Passive Observation vs. Active Seeking:** Simply *passively observing* or *commenting on* new life circumstances (e.g., "This new job has a lot of new procedures," "Moving to a new city is a big change"). This is a common situation, not a personality trait. Openness requires evidence of *actively seeking out* novelty.
+     **Pragmatic Problem-Solving vs. Intellectual Curiosity:** "Curiosity" that is purely pragmatic and self-interested (e.g., "I'm trying to figure out how to fix my leaky faucet"). True Openness is characterized by curiosity about *abstract ideas* or the world at large, not just solving a personal, practical problem.
+  
+5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
+6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+
+## Examples of Analysis
+
+**Example 1:**
+* **Text:** "I spent the weekend trying out a class on abstract painting, and then I read a fascinating article about string theory. I just love exploring different, complex concepts."
+* **Output:**
+    ```json
+    {
+      "openness": 1,
+      "justification": "The user demonstrates high Openness by actively seeking out new, creative ('abstract painting'), and abstract subjects ('string theory') and explicitly stating they 'love exploring different, complex concepts'."
+    }
+    ```
+
+**Example 2:**
+* **Text:** "I don't really get the point of traveling or trying all this weird new food. I know what I like, and I prefer to stick to my routine. It's just more comfortable."
+* **Output:**
+    ```json
+    {
+      "openness": 0,
+      "justification": "The user expresses a strong preference for routine ('stick to my routine') and a clear dislike for new experiences ('don't see the point of traveling'), indicating low Openness."
+    }
+    ```
+
+**Example 3:**
+* **Text:** "I'm heading to the store to pick up some milk and eggs. I'll be back in about an hour."
+* **Output:**
+    ```json
+    {
+      "openness": 0,
+      "justification": "The text is purely informational and provides no insight into the user's personality traits like creativity, curiosity, or appreciation for novelty. Therefore, the trait cannot be confirmed."
+    }
+    ```
+
+## Your Task
+
+Analyze the following text and provide your JSON output:
+
+**Text:**
+"{{USER_TEXT}}"
+
+**Output:**
+"""

@@ -1,0 +1,30 @@
+{
+  "telegram": {
+    "chat_id": "3389864729",
+    "api_host": "telegram2",
+    "api_port": 4000
+  },
+  "polling": {
+    "message_check_interval_seconds": 15,
+    "executor_check_interval_seconds": 2,
+    "max_recent_messages": 7
+  },
+  "no_action_sleep_duration": 5,
+  "agents": [
+    {
+      "type": "active",
+      "persona_file": "agents_personas/tamar_persona.json",
+      "agent_goal": "Encourage tourism in Israel only, by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
+    },
+    {
+      "type": "off_radar",
+      "persona_file": "agents_personas/matan_persona.json",
+      "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short, low-key messages that blend into the background, without starting debates or posting long messages."
+    }
+  ],
+  "group_metadata": {
+    "name": "PassportTraveling! English Only!",
+    "topic": "A group dedicated to sharing recommendations and information about notable sites, attractions, and places to visit around the world.",
+    "members": 7
+  }
+}

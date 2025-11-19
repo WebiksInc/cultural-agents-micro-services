@@ -1,1 +1,6 @@
 requests
+langgraph
+langchain
+langchain-openai
+langchain-anthropic
+python-dotenv
