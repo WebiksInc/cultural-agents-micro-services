@@ -211,7 +211,7 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
         # Append to selected_actions using Command
         return Command(
             update={
-                "selected_actions": [action_entry]  # Will be appended due to Annotated[List, operator.add]
+                "selected_actions": [action_entry] 
             },
             goto="scheduler"
         )

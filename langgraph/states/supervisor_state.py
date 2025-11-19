@@ -1,6 +1,6 @@
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Annotated
 from .agent_state import Message
-import operator
+from operator import add
 
 
 class SupervisorState(TypedDict):
@@ -16,10 +16,9 @@ class SupervisorState(TypedDict):
     recent_messages: List[Message]  # The global message history from Telegram
     
     # Action tracking
-    # Use Annotated with operator.add to allow multiple agents to append actions in parallel
-    selected_actions: List[dict]
+    selected_actions: Annotated[List[dict], add]
     execution_queue: List[dict]  # Output of Scheduler, e.g., [{"agent": "troll", "action": ..., "time": ...}]
     
     # Internal tracking
-    current_nodes: Optional[List[str]]  # For LangGraph internal tracking
-    next_nodes: Optional[List[str]]  # For LangGraph internal tracking
+    current_nodes: Optional[List[str]]  
+    next_nodes: Optional[List[str]]  
