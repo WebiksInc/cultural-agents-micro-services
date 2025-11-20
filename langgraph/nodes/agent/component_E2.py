@@ -16,22 +16,12 @@ logger = get_logger(__name__)
 
 
 def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Component E.2: Styler Node
-    
-    Stylizes the generated response to match the agent's persona.
-    Modifies the state in-place by setting styled_response.
-    
-    Args:
-        state: AgentState dict containing generated_response, selected_persona, agent_prompt, etc.
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
     
     log_node_start("styler", agent_name=agent_name)
     log_state("styler", state, "entry")
-    # logger.info("Starting Styler (E.2)")
     
     # Get required inputs
     generated_response = state.get('generated_response')
@@ -42,10 +32,8 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         logger.error("No generated_response - cannot apply styling")
         return {
             'styled_response': None,
-            'current_node': 'styler'
+            'next_node': 'validator'
         }
-    
-    # logger.info(f"Styling response ({len(generated_response)} chars)")
     
     # Format selected_persona as JSON
     selected_persona_json = json.dumps(selected_persona, indent=2)
@@ -66,9 +54,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         # Log prompt to Logfire
         log_prompt("styler", main_prompt, model_name, temperature, agent_name=agent_name)
-        
-        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
-        
+                
         model = init_chat_model(
             model=model_name,
             model_provider=provider,
@@ -84,9 +70,6 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         response = model.invoke(messages)
         response_text = response.content.strip()
         
-        # logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...\n")
-        print(("-" * 80))
-        
         # Log output to Logfire
         log_node_output("styler", {"styled_response": response_text}, agent_name=agent_name)
         log_state("styler", state, "exit")
@@ -94,7 +77,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Return styled response
         return {
             'styled_response': response_text,
-            'current_node': 'styler'
+            'next_node': 'validator'
         }
         
     except Exception as e:
@@ -102,6 +85,5 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Return None if error occurred
     return {
-        'styled_response': None,
-        'current_node': 'styler'
+        'styled_response': None
     }

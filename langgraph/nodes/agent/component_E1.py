@@ -2,6 +2,7 @@ import json
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.chat_models import init_chat_model
+import logfire
 
 # utilities
 import sys
@@ -16,15 +17,6 @@ logger = get_logger(__name__)
 
 
 def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Component E.1: Text Generator Node
-    
-    Generates response content based on selected action and conversation context.
-    Modifies the state in-place by setting generated_response.
-    
-    Args:
-        state: AgentState dict containing agent_prompt, selected_action, recent_messages, etc.
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
@@ -100,7 +92,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             It was rejected for the following reason:
                             {validation_feedback}
 
-                            Please generate a NEW response that addresses this issue while still fulfilling the action purpose.
+                            Generate a NEW response that addresses this issue while still fulfilling the action purpose.
                             Focus on fixing the specific problem mentioned above."""
                                                                   
         main_prompt = feedback_note + main_prompt
@@ -113,8 +105,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         provider = model_settings['provider']
         
         # Log prompt to Logfire (including system prompt)
-        try:
-            import logfire
+        try:      
             display_name = f"text_generator ({agent_name})"
             logfire.info(f"📝 Prompt for {display_name}", **{
                 "component": "text_generator",
@@ -151,7 +142,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Return generated response
         return {
             'generated_response': response_text,
-            'current_node': 'text_generator'
+            'next_node': 'styler'
         }
         
     except Exception as e:
@@ -159,6 +150,5 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Return None if error occurred
     return {
-        'generated_response': None,
-        'current_node': 'text_generator'
+        'generated_response': None
     }
