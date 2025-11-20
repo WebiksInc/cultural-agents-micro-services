@@ -32,7 +32,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         logger.error("No generated_response - cannot apply styling")
         return {
             'styled_response': None,
-            'next_node': 'validator'
+            'current_node': 'styler'
         }
     
     # Format selected_persona as JSON
@@ -77,7 +77,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Return styled response
         return {
             'styled_response': response_text,
-            'next_node': 'validator'
+            'current_node': 'styler'
         }
         
     except Exception as e:
@@ -85,5 +85,6 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Return None if error occurred
     return {
-        'styled_response': None
+        'styled_response': None,
+        'current_node': 'styler'
     }

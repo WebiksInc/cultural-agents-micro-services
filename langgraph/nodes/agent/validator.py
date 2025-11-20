@@ -1,12 +1,4 @@
-"""
-Validator Node
-
-Performs final quality check on styled response before sending.
-Validates against 4 criteria: goal alignment, action alignment, persona coherence, context sanity.
-"""
-
 import json
-import logging
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
@@ -19,28 +11,12 @@ from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
-# Configure logging
 logger = get_logger(__name__)
 
 # Maximum number of retries before accepting the response
 MAX_RETRIES = 3
 
-
 def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Validator Node
-    
-    Validates the styled response against 4 criteria:
-    1. Goal Alignment
-    2. Action Alignment
-    3. Persona Coherence
-    4. Context Sanity Check
-    
-    Modifies the state in-place by setting validation dict.
-    
-    Args:
-        state: AgentState dict containing styled_response, agent_goal, selected_action, etc.
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
@@ -59,26 +35,30 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Validate styled_response exists
     if not styled_response:
         logger.error("No styled_response to validate")
-        state['validation'] = {
-            "approved": False,
-            "explanation": "No styled response was generated",
-            "styled_response": styled_response
+        return {
+            'validation': {
+                "approved": False,
+                "explanation": "No styled response was generated",
+                "styled_response": styled_response
+            },
+            'validation_feedback': "No styled response was generated",
+            'current_node': 'validator'
         }
-        state['validation_feedback'] = "No styled response was generated"
-        return
     
-    logger.info(f"Validating response (retry_count: {retry_count}/{MAX_RETRIES}) {agent_name}")
+    logger.info(f"Validating response (retry_count: {retry_count}/{MAX_RETRIES}) - ({agent_name})")
     
     # Check if we've exceeded max retries - if so, approve by default
     if retry_count >= MAX_RETRIES:
-        logger.warning(f"Max retries ({MAX_RETRIES}) reached - approving response by default {agent_name}")
-        state['validation'] = {
-            "approved": True,
-            "styled_response": styled_response
+        logger.warning(f"Max retries ({MAX_RETRIES}) reached - approving response by default - ({agent_name})")
+        return {
+            'validation': {
+                "approved": True,
+                "styled_response": styled_response
+            },
+            'validation_feedback': None,
+            'retry_count': 0,
+            'current_node': 'validator'
         }
-        state['validation_feedback'] = None
-        state['retry_count'] = 0  # Reset for next action
-        return
     
     # Format selected_action as JSON
     selected_action_json = json.dumps(selected_action, indent=2)
@@ -93,7 +73,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     ]
     recent_messages_json = json.dumps(recent_messages_formatted, indent=2)
     
-    # Build the validation prompt
+    # Building the validation prompt
     prompt_template = load_prompt("agent_graph/validator/validator_prompt.txt")
     validation_prompt = prompt_template.format(
         styled_response=styled_response,
@@ -108,13 +88,13 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_settings = get_model_settings('validator', 'VALIDATOR_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
-        
-        # Log prompt to Logfire
+        provider = model_settings.get('provider', 'openai')
+       
         log_prompt("validator", validation_prompt, model_name, temperature, agent_name=agent_name)
                 
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         
@@ -130,7 +110,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             explanation = validation_result.get('explanation', '')
             
             if approved:
-                logger.info(f"Response APPROVED {agent_name}")
+                logger.info(f"Response APPROVED - ({agent_name})")
                 output = {
                     'validation': {
                         "approved": True,
@@ -144,7 +124,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 log_state("validator", state, "exit")
                 return output
             else:
-                logger.warning(f"Response NOT APPROVED {agent_name}", explanation=explanation)
+                logger.warning(f"Response NOT APPROVED - ({agent_name})", explanation=explanation)
                 output = {
                     'validation': {
                         "approved": False,

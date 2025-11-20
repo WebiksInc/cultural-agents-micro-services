@@ -41,14 +41,16 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Handle neutral trigger - no action needed
     if trigger_id == 'neutral':
         return {
-            'selected_action': None
+            'selected_action': None,
+            'current_node': 'decision_maker'
         }
     
     # Handle error trigger
     if trigger_id == 'ERROR':
         logger.error("Trigger analysis returned ERROR - cannot make decision")
         return {
-            'selected_action': None
+            'selected_action': None,
+            'current_node': 'decision_maker'
         }
     
     # Find the detected trigger in triggers list to get suggested actions
@@ -63,7 +65,8 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if not suggested_action_ids:
         logger.warning(f"No suggested actions for trigger '{trigger_id}' - no action taken")
         return {
-            'selected_action': None
+            'selected_action': None,
+            'current_node': 'decision_maker'
         }
     
 
@@ -79,7 +82,8 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if not suggested_actions:
         logger.error(f"Could not find action details for suggested actions: {suggested_action_ids}")
         return {
-            'selected_action': None
+            'selected_action': None,
+            'current_node': 'decision_maker'
         }
     
     # Format recent messages for prompt
@@ -131,7 +135,8 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
             if not action_id:
                 logger.error("LLM did not return an action ID")
                 return {
-                    'selected_action': None
+                    'selected_action': None,
+                    'current_node': 'decision_maker'
                 }
             
             # Verify the selected action is in the suggested actions
@@ -158,7 +163,7 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'id': action_id,
                     'purpose': purpose
                 },
-               
+                'current_node': 'decision_maker'
             }
             
         except json.JSONDecodeError as e:
@@ -166,10 +171,12 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
             logger.error(f"Response text: {response_text}")
             return {
                 'selected_action': None,
+                'current_node': 'decision_maker'
             }
             
     except Exception as e:
         logger.error(f"Error in decision maker: {e}", exc_info=True)
         return {
-            'selected_action': None, 
+            'selected_action': None,
+            'current_node': 'decision_maker'
         }

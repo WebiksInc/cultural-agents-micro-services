@@ -17,10 +17,6 @@ class Message(TypedDict):
 
 
 class AgentState(TypedDict):
-    """
-    State for individual agent graphs.
-    The agent receives a *copy* of relevant data from the Supervisor.
-    """
     # Data copied from Supervisor
     recent_messages: List[Message]
     group_sentiment: str

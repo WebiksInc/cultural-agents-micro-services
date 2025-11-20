@@ -39,16 +39,20 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Validate selected_action
     if not selected_action:
         logger.error("No selected_action - cannot generate response")
-        state['generated_response'] = None
-        return
+        return {
+            'generated_response': None,
+            'current_node': 'text_generator'
+        }
     
     action_id = selected_action.get('id')
     action_purpose = selected_action.get('purpose', 'No purpose specified')
     
     if not action_id:
         logger.error("selected_action missing 'id' field")
-        state['generated_response'] = None
-        return
+        return {
+            'generated_response': None,
+            'current_node': 'text_generator'
+        }
     
     # Get full action details (description)
     action_description = 'No description available'
@@ -142,8 +146,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Return generated response
         return {
             'generated_response': response_text,
-            'current_node': 'styler',
-            'next_node': 'validator'
+            'current_node': 'text_generator'
         }
         
     except Exception as e:
@@ -151,5 +154,6 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Return None if error occurred
     return {
-        'generated_response': None
+        'generated_response': None,
+        'current_node': 'text_generator'
     }

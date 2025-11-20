@@ -45,7 +45,6 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if current_node is None or current_node == 'orchestrator':
         log_flow_transition("orchestrator", "trigger_analysis", "entry point", agent_name=agent_name)
         return {
-            'current_node': 'orchestrator',
             'next_node': 'trigger_analysis'
         }
     
@@ -65,7 +64,6 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "agent_type": agent_type,
                     "agent_name": agent_name
                 },
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
@@ -81,14 +79,12 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "agent_type": agent_type,
                     "agent_name": agent_name
                 },
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
         # logger.info(f"→ Trigger detected: {trigger_id} - routing to decision_maker {agent_name}")
         log_flow_transition("trigger_analysis", "decision_maker", f"trigger: {trigger_id}", agent_name=agent_name)
         return {
-            'current_node': 'orchestrator',
             'next_node': 'decision_maker'
         }
     
@@ -108,7 +104,6 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "agent_type": agent_type,
                     "agent_name": agent_name
                 },
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
@@ -116,7 +111,6 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"→ Action selected: {action_id} - routing to text_generator ({agent_name})")
         log_flow_transition("decision_maker", "text_generator", f"action: {action_id}", agent_name=agent_name)
         return {
-            'current_node': 'orchestrator',
             'next_node': 'text_generator'
         }
     
@@ -136,14 +130,12 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "agent_type": agent_type,
                     "agent_name": agent_name
                 },
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
         logger.info("→ Text generated successfully - routing to styler")
         log_flow_transition("text_generator", "styler", "text generated", agent_name=agent_name)
         return {
-            'current_node': 'orchestrator',
             'next_node': 'styler'
         }
     
@@ -163,14 +155,12 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "agent_type": agent_type,
                     "agent_name": agent_name
                 },
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
         logger.info(f"→ Response styled successfully - routing to validator ({agent_name})")
         log_flow_transition("styler", "validator", "text styled", agent_name=agent_name)
         return {
-            'current_node': 'orchestrator',
             'next_node': 'validator'
         }
     
@@ -198,7 +188,6 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             return {
                 'selected_action': selected_action,
                 'retry_count': 0,
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
@@ -218,23 +207,18 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             return {
                 'selected_action': selected_action,
                 'retry_count': 0,
-                'current_node': 'orchestrator',
                 'next_node': END
             }
         
         logger.warning(f"Validation FAILED (attempt {retry_count}/{MAX_RETRIES})")
         log_flow_transition("validator", "text_generator", f"retry {retry_count+1}/{MAX_RETRIES}, description: {explanation}", agent_name=agent_name)
         return {
-            'current_node': 'orchestrator',
             'next_node': 'text_generator'
         }
     
     # Unknown state - error handling
     logger.error(f"→ Unknown current_node: {current_node} - routing to END with error")
     agent_type = state.get('agent_type', 'unknown')
-    first_name = state.get('selected_persona', {}).get('first_name', 'Unknown')
-    last_name = state.get('selected_persona', {}).get('last_name', 'Unknown')
-    agent_name = first_name + (" " + last_name if last_name else "")
     return {
         'selected_action': {
             "status": "error",
@@ -243,7 +227,6 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "agent_type": agent_type,
             "agent_name": agent_name
         },
-        'current_node': 'orchestrator',
         'next_node': END
     }
 
@@ -260,7 +243,4 @@ def route_from_orchestrator(state: Dict[str, Any]) -> str:
         str: Next node name or END
     """
     next_node = state.get('next_node', END)
-    first_name = state.get('selected_persona', {}).get('first_name', 'Unknown')
-    last_name = state.get('selected_persona', {}).get('last_name', 'Unknown')
-    agent_name = first_name + (" " + last_name if last_name else "")
     return next_node

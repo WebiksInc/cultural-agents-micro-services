@@ -104,7 +104,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'id': trigger_id,
                     'justification': justification
                 },
-                'current_node': 'decision_maker'
+                'current_node': 'trigger_analysis'
             }
             log_node_output("trigger_analysis", {
                 "trigger_id": trigger_id,
@@ -123,7 +123,8 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 'detected_trigger': {
                     'id': 'ERROR',
                     'justification': f'JSON parsing failed: {str(e)}'
-                }
+                },
+                'current_node': 'trigger_analysis'
             }
             
     except Exception as e:
@@ -133,5 +134,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'detected_trigger': {
                 'id': 'ERROR',
                 'justification': f'Analysis failed: {str(e)}'
-            }        
+            },
+            'current_node': 'trigger_analysis'
         }
