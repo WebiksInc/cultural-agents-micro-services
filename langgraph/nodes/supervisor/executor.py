@@ -1,26 +1,14 @@
-"""
-Executor Node - Executes actions from the execution queue
-
-Responsibilities:
-1. Get ready actions from execution_queue
-2. Send messages to Telegram using agent phone numbers
-3. Remove executed actions from queue and selected_actions
-4. Return control for next polling cycle
-"""
-
-import logging
 from typing import Dict, Any
 from logs.logfire_config import get_logger
 from logs import log_node_start
-from nodes.supervisor.scheduler import get_ready_actions, mark_action_sent
+# from nodes.supervisor.scheduler import get_ready_actions, mark_action_sent
+from nodes.supervisor.scheduler import get_ready_actions
 
-# Import Telegram sending function
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from telegram_exm import send_telegram_message
 
-# Configure logging
 logger = get_logger(__name__)
 
 
@@ -66,7 +54,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     executed_count = 0
     for action in ready_actions:
         agent_name = action.get('agent_name', 'unknown')
-        action_id = action.get('action', {}).get('id', 'unknown')
+        action_id = action.get('action_id', {})
         action_content = action.get('action_content', '')
         phone_number = action.get('phone_number', '')
         
@@ -74,16 +62,15 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         if not phone_number:
             logger.error(f"No phone number for agent {agent_name}")
-            mark_action_sent(execution_queue, action)
+            # mark_action_sent(execution_queue, action)
             continue
         
         if not action_content:
             logger.error(f"No message content for action from {agent_name}")
-            mark_action_sent(execution_queue, action)
+            # mark_action_sent(execution_queue, action)
             continue
         
         logger.info(f"Sending message from {agent_name} ({phone_number}) to {chat_id}")
-        logger.info(f"Message preview: {action_content[:100]}...")
         
         # Send message to Telegram
         response = send_telegram_message(
@@ -94,13 +81,13 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         )
         
         if response and response.get("success"):
-            logger.info(f"✓ Successfully sent message from {agent_name}")
+            logger.info(f"Successfully sent message from {agent_name}")
             executed_count += 1
         else:
-            logger.error(f"✗ Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
+            logger.error(f"ERROR: Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
         
         # Mark as sent (remove from queue) regardless of success to avoid infinite retries
-        mark_action_sent(execution_queue, action)
+        # mark_action_sent(execution_queue, action)
     
     logger.info(f"Executor: Executed {executed_count}/{len(ready_actions)} actions successfully")
     
