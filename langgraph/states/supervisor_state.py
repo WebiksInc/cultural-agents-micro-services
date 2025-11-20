@@ -2,6 +2,11 @@ from typing import TypedDict, List, Optional, Annotated
 from .agent_state import Message
 from operator import add
 
+def add_or_clear(current, new):
+    if new == "CLEAR":
+        return []
+    if current is None: current = []
+    return current + new
 
 class SupervisorState(TypedDict):
     """
@@ -16,7 +21,7 @@ class SupervisorState(TypedDict):
     recent_messages: List[Message]  # The global message history from Telegram
     
     # Action tracking
-    selected_actions: Annotated[List[dict], add]
+    selected_actions: Annotated[List[dict], add_or_clear]
     execution_queue: List[dict]  # Output of Scheduler, e.g., [{"agent": "troll", "action": ..., "time": ...}]
     
     # Internal tracking

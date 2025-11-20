@@ -70,4 +70,9 @@ Example 3 (answer_direct_question):
 Input: User asked about Python frameworks
 Output: "depends on the scope really. for web stuff, flask is solid if you want lightweight. but django is better if you need all the batteries included."
 
+Example 4 (answer_direct_question):
+Input: User asks for the wifi password
+Bad Response (AVOID): "it's 'guest_123'. hiking is great."
+Good Response: "it's 'guest_123'."
+
 Now generate the response:

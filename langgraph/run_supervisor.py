@@ -29,7 +29,7 @@ from states.agent_state import Message
 # Import Telegram functions
 from telegram_exm import get_chat_messages, get_all_group_participants
 
-# Import logfire setup
+# Import Logfire logging
 from logs.logfire_config import setup_logfire, get_logger
 
 # Setup Logfire
@@ -43,6 +43,7 @@ with open(CONFIG_PATH, 'r') as f:
 
 CHAT_ID = CONFIG["telegram"]["chat_id"]
 MESSAGE_CHECK_INTERVAL = CONFIG["polling"]["message_check_interval_seconds"]
+TELEGRAM_FETCH_LIMIT = CONFIG["polling"]["telegram_fetch_limit"]
 MAX_RECENT_MESSAGES = CONFIG["polling"]["max_recent_messages"]
 
 # Global state
@@ -64,20 +65,6 @@ def parse_telegram_message(msg_data: dict) -> Message:
         sender_personality=None,
         processed=False
     )
-
-
-def update_recent_messages(current_messages: list, new_messages: list) -> list:
-    """Update recent_messages list, removing duplicates and keeping max size."""
-    all_messages = new_messages + current_messages
-    
-    seen_ids = set()
-    unique_messages = []
-    for msg in all_messages:
-        if msg["message_id"] not in seen_ids and msg["message_id"]:
-            seen_ids.add(msg["message_id"])
-            unique_messages.append(msg)
-    
-    return unique_messages[:MAX_RECENT_MESSAGES]
 
 
 def is_agent_message(msg: Message, agent_personas: list) -> bool:
@@ -138,6 +125,9 @@ def run_supervisor_loop():
     # Use first agent's phone for API calls
     primary_phone = agent_personas[0].get("phone_number", "+37379276083")
     
+    # Track all seen message IDs (separate from recent_messages which gets trimmed)
+    seen_message_ids = set()
+    
     # Initialize state
     state = SupervisorState(
         recent_messages=[],
@@ -149,8 +139,6 @@ def run_supervisor_loop():
         next_nodes=None
     )
     
-    # logger.info("Starting supervisor pulling loop...")
-    # logger.info(f"Pulling interval: {MESSAGE_CHECK_INTERVAL}s")
     logger.info(f"Chat ID: {CHAT_ID}")
     
     try:
@@ -160,7 +148,7 @@ def run_supervisor_loop():
             
             # Check if it's time to poll
             if time_since_check >= MESSAGE_CHECK_INTERVAL:
-                logger.info(f"Pulling messages...")
+                logger.info(f"Fetching messages...")
                 
                 if _first_run:
                     logger.info("First run: Initializing group metadata")
@@ -176,10 +164,12 @@ def run_supervisor_loop():
                         }
                     
                     # Get initial messages
-                    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=MAX_RECENT_MESSAGES)
+                    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
                     if messages_data and messages_data.get("success"):
                         new_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
-                        state["recent_messages"] = update_recent_messages(state["recent_messages"], new_messages)
+                        state["recent_messages"] = new_messages
+                        # Track all initial message IDs
+                        seen_message_ids.update(msg["message_id"] for msg in new_messages)
                         logger.info(f"Loaded {len(new_messages)} initial messages")
                         
                         # Mark agent messages as processed
@@ -200,6 +190,8 @@ def run_supervisor_loop():
                             for msg in state["recent_messages"]:
                                 msg['processed'] = True
                             
+                           
+                            
                             logger.info("Initial graph execution completed")
                         else:
                             logger.info("All initial messages are from agents, skipping graph execution")
@@ -208,18 +200,21 @@ def run_supervisor_loop():
                 
                 else:
                     # Poll for new messages
-                    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=MAX_RECENT_MESSAGES)
+                    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
                     
                     if messages_data and messages_data.get("success"):
                         new_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
                         
-                        # Filter out already-seen messages
-                        current_ids = {msg["message_id"] for msg in state["recent_messages"]}
-                        truly_new = [msg for msg in new_messages if msg["message_id"] not in current_ids]
+                        # Filter out already-seen messages using persistent tracking
+                        truly_new = [msg for msg in new_messages if msg["message_id"] not in seen_message_ids]
+                        
+                        # Add new message IDs to tracking set
+                        if truly_new:
+                            seen_message_ids.update(msg["message_id"] for msg in truly_new)
                         
                         if truly_new:
-                            # Add all new messages to state
-                            state["recent_messages"] = update_recent_messages(state["recent_messages"], truly_new)
+                            # Prepend new messages to existing ones (Component B will analyze and trim)
+                            state["recent_messages"] = truly_new + state["recent_messages"]
                             logger.info(f"Found {len(truly_new)} new messages")
                             
                             # Mark agent messages as processed
@@ -239,6 +234,8 @@ def run_supervisor_loop():
                                 # Mark messages as processed
                                 for msg in state["recent_messages"]:
                                     msg['processed'] = True
+                                
+                                
                                 
                                 logger.info("Graph execution completed")
                             else:

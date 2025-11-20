@@ -11,6 +11,7 @@ Responsibilities:
 import logging
 from typing import Dict, Any, List
 from logs.logfire_config import get_logger
+from logs import log_node_start
 
 # Configure logging
 logger = get_logger(__name__)
@@ -29,6 +30,10 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict with updated execution_queue
     """
+    log_node_start("scheduler", {
+        "selected_actions_count": len(state.get('selected_actions', []))
+    }, supervisor_state=state)
+    
     selected_actions = state.get('selected_actions', [])
     
     # Filter out actions with no_action_needed status
@@ -44,7 +49,7 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'execution_queue': []
         }
     
-    logger.info(f"Scheduler: Queuing {len(actionable_items)} actions", selected_actions=actionable_items)
+    logger.info(f"Scheduler: Queuing {len(actionable_items)} actions", selected_actions=actionable_items, supervisor_state=state)
     
     # Build execution queue with all necessary fields
     execution_queue = []

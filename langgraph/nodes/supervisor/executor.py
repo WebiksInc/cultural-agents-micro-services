@@ -11,6 +11,7 @@ Responsibilities:
 import logging
 from typing import Dict, Any
 from logs.logfire_config import get_logger
+from logs import log_node_start
 from nodes.supervisor.scheduler import get_ready_actions, mark_action_sent
 
 # Import Telegram sending function
@@ -36,6 +37,10 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict with cleared execution_queue and selected_actions
     """
+    log_node_start("executor", {
+        "execution_queue_count": len(state.get('execution_queue', []))
+    }, supervisor_state=state)
+    
     execution_queue = state.get('execution_queue', [])
     group_metadata = state.get('group_metadata', {})
     chat_id = group_metadata.get('id', '')
@@ -55,7 +60,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         logger.info("Executor: No ready actions in queue")
         return {}
     
-    logger.info(f"Executor: Executing {len(ready_actions)} actions")
+    logger.info(f"Executor: Executing {len(ready_actions)} actions", supervisor_state=state)
     
     # Execute each action
     executed_count = 0
@@ -99,8 +104,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     logger.info(f"Executor: Executed {executed_count}/{len(ready_actions)} actions successfully")
     
-    # Clear both execution_queue and selected_actions after execution
     return {
-        'execution_queue': execution_queue,  # Now empty after mark_action_sent calls
-        'selected_actions': []  # Clear for next cycle
+        'execution_queue': execution_queue,
+        'selected_actions' : "CLEAR"
     }

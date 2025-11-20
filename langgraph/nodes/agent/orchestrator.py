@@ -167,7 +167,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 'next_node': END
             }
         
-        logger.info("→ Response styled successfully - routing to validator {agent_name}")
+        logger.info(f"→ Response styled successfully - routing to validator ({agent_name})")
         log_flow_transition("styler", "validator", agent_name)
         return {
             'current_node': 'orchestrator',

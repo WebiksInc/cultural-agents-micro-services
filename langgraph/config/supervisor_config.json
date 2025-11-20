@@ -7,6 +7,7 @@
   "polling": {
     "message_check_interval_seconds": 15,
     "executor_check_interval_seconds": 2,
+    "telegram_fetch_limit": 20,
     "max_recent_messages": 7
   },
   "no_action_sleep_duration": 5,
