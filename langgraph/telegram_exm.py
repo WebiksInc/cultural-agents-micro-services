@@ -17,6 +17,8 @@ MATAN_API_HASH = "82efd609e785a46bb8c98cbe5052d473"
 MATAN_API_ID = 34480201
 PETACH_TIKVA_CHAT_ID = "3175400700"
 REPLIED_MESSAGE_ID = 13
+ELI_NUMBER_ENCODED = "%2B19252931349"
+ELI_NUMBER = "+19252931349"
 
 def print_response(response):
     print('Status Code:', response.status_code)
@@ -57,7 +59,7 @@ def get_unread_telegram_messages():
     return response.json()
 
 def get_all_chats():
-    getUrl = f"{TELEGRAM_API_URL}/api/chats/all?accountPhone={MATAN_PHONE_ENCODED}"
+    getUrl = f"{TELEGRAM_API_URL}/api/chats/all?accountPhone={ELI_NUMBER_ENCODED}"
     print('Fetching all chats from:', getUrl)
     response = requests.get(getUrl)
     print_response(response)
@@ -82,11 +84,11 @@ def get_all_group_participants():
 
 # sending messages and replies
 
-def send_telegram_message():
+def send_telegram_message(toNumber="526622223"):
     postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
     payload = {
-      "fromPhone": TAMAR_NUMBER,
-      "toTarget": PETACH_TIKVA_CHAT_ID,
+      "fromPhone": ELI_NUMBER,
+      "toTarget": toNumber,
       "content": {
         "type": "text",
         "value": "hi there from the python api!!"
@@ -131,6 +133,19 @@ def reply_to_telegram_message_by_timestamp():
     return response.json()
 
 
+def show_typing_indicator(phone=ELI_NUMBER, chatId="526622223", duration=5000):
+    """Show typing indicator for (duration/1000) seconds in the Petach Tikva chat."""
+    postUrl = f"{TELEGRAM_API_URL}/api/typing"
+    payload = {
+        "phone": phone,
+        "chatId": chatId,
+        "duration": duration  
+    }
+    print('Showing typing indicator at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
 
 # get_unread_telegram_messages()
 # get_all_chats()
@@ -139,3 +154,11 @@ def reply_to_telegram_message_by_timestamp():
 #send_telegram_message()
 # replay_to_telegram_message()
 # reply_to_telegram_message_by_timestamp()
+
+if __name__ == "__main__":
+    show_typing_indicator(chatId="526622223", duration=15000) # 15 seconds
+    send_telegram_message()
+    show_typing_indicator(chatId=PETACH_TIKVA_CHAT_ID, duration=15000) # 15 seconds
+    send_telegram_message(toNumber=PETACH_TIKVA_CHAT_ID)
+
+    

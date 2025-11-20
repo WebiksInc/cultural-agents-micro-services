@@ -2,9 +2,10 @@ services:
 
   telegram2:
     image: telegram2:0.1.0
+    network_mode: "host"
 
-    ports:
-      - "4000:4000"
+    #ports:
+    #  - "4000:4000"
 
     volumes:
       - ./volumes/telegram2:/app/data
@@ -27,6 +28,7 @@ services:
 
   langgraph:
     image: langgraph:0.1.8
+    network_mode: "host"
     environment:
       - TELEGRAM_PORT=4000
       - TELEGRAM_HOST=telegram2
