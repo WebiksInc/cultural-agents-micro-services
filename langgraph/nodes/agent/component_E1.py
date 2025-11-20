@@ -142,7 +142,8 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Return generated response
         return {
             'generated_response': response_text,
-            'next_node': 'styler'
+            'current_node': 'styler',
+            'next_node': 'validator'
         }
         
     except Exception as e:

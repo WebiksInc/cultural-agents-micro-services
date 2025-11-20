@@ -16,18 +16,6 @@ logger = get_logger(__name__)
 
 
 def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Trigger Analysis Node
-    
-    Analyzes recent messages to detect which trigger condition applies.
-    Returns detected_trigger and current_node updates.
-    
-    Args:
-        state: AgentState dict
-        
-    Returns:
-        Dict with detected_trigger and current_node updates
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
@@ -43,11 +31,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     triggers = state.get('triggers', {})
     agent_type = state.get('agent_type', 'unknown')
     agent_goal = state.get('agent_goal', 'No goal specified')
-    
-    # Extract agent name from persona
-    first_name = selected_persona.get('first_name')
-    last_name = selected_persona.get('last_name')
-    agent_name = first_name + (" " + last_name if last_name else "")
     
     # Validate inputs
     if not recent_messages:
@@ -69,7 +52,6 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             },
             'current_node': 'trigger_analysis'
         }
-    
     
     # Format recent messages for prompt
     message_lines = []
@@ -122,7 +104,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     'id': trigger_id,
                     'justification': justification
                 },
-                'current_node': 'trigger_analysis'
+                'current_node': 'decision_maker'
             }
             log_node_output("trigger_analysis", {
                 "trigger_id": trigger_id,
@@ -141,8 +123,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 'detected_trigger': {
                     'id': 'ERROR',
                     'justification': f'JSON parsing failed: {str(e)}'
-                },
-                'current_node': 'trigger_analysis'
+                }
             }
             
     except Exception as e:
@@ -152,6 +133,5 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'detected_trigger': {
                 'id': 'ERROR',
                 'justification': f'Analysis failed: {str(e)}'
-            },
-            'current_node': 'trigger_analysis'
+            }        
         }

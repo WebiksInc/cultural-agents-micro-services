@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
 
@@ -15,17 +15,8 @@ from logs import log_node_start, log_prompt, log_node_output, log_state
 logger = get_logger(__name__)
 
 
-def decision_maker_node(state: Dict[str, Any]) -> None:
-    """
-    Decision Maker Node
-    
-    Selects the best action from suggested actions based on trigger and context.
-    Modifies the state in-place by setting selected_action.
-    
-    Args:
-        state: AgentState dict containing detected_trigger, actions, recent_messages, etc.
-    """
-    # Get agent name for logging
+def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    # agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
     
@@ -33,7 +24,8 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         "trigger_id": state.get('detected_trigger', {}).get('id', 'none')
     }, agent_name=agent_name)
     log_state("decision_maker_entry", state, "agent")
-        
+    
+    # Values to be injected into prompt    
     detected_trigger = state.get('detected_trigger', {})
     actions = state.get('actions', {})
     triggers = state.get('triggers', {})
@@ -42,20 +34,22 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     agent_type = state.get('agent_type', 'unknown')
     agent_goal = state.get('agent_goal', 'No goal specified')
     
-    # Get trigger details
+    # Trigger details
     trigger_id = detected_trigger.get('id', 'neutral')
     trigger_justification = detected_trigger.get('justification', 'No justification provided')
     
     # Handle neutral trigger - no action needed
     if trigger_id == 'neutral':
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None
+        }
     
     # Handle error trigger
     if trigger_id == 'ERROR':
         logger.error("Trigger analysis returned ERROR - cannot make decision")
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None
+        }
     
     # Find the detected trigger in triggers list to get suggested actions
     suggested_action_ids = []
@@ -68,8 +62,9 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     # If no suggested actions, default to no action
     if not suggested_action_ids:
         logger.warning(f"No suggested actions for trigger '{trigger_id}' - no action taken")
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None
+        }
     
 
     # Get full details for suggested actions
@@ -83,8 +78,9 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     
     if not suggested_actions:
         logger.error(f"Could not find action details for suggested actions: {suggested_action_ids}")
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None
+        }
     
     # Format recent messages for prompt
     message_lines = []
@@ -114,17 +110,14 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         temperature = model_settings['temperature']
         provider = model_settings['provider']
         
-        # Log prompt to Logfire
         log_prompt("decision_maker", prompt, model_name, temperature, agent_name=agent_name)
-        
         
         model = init_chat_model(
             model=model_name,
             model_provider=provider,
             temperature=temperature
         )
-        
-        # Call LLM
+
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
         
@@ -138,8 +131,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             if not action_id:
                 logger.error("LLM did not return an action ID")
                 return {
-                    'selected_action': None,
-                    'current_node': 'decision_maker'
+                    'selected_action': None
                 }
             
             # Verify the selected action is in the suggested actions
@@ -166,7 +158,7 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
                     'id': action_id,
                     'purpose': purpose
                 },
-                'current_node': 'decision_maker'
+               
             }
             
         except json.JSONDecodeError as e:
@@ -174,12 +166,10 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             logger.error(f"Response text: {response_text}")
             return {
                 'selected_action': None,
-                'current_node': 'decision_maker'
             }
             
     except Exception as e:
         logger.error(f"Error in decision maker: {e}", exc_info=True)
         return {
-            'selected_action': None,
-            'current_node': 'decision_maker'
+            'selected_action': None, 
         }
