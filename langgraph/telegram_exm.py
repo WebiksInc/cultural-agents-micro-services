@@ -214,7 +214,7 @@ def send_telegram_message(from_phone=None, to_target=None, content_value=None, r
         logger.error(f"Error sending message: {e}")
         return {"success": False, "error": str(e)}
 
-def replay_to_telegram_message(from_phone=None, to_target=None, content_value=None, reply_to_id=None):
+def reply_to_telegram_message(from_phone=None, to_target=None, content_value=None, reply_to_id=None):
     """
     Reply to a specific message (deprecated - use send_telegram_message with reply_to_message_id).
     
@@ -251,9 +251,9 @@ def reply_to_telegram_message_by_timestamp(from_phone=None, to_target=None, cont
 
 
 # get_unread_telegram_messages()
-get_all_chats()
+# get_all_chats()
 get_chat_messages()
-# get_all_group_participants()
+# get_all_group_participants(phone="+37379276083", chat_id="3389864729")
 #send_telegram_message()
-# replay_to_telegram_message()
+# reply_to_telegram_message()
 # reply_to_telegram_message_by_timestamp()

@@ -3,7 +3,7 @@ Main entry point for running the Supervisor graph with polling loop.
 
 This script:
 1. Builds the hierarchical supervisor graph
-2. Polls Telegram for new messages periodically
+2. Calls Telegram for new messages periodically
 3. Runs the graph when new messages arrive
 4. Handles the continuous polling loop with sleep intervals
 """
@@ -106,29 +106,168 @@ def load_agent_personas() -> list:
     return personas
 
 
+# def run_supervisor_loop():
+#     global _first_run, _last_message_check
+    
+#     logger.info("Building supervisor graph")
+#     graph = build_supervisor_graph()
+#     logger.info("Supervisor graph built successfully")
+    
+#     # Load agent personas for filtering
+#     agent_personas = load_agent_personas()
+#     logger.info(f"Loaded {len(agent_personas)} agent personas")
+    
+#     # Use first agent's phone for API calls
+#     primary_phone = agent_personas[0].get("phone_number", "+37379276083")
+    
+#     # Track all seen message IDs (separate from recent_messages which gets trimmed)
+#     seen_message_ids = set()
+    
+#     # Initialize state
+#     state = SupervisorState(
+#         recent_messages=[],
+#         group_sentiment="",
+#         group_metadata=CONFIG["group_metadata"],
+#         selected_actions=[],
+#         execution_queue=[],
+#         current_nodes=None,
+#         next_nodes=None
+#     )
+    
+#     logger.info(f"Chat ID: {CHAT_ID}")
+    
+#     try:
+#         while True:
+#             current_time = time.time()
+#             time_since_check = current_time - _last_message_check
+            
+#             # Check if it's time to poll
+#             if time_since_check >= MESSAGE_CHECK_INTERVAL:
+#                 logger.info(f"Fetching messages...")
+                
+#                 if _first_run:
+#                     logger.info("First run: Initializing group metadata")
+                    
+#                     # Get group metadata
+#                     participants_data = get_all_group_participants(phone=primary_phone, chat_id=CHAT_ID)
+#                     if participants_data and participants_data.get("success"):
+#                         state["group_metadata"] = {
+#                             "id": CHAT_ID,
+#                             "name": participants_data.get("chatTitle", CONFIG["group_metadata"]["name"]),
+#                             "topic": CONFIG["group_metadata"]["topic"],
+#                             "members": participants_data.get("participantCount", CONFIG["group_metadata"]["members"])
+#                         }
+                    
+#                     # Get initial messages
+#                     messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
+#                     if messages_data and messages_data.get("success"):
+#                         new_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
+#                         state["recent_messages"] = new_messages
+#                         # Track all initial message IDs
+#                         seen_message_ids.update(msg["message_id"] for msg in new_messages)
+#                         logger.info(f"Loaded {len(new_messages)} initial messages")
+                        
+#                         # Mark agent messages as processed
+#                         for msg in state["recent_messages"]:
+#                             if is_agent_message(msg, agent_personas):
+#                                 msg['processed'] = True
+                        
+#                         # Check if there are unprocessed messages to analyze
+#                         unprocessed = [msg for msg in state["recent_messages"] if not msg.get('processed', False)]
+                        
+#                         if unprocessed:
+#                             logger.info(f"Running graph for {len(unprocessed)} initial unprocessed messages...")
+                            
+#                             # Run the graph on initial messages
+#                             state = graph.invoke(state)
+                            
+#                             # Mark messages as processed
+#                             for msg in state["recent_messages"]:
+#                                 msg['processed'] = True
+                            
+                           
+                            
+#                             logger.info("Initial graph execution completed")
+#                         else:
+#                             logger.info("All initial messages are from agents, skipping graph execution")
+                    
+#                     _first_run = False
+                
+#                 else:
+#                     # Poll for new messages
+#                     messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
+                    
+#                     if messages_data and messages_data.get("success"):
+#                         new_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
+                        
+#                         # Filter out already-seen messages using persistent tracking
+#                         truly_new = [msg for msg in new_messages if msg["message_id"] not in seen_message_ids]
+                        
+#                         # Add new message IDs to tracking set
+#                         if truly_new:
+#                             seen_message_ids.update(msg["message_id"] for msg in truly_new)
+                        
+#                         if truly_new:
+#                             # Prepend new messages to existing ones (Component B will analyze and trim)
+#                             state["recent_messages"] = truly_new + state["recent_messages"]
+#                             logger.info(f"Found {len(truly_new)} new messages")
+                            
+#                             # Mark agent messages as processed
+#                             for msg in state["recent_messages"]:
+#                                 if is_agent_message(msg, agent_personas) and not msg.get('processed', False):
+#                                     msg['processed'] = True
+                            
+#                             # Check if there are unprocessed messages
+#                             unprocessed = [msg for msg in state["recent_messages"] if not msg.get('processed', False)]
+                            
+#                             if unprocessed:
+#                                 logger.info(f"Running graph for {len(unprocessed)} unprocessed messages")
+                                
+#                                 # Run the graph
+#                                 state = graph.invoke(state)
+                                
+#                                 # Mark messages as processed
+#                                 for msg in state["recent_messages"]:
+#                                     msg['processed'] = True
+                                
+                                
+                                
+#                                 logger.info("Graph execution completed")
+#                             else:
+#                                 logger.info("All new messages are from agents, skipping graph execution")
+#                         else:
+#                             logger.info("No new messages")
+                
+#                 _last_message_check = current_time
+#             else:
+#                 # Show idle status every 30 seconds
+#                 if int(time_since_check) % 30 == 0 and int(time_since_check) > 0:
+#                     remaining = MESSAGE_CHECK_INTERVAL - int(time_since_check)
+#                     logger.info(f"Idle... Next poll in {remaining}s")
+            
+#             # Sleep briefly before next check
+#             time.sleep(10)
+    
+#     except KeyboardInterrupt:
+#         logger.info("Supervisor loop stopped by user")
+#     except Exception as e:
+#         logger.error(f"Error in supervisor loop: {e}", exc_info=True)
+#         raise
 def run_supervisor_loop():
-    """
-    Main supervisor loop.
+    # --- STEP 1: INITIALIZATION ---
+    logger.info("Starting Supervisor initialization...")
     
-    Continuously polls for messages and runs the graph when new messages arrive.
-    """
-    global _first_run, _last_message_check
-    
-    logger.info("Building supervisor graph")
+    # 1. Build graph and dependencies
     graph = build_supervisor_graph()
     logger.info("Supervisor graph built successfully")
     
-    # Load agent personas for filtering
     agent_personas = load_agent_personas()
     logger.info(f"Loaded {len(agent_personas)} agent personas")
     
-    # Use first agent's phone for API calls
     primary_phone = agent_personas[0].get("phone_number", "+37379276083")
-    
-    # Track all seen message IDs (separate from recent_messages which gets trimmed)
     seen_message_ids = set()
     
-    # Initialize state
+    # 2. Initialize State
     state = SupervisorState(
         recent_messages=[],
         group_sentiment="",
@@ -138,127 +277,116 @@ def run_supervisor_loop():
         current_nodes=None,
         next_nodes=None
     )
+    logger.info(f"Target Chat ID: {CHAT_ID}")
+
+    # 3. Fetch Group Metadata (Run once)
+    logger.info("Fetching group metadata...")
+    participants_data = get_all_group_participants(phone=primary_phone, chat_id=CHAT_ID)
     
-    logger.info(f"Chat ID: {CHAT_ID}")
+    if participants_data and participants_data.get("success"):
+        state["group_metadata"] = {
+            "id": CHAT_ID,
+            "name": participants_data.get("chatTitle", CONFIG["group_metadata"]["name"]),
+            "topic": CONFIG["group_metadata"]["topic"],
+            "members": participants_data.get("participantCount", CONFIG["group_metadata"]["members"])
+        }
+        logger.info("Group metadata initialized")
+
+    # 4. Fetch Initial History (Run once)
+    logger.info("Fetching initial message history...")
+    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
+    
+    if messages_data and messages_data.get("success"):
+        initial_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
+        state["recent_messages"] = initial_messages
+        seen_message_ids.update(msg["message_id"] for msg in initial_messages)
+        logger.info(f"Loaded {len(initial_messages)} initial messages")
+        
+        # Mark agent messages as processed
+        for msg in state["recent_messages"]:
+            if is_agent_message(msg, agent_personas):
+                msg['processed'] = True
+        
+        # Check for unprocessed messages in history to react to
+        unprocessed = [msg for msg in state["recent_messages"] if not msg.get('processed', False)]
+        
+        if unprocessed:
+            logger.info(f"Running graph for {len(unprocessed)} initial unprocessed messages...")
+            state = graph.invoke(state)
+            
+            # Mark processed locally after run
+            for msg in state["recent_messages"]:
+                msg['processed'] = True
+            
+            logger.info("Initial graph execution completed")
+        else:
+            logger.info("No actionable initial messages found")
+
+    logger.info("Initialization complete. Entering main fetching loop.")
+
+    # --- STEP 2: MAIN FETCHING LOOP ---
+    last_message_check = 0
     
     try:
         while True:
             current_time = time.time()
-            time_since_check = current_time - _last_message_check
+            time_since_check = current_time - last_message_check
             
-            # Check if it's time to poll
             if time_since_check >= MESSAGE_CHECK_INTERVAL:
-                logger.info(f"Fetching messages...")
+                logger.info("Fetching new messages...")
                 
-                if _first_run:
-                    logger.info("First run: Initializing group metadata")
+                messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
+                
+                if messages_data and messages_data.get("success"):
+                    raw_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
                     
-                    # Get group metadata
-                    participants_data = get_all_group_participants(phone=primary_phone, chat_id=CHAT_ID)
-                    if participants_data and participants_data.get("success"):
-                        state["group_metadata"] = {
-                            "id": CHAT_ID,
-                            "name": participants_data.get("chatTitle", CONFIG["group_metadata"]["name"]),
-                            "topic": CONFIG["group_metadata"]["topic"],
-                            "members": participants_data.get("participantCount", CONFIG["group_metadata"]["members"])
-                        }
+                    # Filter truly new messages
+                    new_messages = [msg for msg in raw_messages if msg["message_id"] not in seen_message_ids]
                     
-                    # Get initial messages
-                    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
-                    if messages_data and messages_data.get("success"):
-                        new_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
-                        state["recent_messages"] = new_messages
-                        # Track all initial message IDs
+                    if new_messages:
                         seen_message_ids.update(msg["message_id"] for msg in new_messages)
-                        logger.info(f"Loaded {len(new_messages)} initial messages")
+                        
+                        # Prepend new messages
+                        state["recent_messages"] = new_messages + state["recent_messages"]
+                        logger.info(f"Found {len(new_messages)} new messages")
                         
                         # Mark agent messages as processed
                         for msg in state["recent_messages"]:
-                            if is_agent_message(msg, agent_personas):
+                            if is_agent_message(msg, agent_personas) and not msg.get('processed', False):
                                 msg['processed'] = True
                         
-                        # Check if there are unprocessed messages to analyze
+                        # Process if actionable messages exist
                         unprocessed = [msg for msg in state["recent_messages"] if not msg.get('processed', False)]
                         
                         if unprocessed:
-                            logger.info(f"Running graph for {len(unprocessed)} initial unprocessed messages...")
-                            
-                            # Run the graph on initial messages
+                            logger.info(f"Running graph for {len(unprocessed)} new messages")
                             state = graph.invoke(state)
                             
-                            # Mark messages as processed
+                            # Mark processed locally
                             for msg in state["recent_messages"]:
                                 msg['processed'] = True
-                            
-                           
-                            
-                            logger.info("Initial graph execution completed")
+                                
+                            logger.info("Graph execution completed")
                         else:
-                            logger.info("All initial messages are from agents, skipping graph execution")
-                    
-                    _first_run = False
+                            logger.info("All new messages are internal/agent messages, skipping")
+                    else:
+                        logger.info("No new messages found")
                 
-                else:
-                    # Poll for new messages
-                    messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
-                    
-                    if messages_data and messages_data.get("success"):
-                        new_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
-                        
-                        # Filter out already-seen messages using persistent tracking
-                        truly_new = [msg for msg in new_messages if msg["message_id"] not in seen_message_ids]
-                        
-                        # Add new message IDs to tracking set
-                        if truly_new:
-                            seen_message_ids.update(msg["message_id"] for msg in truly_new)
-                        
-                        if truly_new:
-                            # Prepend new messages to existing ones (Component B will analyze and trim)
-                            state["recent_messages"] = truly_new + state["recent_messages"]
-                            logger.info(f"Found {len(truly_new)} new messages")
-                            
-                            # Mark agent messages as processed
-                            for msg in state["recent_messages"]:
-                                if is_agent_message(msg, agent_personas) and not msg.get('processed', False):
-                                    msg['processed'] = True
-                            
-                            # Check if there are unprocessed messages
-                            unprocessed = [msg for msg in state["recent_messages"] if not msg.get('processed', False)]
-                            
-                            if unprocessed:
-                                logger.info(f"Running graph for {len(unprocessed)} unprocessed messages")
-                                
-                                # Run the graph
-                                state = graph.invoke(state)
-                                
-                                # Mark messages as processed
-                                for msg in state["recent_messages"]:
-                                    msg['processed'] = True
-                                
-                                
-                                
-                                logger.info("Graph execution completed")
-                            else:
-                                logger.info("All new messages are from agents, skipping graph execution")
-                        else:
-                            logger.info("No new messages")
+                last_message_check = current_time
                 
-                _last_message_check = current_time
             else:
-                # Show idle status every 30 seconds
+                # Idle logging
                 if int(time_since_check) % 30 == 0 and int(time_since_check) > 0:
                     remaining = MESSAGE_CHECK_INTERVAL - int(time_since_check)
-                    logger.info(f"Idle... Next poll in {remaining}s")
+                    logger.info(f"Idle... Next pull in {remaining}s")
             
-            # Sleep briefly before next check
             time.sleep(10)
-    
+
     except KeyboardInterrupt:
         logger.info("Supervisor loop stopped by user")
     except Exception as e:
         logger.error(f"Error in supervisor loop: {e}", exc_info=True)
         raise
-
 
 if __name__ == "__main__":
     run_supervisor_loop()
