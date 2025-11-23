@@ -17,10 +17,10 @@
       "agent_goal": "Encourage tourism in Israel only, by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
     },
     {
-      "type": "off_radar",
+      "type": "chaos",
       "name": "Matan Dotan",
       "persona_file": "agents_personas/matan_persona.json",
-      "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short, low-key messages that blend into the background, without starting debates or posting long messages."
+      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics, incite conflicts between groups members and try to provoke other group members about their opinions on these hot topics."
     }
   ],
   "group_metadata": {
