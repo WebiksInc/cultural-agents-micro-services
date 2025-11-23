@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Literal
+from typing import Dict, Any, Literal
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
@@ -60,7 +60,7 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
     actions = load_json_file(actions_path)
     
     # Load agent prompt
-    prompt_path = BASE_DIR / "prompts" / "agent_types" / f"{agent_type}_prompt.txt"
+    # prompt_path = BASE_DIR / "prompts" / "agent_types" / f"{agent_type}_prompt.txt"
     agent_prompt = load_prompt(f"agent_types/{agent_type}_prompt.txt")
     
     return {
@@ -300,10 +300,7 @@ if __name__ == "__main__":
     
     try:
         graph = build_supervisor_graph()
-        print("✓ Supervisor graph built successfully")
-        print(f"✓ Graph has {len(graph.nodes)} nodes")
     except Exception as e:
-        print(f"✗ Failed to build graph: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

@@ -22,7 +22,6 @@
         "express_consensus_agreement"
       ]
     },
-
     {
       "id": "random_engagement",
       "description": "A probabilistic trigger to act, to simulate occasional, random activity.",
