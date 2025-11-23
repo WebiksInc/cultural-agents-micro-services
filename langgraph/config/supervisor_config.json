@@ -6,8 +6,8 @@
   },
   "polling": {
     "message_check_interval_seconds": 15,
-    "telegram_fetch_limit": 7,
-    "max_recent_messages": 7
+    "telegram_fetch_limit": 8,
+    "max_recent_messages": 8
   },
   "agents": [
     {
@@ -16,6 +16,7 @@
       "persona_file": "agents_personas/tamar_persona.json",
       "agent_goal": "Encourage tourism in Israel only, by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
     },
+
     {
       "type": "chaos",
       "name": "Matan Dotan",
