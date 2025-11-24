@@ -53,6 +53,14 @@ _last_message_check = 0
 
 def parse_telegram_message(msg_data: dict) -> Message:
     """Parse Telegram API message into Message TypedDict."""
+    # Parse reactions if present
+    reactions = None
+    if msg_data.get("reactions"):
+        reactions = [
+            {"emoji": r.get("emoji", ""), "count": r.get("count", 0)}
+            for r in msg_data.get("reactions", [])
+        ]
+    
     return Message(
         message_id=str(msg_data.get("id", "")),
         sender_id=msg_data.get("senderId") or "",
@@ -61,6 +69,7 @@ def parse_telegram_message(msg_data: dict) -> Message:
         sender_last_name=msg_data.get("senderLastName") or "",
         text=msg_data.get("text") or "",
         date=datetime.fromisoformat(msg_data.get("date", "").replace("Z", "+00:00")) if msg_data.get("date") else datetime.now(),
+        reactions=reactions,
         message_emotion=None,
         sender_personality=None,
         processed=False

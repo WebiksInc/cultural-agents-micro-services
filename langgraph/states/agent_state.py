@@ -11,6 +11,7 @@ class Message(TypedDict):
     sender_last_name: str
     text: str # message content
     date: datetime
+    reactions: Optional[List[dict]]  # List of reactions: [{"emoji": "👍", "count": 2}, ...]
     message_emotion: Optional[str]  # Filled by Component B (Emotion Analysis)
     sender_personality: Optional[dict]  # Filled by Component C on-demand (Personality Analysis)
     processed: Optional[bool]  # Track if message has been analyzed for triggers

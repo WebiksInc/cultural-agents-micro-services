@@ -7,7 +7,7 @@ from nodes.supervisor.scheduler import get_ready_actions
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from telegram_exm import send_telegram_message
+from telegram_exm import *
 
 logger = get_logger(__name__)
 
