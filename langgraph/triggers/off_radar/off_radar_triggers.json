@@ -17,7 +17,7 @@
     },
     {
       "id": "consensus_detected",
-      "description": "A specific message has received a high number of positive reactions (likes, positive comments).",
+      "description": "Detected a forming group consensus: either a specific message has received high positive engagement, OR a sequence of recent messages where multiple participants express agreement or share the same sentiment/opinion (a 'pile-on' of agreement).",     
       "suggested_actions": [
         "express_consensus_agreement"
       ]

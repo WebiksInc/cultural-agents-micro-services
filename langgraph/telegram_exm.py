@@ -231,7 +231,7 @@ def reply_to_telegram_message(from_phone=None, to_target=None, content_value=Non
         content_value=content_value,
         reply_to_message_id=reply_to_id
     )
-
+ 
 def reply_to_telegram_message_by_timestamp(from_phone=None, to_target=None, content_value=None, reply_timestamp=None):
     """
     Reply to a message by timestamp (deprecated - use send_telegram_message with reply_to_timestamp).
