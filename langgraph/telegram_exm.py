@@ -111,7 +111,7 @@ def get_all_chats(account_phone=None):
         logger.error(f"Error fetching chats: {e}")
         return {"success": False, "error": str(e)}
 
-def get_chat_messages(phone=None, chat_id=None, limit=10):
+def get_chat_messages(phone=None, chat_id=None, limit=1000):
     """
     Fetch chat messages from Telegram API.
     
@@ -248,12 +248,69 @@ def reply_to_telegram_message_by_timestamp(from_phone=None, to_target=None, cont
         reply_to_timestamp=reply_timestamp
     )
 
+def show_typing_indicator(phone, chatId, duration):
+    """Show typing indicator for (duration/1000) seconds in the chat."""
+    postUrl = f"{TELEGRAM_API_URL}/api/typing"
+    payload = {
+        "phone": phone,
+        "chatId": chatId,
+        "duration": duration  
+    }
+    print('Showing typing indicator at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+def add_reaction_to_message(phone=None, chat_id=None, message_timestamp=None, emoji=None):
+    """
+    Add emoji reaction to a message by timestamp.
+    
+    Args:
+        phone: Phone number to react from
+        chat_id: Chat ID where the message is
+        message_timestamp: ISO timestamp of the message to react to
+        emoji: Emoji to use as reaction (e.g., "👍", "❤️", "🔥")
+    
+    Returns:
+        JSON response from Telegram API
+    """
+    phone = phone or TAMAR_NUMBER
+    chat_id = chat_id or PETACH_TIKVA_CHAT_ID
+    emoji = emoji or "👍"
+    
+    if not message_timestamp:
+        raise ValueError("message_timestamp is required")
+    
+    postUrl = f"{TELEGRAM_API_URL}/api/reactions"
+    payload = {
+        "phone": phone,
+        "chatId": chat_id,
+        "messageTimestamp": message_timestamp,
+        "emoji": emoji
+    }
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
 
 
 # get_unread_telegram_messages()
 # get_all_chats()
-get_chat_messages()
+# output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=5)
 # get_all_group_participants(phone="+37379276083", chat_id="3389864729")
 #send_telegram_message()
 # reply_to_telegram_message()
 # reply_to_telegram_message_by_timestamp()
+# print(output)
+
+if __name__ == "__main__":
+    import time
+    
+    # Show typing indicator
+    # show_typing_indicator(phone=TAMAR_NUMBER, chatId=PETACH_TIKVA_CHAT_ID, duration=6000)
+    add_reaction_to_message(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, message_timestamp="2025-11-24T14:07:40.000Z", emoji="👌")
+    # Wait for typing to show before sending message
+    # time.sleep(6)  # Wait 6 seconds to see the typing indicator
+    # output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=5)
+    # print(json.dumps(output, indent=2, ensure_ascii=False))
+    # Send message
+    # send_telegram_message( from_phone=TAMAR_NUMBER, to_target=PETACH_TIKVA_CHAT_ID, content_value="Hello from LangGraph Telegram EXM!" )
