@@ -21,6 +21,10 @@ export interface MediaInfo {
   mimeType?: string;
 }
 
+export interface MessageReaction {
+  emoji: string;      
+  count: number;     
+}
 export interface FullChatMessage {
   id: number;
   date: string;
@@ -33,6 +37,7 @@ export interface FullChatMessage {
   isForwarded: boolean;
   replyToMessageId: number | null;
   media: MediaInfo | null;
+  reactions: MessageReaction[];
   views: number | null;
   forwards: number | null;
 }

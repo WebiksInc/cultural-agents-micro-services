@@ -1,51 +1,8 @@
 import sessionManager from './sessionManager';
 import logger from '../utils/logger.js';
 import entityResolver from './entityResolver';
-import { FullChatMessage, MediaInfo } from '../types/messages';
-
-function extractMediaInfo(media: unknown): MediaInfo {
-  const mediaObj = media as Record<string, unknown>;
-  const className = (mediaObj.className || mediaObj.constructor?.toString() || 'unknown') as string;
-  
-  let type: MediaInfo['type'] = 'unknown';
-  if (className.includes('Photo')) type = 'photo';
-  else if (className.includes('Poll')) type = 'poll';
-
-  const document = mediaObj.document as Record<string, unknown> | undefined;
-  const photo = mediaObj.photo as Record<string, unknown> | undefined;
-  const attributes = document?.attributes as Array<Record<string, unknown>> | undefined;
-
-  return {
-    type,
-    fileName: attributes?.find((a) => a.fileName)?.fileName as string | undefined,
-    fileSize: (document?.size || photo?.size) as number | undefined,
-    duration: attributes?.find((a) => a.duration)?.duration as number | undefined,
-    mimeType: document?.mimeType as string | undefined,
-  };
-}
-
-function transformMessage(msg: unknown): FullChatMessage {
-  const message = msg as Record<string, unknown>;
-  const sender = message.sender as Record<string, unknown> | undefined;
-  const replyTo = message.replyTo as Record<string, unknown> | undefined;
-  
-  return {
-    id: message.id as number,
-    date: message.date ? new Date((message.date as number) * 1000).toISOString() : new Date().toISOString(),
-    text: (message.message as string) || null,
-    senderId: message.senderId?.toString() || null,
-    senderUsername: sender?.username as string | null || null,
-    senderFirstName: sender?.firstName as string | null || null,
-    senderLastName: sender?.lastName as string | null || null,
-    isOutgoing: (message.out as boolean) || false,
-    isForwarded: message.fwdFrom !== undefined && message.fwdFrom !== null,
-    replyToMessageId: (replyTo?.replyToMsgId as number) || null,
-    media: message.media ? extractMediaInfo(message.media) : null,
-    views: (message.views as number) || null,
-    forwards: (message.forwards as number) || null,
-  };
-}
-
+import { FullChatMessage } from '../types/messages';
+import { transformMessage } from '../utils/chatMessage';
 
 export const findMessageIdByTimestamp = async (
   phone: string,
@@ -141,5 +98,6 @@ export const getMessages = async (
 
 export default {
   getMessages,
-  findMessageIdByTimestamp
+  findMessageIdByTimestamp,
 };
+
