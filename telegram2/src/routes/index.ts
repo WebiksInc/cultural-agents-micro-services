@@ -6,6 +6,8 @@ import chatMessagesRoutes from './chatMessagesRoutes';
 import chatParticipantsRoutes from './chatParticipantsRoutes';
 import pollRoutes from './pollRoutes';
 import typingRoutes from './typingRoutes';
+import reactionRoutes from './reactionRoutes';
+
 
 const router = Router();
 
@@ -16,6 +18,7 @@ router.use('/chat-messages', chatMessagesRoutes);
 router.use('/participants', chatParticipantsRoutes);
 router.use('/polls', pollRoutes);
 router.use('/typing', typingRoutes);  
+router.use('/reactions', reactionRoutes);
 
     
 export default router;

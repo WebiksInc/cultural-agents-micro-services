@@ -155,6 +155,20 @@ def show_typing_indicator(phone=ELI_NUMBER, chatId="526622223", duration=5000):
 # replay_to_telegram_message()
 # reply_to_telegram_message_by_timestamp()
 
+def add_reaction_to_message():
+    """Add emoji reaction to a message by timestamp."""
+    postUrl = f"{TELEGRAM_API_URL}/api/reactions"
+    payload = {
+        "phone": ELI_NUMBER,
+        "chatId": PETACH_TIKVA_CHAT_ID,
+        "messageTimestamp": "2025-11-20T10:30:00.000Z",  
+        "emoji": "👍"
+    }
+    print('Adding reaction at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json
+
 if __name__ == "__main__":
     show_typing_indicator(chatId="526622223", duration=15000) # 15 seconds
     send_telegram_message()
