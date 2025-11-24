@@ -1,0 +1,225 @@
+import requests
+import os
+import json
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+TELEGRAM_HOST = os.environ.get('TELEGRAM_HOST', 'localhost')
+TELEGRAM_PORT = os.environ.get('TELEGRAM_PORT', '4000')
+TELEGRAM_API_URL = f"http://{TELEGRAM_HOST}:{TELEGRAM_PORT}"
+
+# Test constants (for standalone testing)
+TAMAR_NUMBER_ENCODED = "%2B37379276083"
+TAMAR_NUMBER = "+37379276083"
+TAMAR_API_HASH = "d6b4e90157370c68eefd02872c165541"
+TAMAR_API_ID = 25872607
+YAIR_PHONE_ENCODED = "%2B972584087777"
+YAIR_NUMBER = "+972584087777"
+MATAN_PHONE_ENCODED = "%2B1925 208 8164"
+MATAN_NUMBER = "+1925 208 8164"
+MATAN_API_HASH = "82efd609e785a46bb8c98cbe5052d473"
+MATAN_API_ID = 34480201
+PETACH_TIKVA_CHAT_ID = "3175400700"
+PETACH_TIKVA_CHAT_ID = "3389864729"
+REPLIED_MESSAGE_ID = 13
+ELI_NUMBER_ENCODED = "%2B19252931349"
+ELI_NUMBER = "+19252931349"
+
+def print_response(response):
+    """Print response for debugging."""
+    print('Status Code:', response.status_code)
+    print(json.dumps(response.json(), indent=2, ensure_ascii=False)) 
+
+# authentication
+
+def send_telegram_verification_code():
+    postUrl = f"{TELEGRAM_API_URL}/api/auth/send-code"
+    payload = {
+      "phone": TAMAR_NUMBER,
+      "apiId": TAMAR_API_ID,
+      "apiHash": TAMAR_API_HASH
+    }
+    print('Sending verification code to:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+def verify_telegram_code():
+    postUrl = f"{TELEGRAM_API_URL}/api/auth/verify-code"
+    payload = {
+      "phone": TAMAR_NUMBER,
+      "code": "12345"  # Replace with the actual code received
+    }
+    print('Verifying code at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+# message and chat operations
+
+def get_unread_telegram_messages(): 
+    getUrl = f"{TELEGRAM_API_URL}/api/messages/unread?accountPhone={TAMAR_NUMBER_ENCODED}&target={YAIR_PHONE_ENCODED}"
+    print('Fetching unread messages from:', getUrl)
+    response = requests.get(getUrl)
+    print_response(response)
+    return response.json()
+
+def get_all_chats():
+    getUrl = f"{TELEGRAM_API_URL}/api/chats/all?accountPhone={ELI_NUMBER_ENCODED}"
+    print('Fetching all chats from:', getUrl)
+    response = requests.get(getUrl)
+    print_response(response)
+    return response.json()
+
+def get_chat_messages(phone=None, chat_id=None, limit=10):
+    """
+    Fetch chat messages from Telegram API.
+    
+    Args:
+        phone: Phone number to fetch messages for (will be URL encoded)
+        chat_id: Chat ID to fetch messages from
+        limit: Maximum number of messages to fetch
+    
+    Returns:
+        JSON response with chat messages
+    """
+    phone = phone or TAMAR_NUMBER
+    chat_id = chat_id or PETACH_TIKVA_CHAT_ID
+    phone_encoded = phone.replace("+", "%2B")
+    
+    getUrl = f"{TELEGRAM_API_URL}/api/chat-messages?phone={phone_encoded}&chatId={chat_id}&limit={limit}"
+    logger.info(f'Fetching messages from: {getUrl}')
+    
+    try:
+        response = requests.get(getUrl, timeout=10)
+        response.raise_for_status()
+        logger.info(f"Messages fetched successfully. Count: {response.json().get('messagesCount', 0)}")
+        return response.json()
+    except requests.RequestException as e:
+        logger.error(f"Error fetching chat messages: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def get_all_group_participants(phone=None, chat_id=None):
+    """
+    Fetch all participants in a group chat.
+    
+    Args:
+        phone: Phone number to use for request (will be URL encoded)
+        chat_id: Chat ID to get participants from
+    
+    Returns:
+        JSON response with group participants
+    """
+    phone = phone or TAMAR_NUMBER
+    chat_id = chat_id or PETACH_TIKVA_CHAT_ID
+    phone_encoded = phone.replace("+", "%2B")
+    
+    getUrl = f"{TELEGRAM_API_URL}/api/participants?phone={phone_encoded}&chatId={chat_id}"
+    logger.info(f'Fetching all group participants from: {getUrl}')
+    
+    try:
+        response = requests.get(getUrl, timeout=10)
+        response.raise_for_status()
+        logger.info(f"Group participants fetched successfully. Status: {response.status_code}")
+        return response.json()
+    except requests.RequestException as e:
+        logger.error(f"Error fetching group participants: {e}")
+        return {"success": False, "error": str(e)}
+
+# sending messages and replies
+
+def send_telegram_message(toNumber="526622223"):
+    postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
+    payload = {
+      "fromPhone": ELI_NUMBER,
+      "toTarget": toNumber,
+      "content": {
+        "type": "text",
+        "value": "hi there from the python api!!"
+      }
+    }
+    print('Sending message to:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+def replay_to_telegram_message():
+    # NOTE: every telegram account have its own message IDs although the messages are in the same chat!!
+    postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
+    payload = {
+      "fromPhone": MATAN_NUMBER,
+      "toTarget": PETACH_TIKVA_CHAT_ID,
+      "content": {
+        "type": "text",
+        "value": "This is a reply to your message from the python API."
+      },
+      "replyTo": REPLIED_MESSAGE_ID
+    }
+    print('Replying to message at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+def reply_to_telegram_message_by_timestamp():
+    postUrl = f"{TELEGRAM_API_URL}/api/messages/send"
+    payload = {
+      "fromPhone": TAMAR_NUMBER,
+      "toTarget": PETACH_TIKVA_CHAT_ID,
+      "content": {
+        "type": "text",
+        "value": "This is a reply to your message by timestamp from the python API."
+      },
+      "replyToTimestamp": "2025-11-13T07:13:48.000Z"
+    }
+    print('Replying to message by timestamp at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+
+def show_typing_indicator(phone=ELI_NUMBER, chatId="526622223", duration=5000):
+    """Show typing indicator for (duration/1000) seconds in the Petach Tikva chat."""
+    postUrl = f"{TELEGRAM_API_URL}/api/typing"
+    payload = {
+        "phone": phone,
+        "chatId": chatId,
+        "duration": duration  
+    }
+    print('Showing typing indicator at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json()
+
+
+# get_unread_telegram_messages()
+# get_all_chats()
+get_chat_messages()
+# get_all_group_participants(phone="+37379276083", chat_id="3389864729")
+#send_telegram_message()
+# reply_to_telegram_message()
+# reply_to_telegram_message_by_timestamp()
+
+def add_reaction_to_message():
+    """Add emoji reaction to a message by timestamp."""
+    postUrl = f"{TELEGRAM_API_URL}/api/reactions"
+    payload = {
+        "phone": ELI_NUMBER,
+        "chatId": PETACH_TIKVA_CHAT_ID,
+        "messageTimestamp": "2025-11-20T10:30:00.000Z",  
+        "emoji": "👍"
+    }
+    print('Adding reaction at:', postUrl)
+    response = requests.post(postUrl, json=payload)
+    print_response(response)
+    return response.json
+
+if __name__ == "__main__":
+    show_typing_indicator(chatId="526622223", duration=15000) # 15 seconds
+    send_telegram_message()
+    show_typing_indicator(chatId=PETACH_TIKVA_CHAT_ID, duration=15000) # 15 seconds
+    send_telegram_message(toNumber=PETACH_TIKVA_CHAT_ID)
+
+    
