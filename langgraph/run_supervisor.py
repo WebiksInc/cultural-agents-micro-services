@@ -61,8 +61,13 @@ def parse_telegram_message(msg_data: dict) -> Message:
             for r in msg_data.get("reactions", [])
         ]
     
+    msg_id = msg_data.get("id")
+    if msg_id is None or msg_id == "":
+        logger.warning(f"Message with missing ID detected: {msg_data}")
+        msg_id = f"UNKNOWN_{msg_data.get('date', 'NO_DATE')}"
+    
     return Message(
-        message_id=str(msg_data.get("id", "")),
+        message_id=str(msg_id),
         sender_id=msg_data.get("senderId") or "",
         sender_username=msg_data.get("senderUsername") or "",
         sender_first_name=msg_data.get("senderFirstName") or "",
@@ -201,8 +206,17 @@ def run_supervisor_loop():
                 if messages_data and messages_data.get("success"):
                     raw_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
                     
+                    # Log ALL fetched message IDs to track if same message appears with different IDs
+                    all_ids = [msg["message_id"] for msg in raw_messages]
+                    logger.info(f"📥 Fetched {len(raw_messages)} messages. IDs: {all_ids}")
+                    
                     # Filter truly new messages
                     new_messages = [msg for msg in raw_messages if msg["message_id"] not in seen_message_ids]
+                    
+                    # Debug logging for investigation
+                    if new_messages:
+                        for msg in new_messages:
+                            logger.info(f"📩 New msg ID={msg['message_id']}, Sender={msg.get('sender_first_name', 'Unknown')}, Date={msg.get('date').strftime('%Y-%m-%d %H:%M:%S')}, Text={msg.get('text', '')[:50]}")
                     
                     if new_messages:
                         seen_message_ids.update(msg["message_id"] for msg in new_messages)

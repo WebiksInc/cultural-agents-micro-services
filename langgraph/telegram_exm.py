@@ -57,24 +57,29 @@ def verify_telegram_code():
 
 # message and chat operations
 
-def get_unread_telegram_messages(account_phone=None, target_phone=None): 
+def get_unread_telegram_messages(account_phone=None, target_phone=None, chat_id=None): 
     """
     Fetch unread messages from Telegram API.
     
     Args:
         account_phone: Account phone number (will be URL encoded)
-        target_phone: Target phone number (will be URL encoded)
+        target_phone: Target phone number for direct messages (will be URL encoded)
+        chat_id: Chat ID for group chats (use this OR target_phone, not both)
     
     Returns:
         JSON response with unread messages
     """
     account_phone = account_phone or TAMAR_NUMBER
-    target_phone = target_phone or YAIR_NUMBER
-    
     account_encoded = account_phone.replace("+", "%2B")
-    target_encoded = target_phone.replace("+", "%2B")
     
-    getUrl = f"{TELEGRAM_API_URL}/api/messages/unread?accountPhone={account_encoded}&target={target_encoded}"
+    # Use chat_id if provided, otherwise fall back to target_phone
+    if chat_id:
+        getUrl = f"{TELEGRAM_API_URL}/api/messages/unread?accountPhone={account_encoded}&target={chat_id}"
+    else:
+        target_phone = target_phone or YAIR_NUMBER
+        target_encoded = target_phone.replace("+", "%2B")
+        getUrl = f"{TELEGRAM_API_URL}/api/messages/unread?accountPhone={account_encoded}&target={target_encoded}"
+    
     logger.info(f'Fetching unread messages from: {getUrl}')
     
     try:
@@ -111,7 +116,7 @@ def get_all_chats(account_phone=None):
         logger.error(f"Error fetching chats: {e}")
         return {"success": False, "error": str(e)}
 
-def get_chat_messages(phone=None, chat_id=None, limit=1000):
+def get_chat_messages(phone=None, chat_id=None, limit=100):
     """
     Fetch chat messages from Telegram API.
     
