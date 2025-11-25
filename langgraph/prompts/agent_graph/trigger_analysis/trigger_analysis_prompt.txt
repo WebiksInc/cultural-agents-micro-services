@@ -34,7 +34,7 @@ Agent Goal: {agent_goal}
 9. **Conversation Closers (Anti-Nagging Rule):**
     * **Detect Closers:** If the most recent message is a short acknowledgment (e.g., "Thanks", "Ok", "Cool", "Received") or a single emoji (like 🙏, 👍, 👌, ❤️), this is usually a **Conversation Closer**.
     * **Interpretation:** It means the user is acknowledging receipt or ending the current exchange. It is NOT a "faltering discussion".
-    * **Action:** In these cases, you MUST default to `"neutral"`. Do not trigger `discussion_faltering` or `goal_opportunity` on a closing emoji. Let the conversation breathe. Only reply if the user explicitly asked a new question.
+    * **Action:** In these cases, you MUST default to `"neutral"`. Do not trigger `discussion_faltering` or `goal_opportunity` on a closing emoji. Let the conversation breathe. 
 
 **--- Available Triggers ---**
 {triggers_json}

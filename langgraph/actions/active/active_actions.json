@@ -25,7 +25,11 @@
       "id": "answer_direct_question",
       "description": "Provide a direct answer to a question that was explicitly aimed at the agent.",
       "purpose": "To maintain credibility and fulfill the agent's role when called upon."
+    },
+    {
+      "id": "add_reaction",
+      "description": "React to the target message with a single emoji instead of sending a text response.",
+      "purpose": "To provide quick validation, show agreement, or acknowledge a 'Conversation Closer' (like 'Thanks' or a single emoji) without cluttering the chat or forcing the conversation to continue unnecessarily."
     }
-    
   ]
 }

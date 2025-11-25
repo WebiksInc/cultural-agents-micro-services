@@ -5,14 +5,16 @@
       "id": "direct_mention",
       "description": "Agent was directly addressed by a group member.",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction"
       ]
     },
     {
       "id": "implicit_follow_up",
       "description": "The most recent message is a clear, contextual follow-up (e.g., a question, a request for more details, or a direct continuation) aimed at the agent's *immediately preceding* message, even if the agent's name is not used.",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction"
       ]
     },
     {

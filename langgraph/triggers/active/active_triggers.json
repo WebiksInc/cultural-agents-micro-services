@@ -5,7 +5,8 @@
       "id": "direct_mention",
       "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction"
       ]
     },
      {
@@ -14,7 +15,8 @@
       "suggested_actions": [
         "answer_direct_question",
         "show_interest",
-        "expand_discussion"
+        "expand_discussion",
+        "add_reaction"
       ]
     },
     {

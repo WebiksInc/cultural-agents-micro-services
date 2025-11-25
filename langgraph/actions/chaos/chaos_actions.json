@@ -15,6 +15,11 @@
       "id": "strawman_argument",
       "description": "Intentionally misinterpret, oversimplify, or distort a participant's argument to make it easier to attack or ridicule.",
       "purpose": "To frustrate the opponent, lower the quality of discourse, and force them into a defensive position."
+    },
+    {
+      "id": "add_reaction",
+      "description": "React to the target message with a single emoji instead of sending a text response.",
+      "purpose": "To provide quick validation, show agreement, provoke another group member with a reaction emoji, or acknowledge a 'Conversation Closer' (like 'Thanks' or a single emoji) without cluttering the chat or forcing the conversation to continue unnecessarily."
     }
   ]
 }

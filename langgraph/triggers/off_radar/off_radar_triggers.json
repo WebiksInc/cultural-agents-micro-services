@@ -5,21 +5,24 @@
       "id": "direct_mention",
       "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+         "add_reaction"
       ]
     },
     {
       "id": "implicit_follow_up",
-      "description": "The most recent message is a clear, contextual follow-up (e.g., a question, a request for more details, or a direct continuation) aimed at the agent's *immediately preceding* message, even if the agent's name is not used.",
+      "description": "The most recent message is a clear, contextual follow-up (e.g., a question, a request for more details, or a direct continuation) aimed at the agent's *preceding* message, even if the agent's name is not used.",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction"
       ]
     },
     {
       "id": "blend_in_with_group",
       "description": "Detected a forming group consensus: either a specific message receiving a noticeably higher number of reactions compared to the recent conversation baseline (indicating group approval), OR a sequence of recent messages where multiple participants express agreement or share the same sentiment/opinion.",     
       "suggested_actions": [
-        "express_consensus_agreement"
+        "express_consensus_agreement",
+        "add_reaction"
       ]
     },
     {
@@ -27,6 +30,14 @@
       "description": "A probabilistic trigger to act, to simulate occasional, random activity.",
       "suggested_actions": [
         "post_neutral_response"
+      ]
+    },
+    {
+      "id": "support_your_comrades",
+      "description": "Another agent in the group has just posted a message. This is an opportunistic moment to support them by reacting or posting a low-key supportive comment.",
+      "suggested_actions": [
+        "add_reaction",
+        "post_supportive_comment"
       ]
     },
     {
