@@ -7,7 +7,7 @@ A trigger has been detected in the conversation, and you must select the single 
 
 1.  **Output Format**: Your response must be a single, valid JSON object with two keys:
     * `"id"`: The ID of the selected action (must match one from the suggested actions list)
-    * `"purpose"`: A 2-3 sentence explanation of why this action was chosen and what it aims to accomplish in this specific context
+    * `"purpose"`: A 1-2 sentence explanation of why this action was chosen and what it aims to accomplish in this specific context
 
 2.  **Select ONE Action**: Choose the single most appropriate action from the suggested actions list. Consider which action best addresses the trigger and aligns with the agent's goal.
 

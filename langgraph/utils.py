@@ -5,7 +5,7 @@ Provides common functionality for loading prompts, model configs, and formatting
 """
 
 import json
-import logging
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 from logs.logfire_config import get_logger
@@ -22,16 +22,6 @@ MODEL_CONFIG_PATH = CONFIG_DIR / "model_config.json"
 def load_prompt(prompt_path: str) -> str:
     """
     Load a prompt template from file.
-    
-    Args:
-        prompt_path: Relative path from langgraph/prompts/ directory
-                    (e.g., "agent_graph/trigger_analysis_prompt.txt")
-    
-    Returns:
-        The prompt template as a string
-        
-    Raises:
-        FileNotFoundError: If prompt file doesn't exist
     """
     full_path = PROMPTS_DIR / prompt_path
     try:
@@ -70,22 +60,16 @@ def load_model_config() -> Dict[str, Any]:
 
 def get_model_settings(node_name: str, env_var_name: Optional[str] = None) -> Dict[str, Any]:
     """
-    Get model settings for a specific node.
-    
-    Args:
-        node_name: Name of the node (e.g., "trigger_analysis", "component_B")
-        env_var_name: Optional environment variable name to override model setting
+    Extracting model settings for a specific node as configured in the model config file.
         
     Returns:
         Dictionary with 'model' and 'temperature' keys
     """
-    import os
-    
     model_configs = load_model_config()
     node_config = model_configs.get(node_name, {})
     
     # Default settings
-    default_model = "gpt-4o-mini"
+    default_model = "gpt-5-nano"
     default_temperature = 0
     
     # Get settings (env var > config > defaults)
@@ -105,7 +89,8 @@ def get_model_settings(node_name: str, env_var_name: Optional[str] = None) -> Di
 
 def format_message_for_prompt(msg: Dict[str, Any], 
                               include_timestamp: bool = True,
-                              include_emotion: bool = True) -> str:
+                              include_emotion: bool = True,
+                              selected_persona: Dict[str, Any] = None) -> str:
     """
     Format a message for inclusion in a prompt.
     
@@ -115,7 +100,7 @@ def format_message_for_prompt(msg: Dict[str, Any],
         include_emotion: Whether to include emotion annotation
         
     Returns:
-        Formatted message string (e.g., "[2025-11-11 10:00:00] alice [joy]: Hello!")
+        Formatted message string with timestamp, sender, emotion, reactions, and text.
     """
     from datetime import datetime
     
@@ -132,6 +117,22 @@ def format_message_for_prompt(msg: Dict[str, Any],
         sender = sender_first_name
     else:
         sender = 'Unknown'
+    
+    # Check if this message is from the agent (YOU)
+    if selected_persona:
+        persona_username = selected_persona.get('user_name', '').strip().lower()
+        persona_first = selected_persona.get('first_name', '').strip().lower()
+        persona_last = selected_persona.get('last_name', '').strip().lower()
+        
+        is_agent = False
+        if persona_username and sender_username.lower() == persona_username:
+            is_agent = True
+        elif persona_first and persona_last:
+            if sender_first_name.lower() == persona_first and sender_last_name.lower() == persona_last:
+                is_agent = True
+        
+        if is_agent:
+            sender = f"{sender} (YOU)"
     
     text = msg.get('text', '')
     
@@ -176,19 +177,6 @@ def format_message_for_prompt(msg: Dict[str, Any],
 
 
 def load_json_file(file_path: Path) -> Dict[str, Any]:
-    """
-    Load and parse a JSON file.
-    
-    Args:
-        file_path: Path to the JSON file
-        
-    Returns:
-        Parsed JSON as dictionary
-        
-    Raises:
-        FileNotFoundError: If file doesn't exist
-        json.JSONDecodeError: If file contains invalid JSON
-    """
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)

@@ -16,8 +16,8 @@
       ]
     },
     {
-      "id": "consensus_detected",
-      "description": "Detected a forming group consensus: either a specific message has received high positive engagement, OR a sequence of recent messages where multiple participants express agreement or share the same sentiment/opinion (a 'pile-on' of agreement).",     
+      "id": "blend_in_with_group",
+      "description": "Detected a forming group consensus: either a specific message receiving a noticeably higher number of reactions compared to the recent conversation baseline (indicating group approval), OR a sequence of recent messages where multiple participants express agreement or share the same sentiment/opinion.",     
       "suggested_actions": [
         "express_consensus_agreement"
       ]

@@ -21,14 +21,14 @@ Agent Goal: {agent_goal}
       If the most recent message was sent by the agent (check if the sender's name matches the Agent Name provided below), it means the agent has just spoken (which is you).
       In this case, the trigger is almost always `"neutral"` because the agent just provided a response.
       Do not select a trigger (like 'direct_mention') based on an older message that the agent *already responded to*.
-5.  **Consider Full Context**: Analyze message timing, content, emotions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
+5.  **Consider Full Context**: Analyze message timing, content, emotions, messages' reactions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
 
 6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
 
 7.  **Check for Other-Mention (Critical):** Before selecting a trigger (especially `implicit_follow_up`), check if the most recent message contains **another user's name** that is not you. 
       If the message is clearly directed at *another person* and not you, the trigger **MUST** be `"neutral"`.
 
-5.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
+8.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
     * **Multi-Mention (INCLUDES YOU):** If the message mentions another person BUT ALSO mentions you (e.g., "{agent_name} and 'name'"), **this IS a direct mention to you**. Do not mark this as neutral just because another name is present.
 
 **--- Available Triggers ---**

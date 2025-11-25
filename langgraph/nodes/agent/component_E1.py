@@ -8,7 +8,7 @@ import logfire
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings
+from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
@@ -62,8 +62,12 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             action_description = action.get('description', 'No description available')
             break
         
-    # Format recent messages as JSON
-    recent_messages_json = json.dumps(recent_messages, indent=2, default=str)
+    # Format recent messages with (YOU) marker for agent's own messages
+    recent_messages_formatted = [
+        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona)
+        for msg in recent_messages
+    ]
+    recent_messages_json = json.dumps(recent_messages_formatted, indent=2, default=str)
     
     # Format persona as JSON
     persona_json = json.dumps(selected_persona, indent=2)

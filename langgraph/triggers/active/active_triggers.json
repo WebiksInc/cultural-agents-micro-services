@@ -23,8 +23,7 @@
       "suggested_actions": [
         "initiate_discussion",
         "change_narrative",
-        "expand_discussion",
-        "show_interest"
+        "expand_discussion"
       ]
     },
     {

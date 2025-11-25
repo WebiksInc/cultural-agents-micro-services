@@ -68,7 +68,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Format recent_messages as JSON
     recent_messages_formatted = [
-        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True)
+        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona)
         for msg in recent_messages
     ]
     recent_messages_json = json.dumps(recent_messages_formatted, indent=2)

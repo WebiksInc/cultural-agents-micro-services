@@ -56,7 +56,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Format recent messages for prompt
     message_lines = []
     for msg in recent_messages:
-        message_lines.append(format_message_for_prompt(msg, include_timestamp=True, include_emotion=True))
+        message_lines.append(format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona))
     recent_messages_text = "\n".join(message_lines)
     
     # Format triggers JSON
