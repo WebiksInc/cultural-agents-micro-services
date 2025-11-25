@@ -163,7 +163,16 @@ def format_message_for_prompt(msg: Dict[str, Any],
     
     # Combine: "[timestamp] sender [emotion]: text"
     header = " ".join(parts)
-    return f"{header}: {text}"
+    result = f"{header}: {text}"
+    
+    # Add reactions if present
+    reactions = msg.get('reactions')
+    if reactions and len(reactions) > 0:
+        reaction_parts = [f"{r.get('emoji', '?')}×{r.get('count', 0)}" for r in reactions]
+        reaction_str = ", ".join(reaction_parts)
+        result += f" [Reactions: {reaction_str}]"
+    
+    return result
 
 
 def load_json_file(file_path: Path) -> Dict[str, Any]:

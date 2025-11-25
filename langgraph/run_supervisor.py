@@ -27,7 +27,7 @@ from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 
 # Import Telegram functions
-from telegram_exm import get_chat_messages, get_all_group_participants
+from telegram_exm import *
 
 # Import Logfire logging
 from logs.logfire_config import setup_logfire, get_logger
