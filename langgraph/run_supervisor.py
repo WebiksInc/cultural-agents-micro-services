@@ -103,7 +103,6 @@ def is_agent_message(msg: Message, agent_personas: list) -> bool:
 
 
 def load_agent_personas() -> list:
-    """Load agent personas from config."""
     personas = []
     base_path = Path(__file__).parent
     

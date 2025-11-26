@@ -243,8 +243,8 @@ def reply_to_telegram_message_by_timestamp(from_phone=None, to_target=None, cont
     """
     from_phone = from_phone or MATAN_NUMBER
     to_target = to_target or PETACH_TIKVA_CHAT_ID
-    content_value = content_value or "This is a reply to your message by timestamp from the python API."
-    reply_timestamp = reply_timestamp or "2025-11-12T13:38:46.000Z"
+    content_value = content_value 
+    reply_timestamp = reply_timestamp 
     
     return send_telegram_message(
         from_phone=from_phone,
@@ -279,9 +279,9 @@ def add_reaction_to_message(phone=None, chat_id=None, message_timestamp=None, em
     Returns:
         JSON response from Telegram API
     """
-    phone = phone or TAMAR_NUMBER
-    chat_id = chat_id or PETACH_TIKVA_CHAT_ID
-    emoji = emoji or "👍"
+    phone = phone 
+    chat_id = chat_id 
+    emoji = emoji 
     
     if not message_timestamp:
         raise ValueError("message_timestamp is required")
