@@ -104,21 +104,21 @@ def format_message_for_prompt(msg: Dict[str, Any],
     """
     from datetime import datetime
     
-    # Get sender name (prefer username, fall back to first_name + last_name, then just first_name)
+    # Get sender name (prefer full name, fall back to first_name, then username)
     sender_username = msg.get('sender_username', '').strip()
     sender_first_name = msg.get('sender_first_name', '').strip()
     sender_last_name = msg.get('sender_last_name', '').strip()
     
-    if sender_username:
-        sender = sender_username
-    elif sender_first_name and sender_last_name:
+    if sender_first_name and sender_last_name:
         sender = f"{sender_first_name} {sender_last_name}"
     elif sender_first_name:
         sender = sender_first_name
+    elif sender_username:
+        sender = sender_username
     else:
         sender = 'Unknown'
     
-    # Check if this message is from the agent (YOU)
+    # Check if this message is from the agent 
     if selected_persona:
         persona_username = selected_persona.get('user_name', '').strip().lower()
         persona_first = selected_persona.get('first_name', '').strip().lower()

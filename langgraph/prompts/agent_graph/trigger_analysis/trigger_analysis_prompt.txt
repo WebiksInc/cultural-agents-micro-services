@@ -12,7 +12,7 @@ Agent Goal: {agent_goal}
 
 1.  **Output Format**: Your response must be a single, valid JSON object with THREE keys:
     * `"id"`: The ID of the detected trigger (must match one from the available triggers list)
-    * `"justification"`: A 1-2 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action.
+    * `"justification"`: A 1-2 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action. **IMPORTANT**: If your justification includes quotes from messages, use single quotes (') instead of double quotes (") to avoid breaking JSON syntax.
     * `"target_message"`: An object with the specific message that triggered this detection (or `null` if not applicable). Should contain:
       - `"timestamp"`: The timestamp from the message in format "YYYY-MM-DD HH:MM:SS" (extract from the bracketed timestamp)
       - `"text"`: The text content of the message
@@ -23,16 +23,21 @@ Agent Goal: {agent_goal}
 
 4.  **Check for Self-Reply (Critical):** Pay close attention to the **most recent message** (the first one in the list). 
     If the most recent message sender is marked with **(YOU)**, it means the agent has just spoken (which is you).
-      In this case, the trigger is almost always `"neutral"` because the agent just provided a response.
-      Do not select a trigger (like 'direct_mention') based on an older message that the agent *already responded to*.
+    In this case, the trigger is almost always `"neutral"` because the agent just provided a response.
+    Do not select a trigger (like 'direct_mention') based on an older message that the agent *already responded to*.
 
 5.  **Consider Full Context**: Analyze message timing, content, emotions, messages' reactions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
 
-6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
+6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent ({agent_name}). Consider whether messages are directed at this agent, and how they relate to the agent's goal.
 
 7.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
     * **Multi-Mention (INCLUDES YOU):** If the message mentions another person BUT ALSO mentions you (e.g., "{agent_name} and 'name'"), **this IS a direct mention to you**. Do not mark this as neutral just because another name is present.
 
+8. **Redundancy Guard (Already Handled):**
+   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
+   * **Already Addressed:** If the current situation—whether it's a question you answered, a topic you commented on, or an event you ({agent_name}) reacted to—was **already addressed** by you in the last few messages, do NOT trigger again.
+   * **Prevent Loops:** Do not select triggers like `goal_opportunity` or `implicit_follow_up` for the same specific context you just finished handling. 
+      Select `"neutral"` to avoid repetitive or nagging behavior.
 **--- Available Triggers ---**
 {triggers_json}
 

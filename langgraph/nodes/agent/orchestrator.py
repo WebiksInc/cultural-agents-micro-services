@@ -207,7 +207,7 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 'next_node': END
             }
         
-        logger.warning(f"Validation FAILED (attempt {retry_count}/{MAX_RETRIES})")
+        logger.warning(f"Validation FAILED (attempt {retry_count}/{MAX_RETRIES}) - ({agent_name})")
         log_flow_transition("validator", "text_generator", f"retry {retry_count+1}/{MAX_RETRIES}, description: {explanation}", agent_name=agent_name)
         return {
             'next_node': 'text_generator'

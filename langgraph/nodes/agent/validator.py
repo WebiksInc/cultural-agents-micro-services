@@ -76,6 +76,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Building the validation prompt
     prompt_template = load_prompt("agent_graph/validator/validator_prompt.txt")
     validation_prompt = prompt_template.format(
+        agent_name=agent_name,
         styled_response=styled_response,
         agent_goal=agent_goal,
         selected_action=selected_action_json,

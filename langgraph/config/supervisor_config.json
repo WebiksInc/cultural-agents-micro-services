@@ -6,8 +6,8 @@
   },
   "polling": {
     "message_check_interval_seconds": 15,
-    "telegram_fetch_limit": 8,
-    "max_recent_messages": 8
+    "telegram_fetch_limit": 12,
+    "max_recent_messages": 12
   },
   "agents": [
     {

@@ -7,8 +7,8 @@ Your task is to perform a final, holistic quality check on the styled response b
 You must evaluate the response against these FOUR criteria:
 
 1. **Goal Alignment**: Does this message serve the agent's goal?
-   - The agent has a specific goal/role in the group
-   - Does this response help achieve that goal?
+   - The agent has a specific goal/role in the group - Does this response help achieve that goal?
+   - Note that not every message can serve the agent's goal - it should serve it only when it feels natural
 
 2. **Action Alignment**: Does this message fulfill the selected action's purpose?
    - An action was chosen with a specific purpose
@@ -32,6 +32,11 @@ You must evaluate the response against these FOUR criteria:
    - Is it relevant to the ongoing conversation?
    - Is it harmful, nonsensical, or completely out of place?
    - Does it create confusion or break conversation flow?
+
+6. **Redundancy & Repetition Guard (CRITICAL):**
+   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
+   * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
+   * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.
 
 - Make sure the output is social media appropriate: for example the answer should not be sturctured.
 **--- Your Decision ---**
