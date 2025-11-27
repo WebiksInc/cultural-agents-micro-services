@@ -315,6 +315,7 @@ if __name__ == "__main__":
     # add_reaction_to_message(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, message_timestamp="2025-11-24T14:07:40.000Z", emoji="👌")
     # Wait for typing to show before sending message
     # time.sleep(6)  # Wait 6 seconds to see the typing indicator
+    # output = get_all_chats(account_phone=MATAN_NUMBER)
     output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=5)
     print(json.dumps(output, indent=2, ensure_ascii=False))
     # Send message

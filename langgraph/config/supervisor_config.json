@@ -12,20 +12,20 @@
   "agents": [
     {
       "type": "active",
-      "name": "Tamar Rabinian",
-      "persona_file": "agents_personas/tamar_persona.json",
-      "agent_goal": "Encourage tourism in Israel only, by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
+      "name": "Hamoodi Shukri",
+      "persona_file": "agents_personas/hamoodi_persona.json",
+      "agent_goal": "Trying to find instigators of violence or violent people themselves in the group."
     },
     {
-      "type": "off_radar",
-      "name": "Matan Dotan",
-      "persona_file": "agents_personas/matan_persona.json",
-      "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short, low-key messages that blend into the background, without starting debates or posting long messages."
+      "type": "chaos",
+      "name": "Mustafa Yunes",
+      "persona_file": "agents_personas/mustafa_persona.json",
+      "agent_goal": "Raising controversial issues to expose instigators for the Active agent (Hamoodi Shukri), and echoing extremist views"
     }
   ],
   "group_metadata": {
-    "name": "PassportTraveling! English Only!",
-    "topic": "A group dedicated to sharing recommendations and information about notable sites, attractions, and places to visit around the world.",
+    "name": "Shababs Of Hebron",
+    "topic": "Friends from Hebron staying in touch, talking about daily life, sharing news, jokes.",
     "members": 7
   }
 }
