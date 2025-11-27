@@ -189,3 +189,50 @@ def load_json_file(file_path: Path) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error loading JSON from {file_path}: {e}")
         raise
+
+
+def get_most_recent_message_timestamp(recent_messages: list) -> Optional[str]:
+    """
+    Extract the timestamp from the most recent message.
+    
+    Args:
+        recent_messages: List of message dictionaries (first is most recent)
+        
+    Returns:
+        Timestamp string in format "YYYY-MM-DD HH:MM:SS" or None if not available
+    """
+    if not recent_messages or len(recent_messages) == 0:
+        return None
+    
+    most_recent_msg = recent_messages[0]  # First message is the most recent
+    if 'date' not in most_recent_msg:
+        return None
+    
+    date_obj = most_recent_msg['date']
+    if hasattr(date_obj, 'strftime'):
+        return date_obj.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        return str(date_obj)
+
+
+def convert_timestamp_to_iso(timestamp_str: str) -> Optional[str]:
+    """
+    Convert timestamp from "YYYY-MM-DD HH:MM:SS" to ISO format "YYYY-MM-DDTHH:MM:SS.000Z".
+    
+    Args:
+        timestamp_str: Timestamp string in format "YYYY-MM-DD HH:MM:SS"
+        
+    Returns:
+        ISO format timestamp string or None if conversion fails
+    """
+    from datetime import datetime
+    
+    if not timestamp_str:
+        return None
+    
+    try:
+        dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+        return dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+    except Exception as e:
+        logger.warning(f"Failed to convert timestamp '{timestamp_str}': {e}")
+        return None

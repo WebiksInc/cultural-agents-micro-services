@@ -3,11 +3,11 @@ from logs.logfire_config import get_logger
 from logs import log_node_start
 # from nodes.supervisor.scheduler import get_ready_actions, mark_action_sent
 from nodes.supervisor.scheduler import get_ready_actions
-from datetime import datetime
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from telegram_exm import *
+from utils import get_most_recent_message_timestamp, convert_timestamp_to_iso
 
 logger = get_logger(__name__)
 
@@ -32,6 +32,10 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     execution_queue = state.get('execution_queue', [])
     group_metadata = state.get('group_metadata', {})
     chat_id = group_metadata.get('id', '')
+    recent_messages = state.get('recent_messages', [])
+    
+    # Get the most recent message timestamp for comparison
+    most_recent_timestamp = get_most_recent_message_timestamp(recent_messages)
     
     # If queue is empty, nothing to execute
     if not execution_queue:
@@ -69,20 +73,29 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
             logger.error(f"No message content for action from {agent_name}")
             continue
         
-        # Convert timestamp from "YYYY-MM-DD HH:MM:SS" to ISO format "YYYY-MM-DDTHH:MM:SS.000Z"
+        # Convert timestamp and determine if we should use reply
+        # Only use reply if target message is NOT the most recent message (unless it's a reaction)
         reply_timestamp = None
         if target_message and isinstance(target_message, dict):
             timestamp_str = target_message.get('timestamp', '')
             if timestamp_str:
-                try:
-                    # Convert "2025-11-26 08:36:07" to "2025-11-26T08:36:07.000Z"
-                  
-                    dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-                    reply_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-                    logger.info(f"Converted timestamp: {timestamp_str} -> {reply_timestamp}")
-                except Exception as e:
-                    logger.warning(f"Failed to convert timestamp '{timestamp_str}': {e}")
-                    reply_timestamp = None
+                # Convert to ISO format for Telegram API
+                reply_timestamp = convert_timestamp_to_iso(timestamp_str)
+                
+                if not reply_timestamp:
+                    logger.warning(f"Failed to convert timestamp '{timestamp_str}'")
+                else:
+                    # For reactions, we always need the timestamp
+                    # For regular messages, only use reply if target is not the most recent
+                    if action_id != "add_reaction":
+                        is_most_recent = (timestamp_str == most_recent_timestamp)
+                        if is_most_recent:
+                            logger.info(f"Target message is the most recent - skipping reply (no need to quote)")
+                            reply_timestamp = None
+                        else:
+                            logger.info(f"Target message is older - using reply: {timestamp_str} -> {reply_timestamp}")
+                    else:
+                        logger.info(f"Reaction target: {timestamp_str} -> {reply_timestamp}")
         
         # Route based on action_id
         if action_id == "add_reaction":
