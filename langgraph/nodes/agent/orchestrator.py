@@ -106,6 +106,8 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # After text generator (E.1)
     if current_node == 'text_generator':
         generated_response = state.get('generated_response')
+        selected_action = state.get('selected_action', {})
+        action_id = selected_action.get('id', '')
         
         if not generated_response:
             logger.error(f"Text generation failed - routing to END with error - ({agent_name})")
@@ -118,6 +120,16 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "agent_name": agent_name
                 },
                 'next_node': END
+            }
+        
+        # Skip styler for add_reaction - emoji doesn't need styling
+        if action_id == 'add_reaction':
+            logger.info(f"add_reaction detected - skipping styler, routing to validator - ({agent_name})")
+            log_flow_transition("text_generator", "validator", "add_reaction: skip styler", agent_name=agent_name)
+            # Copy generated_response to styled_response since we're skipping styler
+            return {
+                'styled_response': generated_response,
+                'next_node': 'validator'
             }
         
         logger.info(f"Text generated successfully - routing to styler - ({agent_name})")
@@ -166,6 +178,9 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             selected_action['agent_type'] = agent_type
             selected_action['agent_name'] = agent_name
             selected_action['phone_number'] = selected_persona.get('phone_number', '')
+            # Preserve target_message if it exists
+            if 'target_message' not in selected_action:
+                selected_action['target_message'] = None
             
             return {
                 'selected_action': selected_action,

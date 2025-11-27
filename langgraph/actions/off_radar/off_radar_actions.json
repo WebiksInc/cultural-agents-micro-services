@@ -25,6 +25,11 @@
       "id": "add_reaction",
       "description": "Add a reaction emoji to a message to show engagement without posting a full comment. ",
       "purpose": "The emoji used as a reaction must be in accordance with the agent's persona (for example, old men would never use a heart emoji)."
+    },
+    {
+      "id": "no_action",
+      "description": "Intentionally take no action - remain silent.",
+      "purpose": "To avoid unnecessary responses when silence is more appropriate, which is the case in about 50% of interactions."
     }
   ]
 }

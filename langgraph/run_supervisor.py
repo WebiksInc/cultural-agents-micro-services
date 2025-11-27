@@ -18,18 +18,13 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Setup logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Import graph builder
 from build_graph import build_supervisor_graph
 from states.supervisor_state import SupervisorState
 from states.agent_state import Message
-
-# Import Telegram functions
 from telegram_exm import *
-
-# Import Logfire logging
 from logs.logfire_config import setup_logfire, get_logger
 
 # Setup Logfire
@@ -45,10 +40,6 @@ CHAT_ID = CONFIG["telegram"]["chat_id"]
 MESSAGE_CHECK_INTERVAL = CONFIG["polling"]["message_check_interval_seconds"]
 TELEGRAM_FETCH_LIMIT = CONFIG["polling"]["telegram_fetch_limit"]
 MAX_RECENT_MESSAGES = CONFIG["polling"]["max_recent_messages"]
-
-# Global state
-_first_run = True
-_last_message_check = 0
 
 
 def parse_telegram_message(msg_data: dict) -> Message:
@@ -66,6 +57,9 @@ def parse_telegram_message(msg_data: dict) -> Message:
         logger.warning(f"Message with missing ID detected: {msg_data}")
         msg_id = f"UNKNOWN_{msg_data.get('date', 'NO_DATE')}"
     
+    # Preserve original ISO timestamp
+    original_timestamp = msg_data.get("date", "")
+    
     return Message(
         message_id=str(msg_id),
         sender_id=msg_data.get("senderId") or "",
@@ -73,7 +67,8 @@ def parse_telegram_message(msg_data: dict) -> Message:
         sender_first_name=msg_data.get("senderFirstName") or "",
         sender_last_name=msg_data.get("senderLastName") or "",
         text=msg_data.get("text") or "",
-        date=datetime.fromisoformat(msg_data.get("date", "").replace("Z", "+00:00")) if msg_data.get("date") else datetime.now(),
+        date=datetime.fromisoformat(original_timestamp.replace("Z", "+00:00")) if original_timestamp else datetime.now(),
+        timestamp=original_timestamp if original_timestamp else datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
         reactions=reactions,
         message_emotion=None,
         sender_personality=None,
@@ -119,7 +114,7 @@ def load_agent_personas() -> list:
     return personas
 
 def run_supervisor_loop():
-    # --- STEP 1: INITIALIZATION ---
+    # STEP 1: INITIALIZATION 
     logger.info("Starting Supervisor initialization...")
     
     # 1. Build graph and dependencies
@@ -129,7 +124,7 @@ def run_supervisor_loop():
     agent_personas = load_agent_personas()
     logger.info(f"Loaded {len(agent_personas)} agent personas")
     
-    primary_phone = agent_personas[0].get("phone_number", "+37379276083")
+    primary_phone = agent_personas[0].get("phone_number", "+37379276083") # the phone number used to fetch messages
     seen_message_ids = set()
     
     # 2. Initialize State
@@ -189,7 +184,7 @@ def run_supervisor_loop():
 
     logger.info("Initialization complete. Entering main fetching loop.")
 
-    # --- STEP 2: MAIN FETCHING LOOP ---
+    # STEP 2: MAIN FETCHING LOOP 
     last_message_check = 0
     
     try:
@@ -213,10 +208,6 @@ def run_supervisor_loop():
                     new_messages = [msg for msg in raw_messages if msg["message_id"] not in seen_message_ids]
                     
                     # Debug logging for investigation
-                    if new_messages:
-                        for msg in new_messages:
-                            logger.info(f"📩 New msg ID={msg['message_id']}, Sender={msg.get('sender_first_name', 'Unknown')}, Date={msg.get('date').strftime('%Y-%m-%d %H:%M:%S')}, Text={msg.get('text', '')[:50]}")
-                    
                     if new_messages:
                         seen_message_ids.update(msg["message_id"] for msg in new_messages)
                         
@@ -254,7 +245,7 @@ def run_supervisor_loop():
                     remaining = MESSAGE_CHECK_INTERVAL - int(time_since_check)
                     logger.info(f"Idle... Next pull in {remaining}s")
             
-            time.sleep(20)
+            time.sleep(25)
 
     except KeyboardInterrupt:
         logger.info("Supervisor loop stopped by user")

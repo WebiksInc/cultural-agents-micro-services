@@ -46,6 +46,14 @@
       ]
     },
     {
+      "id": "conversation_closer",
+      "description": "If the most recent message is a short acknowledgment (e.g., 'Thanks', 'Ok', 'Cool', 'Received') or a single emoji, this is usually a **Conversation Closer** which doesn't merit a reply.",
+      "suggested_actions": [
+        "no_action",
+        "add_reaction"
+      ]   
+    },
+    {
       "id": "neutral",
       "description": "A message was posted, but it does not meet any specific activation criteria for this agent. No action required.",
       "suggested_actions": []

@@ -143,17 +143,22 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
             if action_id not in suggested_action_ids:
                 logger.warning(f"LLM selected action '{action_id}' not in suggested actions. Using it anyway.")
             
+            # Pass through target_message from detected_trigger
+            target_message = detected_trigger.get('target_message')
+            
             # Log output to Logfire
             output_data = {
                 'selected_action': {
                     'id': action_id,
-                    'purpose': purpose
+                    'purpose': purpose,
+                    'target_message': target_message
                 },
                 'current_node': 'decision_maker'
             }
             log_node_output("decision_maker", {
                 "action_id": action_id,
                 "purpose": purpose,
+                "target_message": target_message,
                 "suggested_actions": suggested_action_ids
             }, agent_name=agent_name)
             log_state("decision_maker_exit", {**state, **output_data}, "agent")
@@ -161,7 +166,8 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
             return {
                 'selected_action': {
                     'id': action_id,
-                    'purpose': purpose
+                    'purpose': purpose,
+                    'target_message': target_message
                 },
                 'current_node': 'decision_maker'
             }

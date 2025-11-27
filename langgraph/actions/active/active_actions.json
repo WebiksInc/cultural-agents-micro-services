@@ -30,6 +30,11 @@
       "id": "add_reaction",
       "description": "React to the target message with a single emoji instead of sending a text response.",
       "purpose": "To provide quick validation, show agreement, or acknowledge a 'Conversation Closer' (like 'Thanks' or a single emoji) without cluttering the chat or forcing the conversation to continue unnecessarily."
+    },
+    {
+      "id": "no_action",
+      "description": "Intentionally take no action - remain silent.",
+      "purpose": "To avoid unnecessary responses when silence is more appropriate, which is the case in about 50% of interactions."
     }
   ]
 }

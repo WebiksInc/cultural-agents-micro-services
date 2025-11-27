@@ -41,13 +41,15 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Build execution queue with all necessary fields
     execution_queue = []
     for action in actionable_items:
+        selected_action_data = action.get('selected_action', {})
         queue_item = {
             'agent_name': action.get('agent_name', 'unknown'),
             'agent_type': action.get('agent_type', 'unknown'),
-            'action_id': action.get('selected_action', {}).get('id', 'unknown'),
-            'action_purpose': action.get('selected_action', {}).get('purpose', ''),
+            'action_id': selected_action_data.get('id', 'unknown'),
+            'action_purpose': selected_action_data.get('purpose', ''),
             'action_content': action.get('styled_response', ''),
             'phone_number': action.get('phone_number', ''),
+            'target_message': selected_action_data.get('target_message'),  # Include target_message
             'status': 'pending'  # pending, sent
         }
         execution_queue.append(queue_item)

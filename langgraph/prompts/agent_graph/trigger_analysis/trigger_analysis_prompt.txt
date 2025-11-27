@@ -10,31 +10,28 @@ Agent Goal: {agent_goal}
 
 **--- Rules ---**
 
-1.  **Output Format**: Your response must be a single, valid JSON object with two keys:
+1.  **Output Format**: Your response must be a single, valid JSON object with THREE keys:
     * `"id"`: The ID of the detected trigger (must match one from the available triggers list)
-    * `"justification"`: A 2-3 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action.
+    * `"justification"`: A 1-2 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action.
+    * `"target_message"`: An object with the specific message that triggered this detection (or `null` if not applicable). Should contain:
+      - `"timestamp"`: The timestamp from the message in format "YYYY-MM-DD HH:MM:SS" (extract from the bracketed timestamp)
+      - `"text"`: The text content of the message
 
 2.  **Select ONE Trigger**: Choose the single most dominant trigger that best describes the current situation. Even if multiple triggers could apply, select the most relevant one.
 
 3.  **Default to Neutral**: If no specific trigger condition is met, select the "neutral" trigger. This indicates that no action is currently required from the agent.
+
 4.  **Check for Self-Reply (Critical):** Pay close attention to the **most recent message** (the first one in the list). 
     If the most recent message sender is marked with **(YOU)**, it means the agent has just spoken (which is you).
       In this case, the trigger is almost always `"neutral"` because the agent just provided a response.
       Do not select a trigger (like 'direct_mention') based on an older message that the agent *already responded to*.
+
 5.  **Consider Full Context**: Analyze message timing, content, emotions, messages' reactions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
 
 6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
 
-7.  **Check for Other-Mention (Critical):** Before selecting a trigger (especially `implicit_follow_up`), check if the most recent message contains **another user's name** that is not you. 
-      If the message is clearly directed at *another person* and not you, the trigger **MUST** be `"neutral"`.
-
-8.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
+7.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
     * **Multi-Mention (INCLUDES YOU):** If the message mentions another person BUT ALSO mentions you (e.g., "{agent_name} and 'name'"), **this IS a direct mention to you**. Do not mark this as neutral just because another name is present.
-
-9. **Conversation Closers (Anti-Nagging Rule):**
-    * **Detect Closers:** If the most recent message is a short acknowledgment (e.g., "Thanks", "Ok", "Cool", "Received") or a single emoji (like 🙏, 👍, 👌, ❤️), this is usually a **Conversation Closer**.
-    * **Interpretation:** It means the user is acknowledging receipt or ending the current exchange. It is NOT a "faltering discussion".
-    * **Action:** In these cases, you MUST default to `"neutral"`. Do not trigger `discussion_faltering` or `goal_opportunity` on a closing emoji. Let the conversation breathe. 
 
 **--- Available Triggers ---**
 {triggers_json}
@@ -45,21 +42,44 @@ Agent Goal: {agent_goal}
 **--- Example Output Format ---**
 {{
   "id": "direct_mention",
-  "justification": "A group member explicitly mentioned the agent by name in their message, asking a direct question. This requires the agent to respond to maintain credibility and engagement."
+  "justification": "A group member explicitly mentioned the agent by name in their message, asking a direct question. This requires the agent to respond to maintain credibility and engagement.",
+  "target_message": {{
+    "timestamp": "2025-11-26 08:36:07",
+    "text": "Hey {agent_name}, what do you think about ....?"
+  }}
+}}
+
+OR
+
+{{
+  "id": "conversation_closer",
+  "justification": "The most recent message is a brief acknowledgment that ends the current exchange. A quick reaction acknowledges without prolonging.",
+  "target_message": {{
+    "timestamp": "2025-11-26 10:15:22",
+    "text": "thanks, i'll let u know if i need it"
+  }}
 }}
 
 OR
 
 {{
   "id": "discussion_faltering",
-  "justification": "The conversation has become sparse with short, disengaged responses. The energy and depth of the discussion have clearly diminished, indicating an opportunity for the agent to reinvigorate the conversation."
+  "justification": "The conversation has become sparse with short, disengaged responses. The energy and depth of the discussion have clearly diminished, indicating an opportunity for the agent to reinvigorate the conversation.",
+  "target_message": null
 }}
 
 OR
 
 {{
   "id": "neutral",
-  "justification": "The conversation is flowing naturally without any specific trigger conditions being met. The recent messages do not require agent intervention at this time."
+  "justification": "The conversation is flowing naturally without any specific trigger conditions being met. The recent messages do not require agent intervention at this time.",
+  "target_message": null
 }}
+
+**--- Target Message Guidelines ---**
+- Include `target_message` for triggers that relate to a SPECIFIC message: `direct_mention`, `conversation_closer`, `controversial_topic`, `answer_direct_question`, etc.
+- Set `target_message` to `null` for GENERAL triggers that don't relate to a specific message: `discussion_faltering`, `goal_opportunity`, `expand_discussion`, etc.
+- Extract the timestamp from the bracketed format in the message: `[2025-11-26 08:36:07]` → `"2025-11-26 08:36:07"`
+- The target message is typically the most recent relevant message, or the one being directly responded to
 
 Provide your analysis now:

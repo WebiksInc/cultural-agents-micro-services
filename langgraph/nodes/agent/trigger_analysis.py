@@ -97,18 +97,33 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             result = json.loads(response_text)
             trigger_id = result.get('id', 'neutral')
             justification = result.get('justification', 'No justification provided')
+            target_message_raw = result.get('target_message')
+            
+            # Process target_message if present
+            target_message = None
+            if target_message_raw and isinstance(target_message_raw, dict):
+                timestamp_str = target_message_raw.get('timestamp', '')
+                text = target_message_raw.get('text', '')
+                
+                if timestamp_str and text:
+                    target_message = {
+                        'timestamp': timestamp_str,
+                        'text': text
+                    }
             
             # Log output to Logfire
             output_data = {
                 'detected_trigger': {
                     'id': trigger_id,
-                    'justification': justification
+                    'justification': justification,
+                    'target_message': target_message
                 },
                 'current_node': 'trigger_analysis'
             }
             log_node_output("trigger_analysis", {
                 "trigger_id": trigger_id,
-                "justification": justification
+                "justification": justification,
+                "target_message": target_message
             }, agent_name=agent_name)
             log_state("trigger_analysis_exit", {**state, **output_data}, "agent")
             
