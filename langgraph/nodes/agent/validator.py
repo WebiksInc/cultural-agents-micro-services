@@ -107,13 +107,15 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         try:
             validation_result = json.loads(response_text)
             approved = validation_result.get('approved', False)
-            explanation = validation_result.get('explanation', '')
+            # Support both 'justification' (new) and 'explanation' (old) for backward compatibility
+            justification = validation_result.get('justification')
             
             if approved:
-                logger.info(f"Response APPROVED - ({agent_name})")
+                logger.info(f"Response APPROVED - ({agent_name})", justification=justification)
                 output = {
                     'validation': {
                         "approved": True,
+                        "justification": justification,
                         "styled_response": styled_response
                     },
                     'validation_feedback': None,
@@ -124,14 +126,14 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 log_state("validator", state, "exit")
                 return output
             else:
-                logger.warning(f"Response NOT APPROVED - ({agent_name})", explanation=explanation)
+                logger.warning(f"Response NOT APPROVED - ({agent_name})", justification=justification)
                 output = {
                     'validation': {
                         "approved": False,
-                        "explanation": explanation,
+                        "justification": justification,
                         "styled_response": styled_response
                     },
-                    'validation_feedback': explanation,
+                    'validation_feedback': justification,
                     'retry_count': retry_count + 1,
                     'current_node': 'validator'
                 }

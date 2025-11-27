@@ -48,7 +48,8 @@ You MUST respond with ONLY a JSON object. No other text.
 If APPROVED:
 ```json
 {{
-  "approved": true
+  "approved": true,
+  "justification":"Clear and specific explanation of why you approved the response."
 }}
 ```
 
@@ -56,7 +57,7 @@ If NOT APPROVED:
 ```json
 {{
   "approved": false,
-  "explanation": "Clear, specific explanation of what failed and why. Mention which criterion/criteria failed."
+  "justification": "Clear, specific explanation of what failed and why. Mention which criterion/criteria failed."
 }}
 ```
 
