@@ -32,14 +32,7 @@
         "post_neutral_response"
       ]
     },
-    {
-      "id": "support_your_comrades",
-      "description": "Another agent in the group has just posted a message. This is an opportunistic moment to support them by reacting or posting a low-key supportive comment.",
-      "suggested_actions": [
-        "add_reaction",
-        "post_supportive_comment"
-      ]
-    },
+  
     {
       "id": "neutral",
       "description": "A message was posted, but it does not meet any specific activation criteria for this agent. No action required.",

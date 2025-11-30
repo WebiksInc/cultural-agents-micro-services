@@ -10,3 +10,4 @@ __pycache__/
 .github/.github.prompt.md
 langgraph/.env
 langgraph/llms-full.txt
+langgraph/auth.py
