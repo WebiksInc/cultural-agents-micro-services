@@ -32,7 +32,7 @@
         "post_neutral_response"
       ]
     },
-  
+
     {
       "id": "neutral",
       "description": "A message was posted, but it does not meet any specific activation criteria for this agent. No action required.",

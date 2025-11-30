@@ -245,7 +245,7 @@ def run_supervisor_loop():
                     remaining = MESSAGE_CHECK_INTERVAL - int(time_since_check)
                     logger.info(f"Idle... Next pull in {remaining}s")
             
-            time.sleep(30)
+            time.sleep(20)
 
     except KeyboardInterrupt:
         logger.info("Supervisor loop stopped by user")

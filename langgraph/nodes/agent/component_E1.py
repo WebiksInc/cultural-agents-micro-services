@@ -75,6 +75,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E1/component_E1_prompt.txt")
     main_prompt = prompt_template.format(
+        agent_name=agent_name,
         agent_goal=agent_goal,
         action_id=action_id,
         action_description=action_description,

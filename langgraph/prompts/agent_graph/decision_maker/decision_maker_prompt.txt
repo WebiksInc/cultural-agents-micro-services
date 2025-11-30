@@ -20,6 +20,12 @@ A trigger has been detected in the conversation, and you must select the single 
 
 4.  **Purpose is Key**: Your purpose explanation should be specific to this situation, not just a generic description. Explain how this action will help achieve the agent's goal in the current context.
 
+5. **Functional vs. Strategic Purposes (The "Clean Answer" Rule):**
+   * **Identify Functional Requests:** If the trigger is a direct question about logistics, factual data, or technical needs (e.g., "What is the wifi?", "Where is the bathroom?", "What time is it?").
+   * **The Rule:** Your `purpose` must be STRICTLY to answer the question helpfuly.
+   * **Do NOT Piggyback:** Goal-related information should only be generated when it can be inserted into the context of the conversation naturally and not in a forced manner.
+
+
 **--- Agent Context ---**
 Agent Type: {agent_type}
 Agent Goal: {agent_goal}
