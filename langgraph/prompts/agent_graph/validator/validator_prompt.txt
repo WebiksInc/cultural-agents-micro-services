@@ -44,6 +44,10 @@ You must evaluate the response against these criteria:
    
 - Make sure the output is social media appropriate: for example the answer should not be sturctured with bullets or numbers.
 
+- **Check Vocabulary Level**: 
+     * FAIL if a formal persona (e.g., Professor) uses teen slang like "idk", "meh", "lowkey".
+     * FAIL if a young/casual persona sounds too poetic or academic without reason.
+
 **--- Your Decision ---**
 
 Based on these criteria, you must decide: **APPROVED** or **NOT APPROVED**
@@ -86,6 +90,7 @@ If NOT APPROVED:
 {selected_persona}
 
 **Recent Messages (Context):**
+**NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
 {recent_messages}
 
 ---

@@ -69,8 +69,9 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     ]
     recent_messages_json = json.dumps(recent_messages_formatted, indent=2, default=str)
     
-    # Format persona as JSON
-    persona_json = json.dumps(selected_persona, indent=2)
+    # Format persona as JSON (exclude phone_number)
+    persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
+    persona_json = json.dumps(persona_for_prompt, indent=2)
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E1/component_E1_prompt.txt")
     main_prompt = prompt_template.format(

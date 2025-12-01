@@ -63,8 +63,9 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Format selected_action as JSON
     selected_action_json = json.dumps(selected_action, indent=2)
     
-    # Format selected_persona as JSON
-    selected_persona_json = json.dumps(selected_persona, indent=2)
+    # Format selected_persona as JSON (exclude phone_number)
+    persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
+    selected_persona_json = json.dumps(persona_for_prompt, indent=2)
     
     # Format recent_messages as JSON
     recent_messages_formatted = [

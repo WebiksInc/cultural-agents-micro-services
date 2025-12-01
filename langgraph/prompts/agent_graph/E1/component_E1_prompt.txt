@@ -46,6 +46,7 @@ Group Description: {topic}
 Group Sentiment: {group_sentiment}
 
 **--- Recent Conversation ---**
+**NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
 {recent_messages_json}
 
 **--- Agent Persona (that describes you) ---**

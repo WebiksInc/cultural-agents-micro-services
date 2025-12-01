@@ -43,6 +43,7 @@ Agent Goal: {agent_goal}
 {triggers_json}
 
 **--- Recent Conversation ---**
+**NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
 {recent_messages}
 
 **--- Example Output Format ---**

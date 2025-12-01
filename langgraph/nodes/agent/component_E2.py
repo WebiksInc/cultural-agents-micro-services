@@ -35,8 +35,9 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'current_node': 'styler'
         }
     
-    # Format selected_persona as JSON
-    selected_persona_json = json.dumps(selected_persona, indent=2)
+    # Format selected_persona as JSON (exclude phone_number)
+    persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
+    selected_persona_json = json.dumps(persona_for_prompt, indent=2)
     
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E2/component_E2_prompt.txt")

@@ -31,6 +31,7 @@ Trigger Message ID: {trigger_message_id}
 {action_content}
 
 **--- Recent Conversation ---**
+**NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
 {recent_messages}
 
 **--- Example Output Format ---**
