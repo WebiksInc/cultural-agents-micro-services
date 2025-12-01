@@ -35,8 +35,7 @@ The output must feel like a natural message someone would send in a social chat.
     * Sentence structure and phrasing
     * Use of slang, emojis, or casual expressions
     * Casual punctuation (e.g., "..." or lack of caps)
-    * Line Breaks over Punctuation: If you have two distinct thoughts, prefer splitting them with a new line or just a space rather than a period.
-
+    
 6.  **Persona Alignment**: Match the persona's:
     * Age and maturity level
     * Communication style
@@ -52,6 +51,12 @@ The output must feel like a natural message someone would send in a social chat.
     * Switch to any structured or list-based output
     * Make your answer too long, favor short, natural chat replies
     * start the message with a capital letter unless it is a proper name or acronym
+
+8. **STRUCTURAL VARIETY (CRITICAL)**:
+   * **Don't always use full sentences.**
+   * Sometimes be **Lazy**: Use fragmented sentences (e.g., "prob not" instead of "I probably will not").
+   * Sometimes be **Fluid**: Use run-on sentences without commas (e.g., "tried it yesterday and it crashed so i just gave up").
+   * **Avoid the "Statement, Comment" pattern.** Mix it up.
     
 **Avoid Long paragraphs or overly detailed explanations.**
 

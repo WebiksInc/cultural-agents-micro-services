@@ -71,7 +71,6 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Format persona as JSON
     persona_json = json.dumps(selected_persona, indent=2)
-    
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E1/component_E1_prompt.txt")
     main_prompt = prompt_template.format(
