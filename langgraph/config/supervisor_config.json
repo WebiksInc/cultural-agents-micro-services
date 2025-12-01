@@ -22,10 +22,5 @@
       "persona_file": "agents_personas/matan_persona.json",
       "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short, low-key messages that blend into the background, without starting debates or posting long messages."
     }
-  ],
-  "group_metadata": {
-    "name": "PassportTraveling! English Only!",
-    "topic": "A group dedicated to sharing recommendations and information about notable sites, attractions, and places to visit around the world.",
-    "members": 7
-  }
+  ]
 }

@@ -127,11 +127,11 @@ def run_supervisor_loop():
     primary_phone = agent_personas[0].get("phone_number", "+37379276083") # the phone number used to fetch messages
     seen_message_ids = set()
     
-    # 2. Initialize State
+    # 2. Initialize State (group_metadata will be fetched from API)
     state = SupervisorState(
         recent_messages=[],
         group_sentiment="",
-        group_metadata=CONFIG["group_metadata"],
+        group_metadata={"id": CHAT_ID, "name": "", "topic": "", "members": 0},
         selected_actions=[],
         execution_queue=[],
         current_nodes=None,
@@ -139,18 +139,26 @@ def run_supervisor_loop():
     )
     logger.info(f"Target Chat ID: {CHAT_ID}")
 
-    # 3. Fetch Group Metadata (Run once)
-    logger.info("Fetching group metadata...")
+    # 3. Fetch Group Metadata from Telegram API (Run once)
+    logger.info("Fetching group metadata from Telegram API...")
     participants_data = get_all_group_participants(phone=primary_phone, chat_id=CHAT_ID)
     
     if participants_data and participants_data.get("success"):
         state["group_metadata"] = {
             "id": CHAT_ID,
-            "name": participants_data.get("chatTitle", CONFIG["group_metadata"]["name"]),
-            "topic": CONFIG["group_metadata"]["topic"],
-            "members": participants_data.get("participantCount", CONFIG["group_metadata"]["members"])
+            "name": participants_data.get("chatTitle", "Unknown Group"),
+            "topic": participants_data.get("chatDescription", "No description available"),
+            "members": participants_data.get("participantsCount", 0)
         }
-        logger.info("Group metadata initialized")
+        logger.info(f"Group metadata initialized: {state['group_metadata']['name']} ({state['group_metadata']['members']} members)")
+    else:
+        logger.warning("Failed to fetch group metadata from API, using defaults")
+        state["group_metadata"] = {
+            "id": CHAT_ID,
+            "name": "Unknown Group",
+            "topic": "No description available",
+            "members": 0
+        }
 
     # 4. Fetch Initial History (Run once)
     logger.info("Fetching initial message history...")
@@ -204,8 +212,14 @@ def run_supervisor_loop():
                     all_ids = [msg["message_id"] for msg in raw_messages]
                     logger.info(f"📥 Fetched {len(raw_messages)} messages. IDs: {all_ids}")
                     
+                    # Cleanup seen_message_ids: only keep IDs that are still in our state's recent_messages
+                    # This prevents infinite memory growth while maintaining correct deduplication
+                    current_message_ids = {msg["message_id"] for msg in state["recent_messages"]}
+                    seen_message_ids = seen_message_ids & current_message_ids
+                    seen_message_ids.update(all_ids)  # Add currently fetched IDs
+                    
                     # Filter truly new messages
-                    new_messages = [msg for msg in raw_messages if msg["message_id"] not in seen_message_ids]
+                    new_messages = [msg for msg in raw_messages if msg["message_id"] not in current_message_ids]
                     
                     # Debug logging for investigation
                     if new_messages:
