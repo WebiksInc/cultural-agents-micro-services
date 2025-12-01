@@ -61,18 +61,18 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         }
     
     # Format selected_action as JSON
-    selected_action_json = json.dumps(selected_action, indent=2)
+    selected_action_json = json.dumps(selected_action, indent=2, ensure_ascii=False)
     
     # Format selected_persona as JSON (exclude phone_number)
     persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
-    selected_persona_json = json.dumps(persona_for_prompt, indent=2)
+    selected_persona_json = json.dumps(persona_for_prompt, indent=2, ensure_ascii=False)
     
     # Format recent_messages as JSON
     recent_messages_formatted = [
         format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona)
         for msg in recent_messages
     ]
-    recent_messages_json = json.dumps(recent_messages_formatted, indent=2)
+    recent_messages_json = json.dumps(recent_messages_formatted, indent=2, ensure_ascii=False)
     
     # Building the validation prompt
     prompt_template = load_prompt("agent_graph/validator/validator_prompt.txt")

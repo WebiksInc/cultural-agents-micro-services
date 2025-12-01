@@ -60,7 +60,7 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     recent_messages_text = "\n".join(message_lines)
     
     # Format triggers JSON
-    triggers_json = json.dumps(triggers, indent=2)
+    triggers_json = json.dumps(triggers, indent=2, ensure_ascii=False)
 
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")

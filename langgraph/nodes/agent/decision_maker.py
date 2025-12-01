@@ -93,7 +93,7 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     recent_messages_text = "\n".join(message_lines) if message_lines else "No recent messages"
     
     # Format suggested actions as JSON
-    suggested_actions_json = json.dumps(suggested_actions, indent=2)
+    suggested_actions_json = json.dumps(suggested_actions, indent=2, ensure_ascii=False)
     
     # Build prompt
     prompt_template = load_prompt("agent_graph/decision_maker/decision_maker_prompt.txt")
