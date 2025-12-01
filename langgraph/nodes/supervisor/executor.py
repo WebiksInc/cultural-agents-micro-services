@@ -8,8 +8,23 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from telegram_exm import *
 from utils import get_most_recent_message_timestamp, convert_timestamp_to_iso
+import time
 
 logger = get_logger(__name__)
+
+
+def calculate_typing_duration(content: str) -> int:
+    # Base calculation: ~100ms per character, but with bounds
+    # Average reading/typing speed: about 10-15 chars per second
+    char_count = len(content)
+    
+    # Calculate duration: 100ms per character
+    duration = char_count * 100
+    
+    # Clamp between 2 seconds (2000ms) and 8 seconds (8000ms)
+    duration = max(2000, min(8000, duration))
+    
+    return duration
 
 
 def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -123,6 +138,22 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         else:
             # For all other actions, use send_telegram_message
+            # First, show typing indicator
+            typing_duration = calculate_typing_duration(action_content)
+            # logger.info(f"Showing typing indicator from {agent_name} for {typing_duration}ms")
+            
+            try:
+                show_typing_indicator(
+                    phone=phone_number,
+                    chatId=chat_id,
+                    duration=typing_duration
+                )
+                # Wait for typing indicator to complete
+                time.sleep(typing_duration / 750)  # Slightly less than duration to account for processing time
+            except Exception as e:
+                logger.warning(f"Failed to show typing indicator: {e}")
+            
+            # Now send the actual message
             logger.info(f"Sending message from {agent_name} ({phone_number}) to {chat_id}")
             
             response = send_telegram_message(

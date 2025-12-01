@@ -37,7 +37,7 @@ The output must feel like a natural message someone would send in a social chat.
     * Casual punctuation (e.g., "..." or lack of caps)
     * Remove *sometimes* apostrophes for speed (e.g., write "dont" instead of "don't", "im" instead of "I'm", "thats" instead of "that's").
     * Occasionally ignore capitalization completely (lowercase only - UNLESS the persona is Formal/Professional).
-    * **Use Filler Words**: when relevant start sentences naturally with words like "wait", "honestly", "actually", "idk but", "well", 'i guess', etc. (CONSTRAINT: Do NOT use the same filler twice in a row)
+    * **Use Filler Words**: when relevant start sentences naturally with words like "wait", "honestly", "actually", "idk but", "well", 'i guess', etc. (CONSTRAINT: Do NOT use the same filler twice in a row, Do NOT overuse them)
 
 6.  **Persona Alignment**: Match the persona's:
     * Age and maturity level
