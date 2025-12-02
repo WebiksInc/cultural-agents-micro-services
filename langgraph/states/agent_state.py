@@ -16,6 +16,7 @@ class Message(TypedDict):
     message_emotion: Optional[str]  # Filled by Component B (Emotion Analysis)
     sender_personality: Optional[dict]  # Filled by Component C on-demand (Personality Analysis)
     processed: Optional[bool]  # Track if message has been analyzed for triggers
+    replyToMessageId: Optional[int] # ID of the message this is replying to, if any
 
 
 class AgentState(TypedDict):

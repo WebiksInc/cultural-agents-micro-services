@@ -72,7 +72,8 @@ def parse_telegram_message(msg_data: dict) -> Message:
         reactions=reactions,
         message_emotion=None,
         sender_personality=None,
-        processed=False
+        processed=False,
+        replyToMessageId = msg_data.get("replyToMessageId", None)
     )
 
 

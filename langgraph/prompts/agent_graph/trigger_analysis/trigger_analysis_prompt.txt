@@ -44,6 +44,9 @@ Agent Goal: {agent_goal}
 
 **--- Recent Conversation ---**
 **NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
+**Message Structure:** Each message follows the format: `[id: message_id][timestamp] sender name [emotion]: message text`
+**Example:** `[id: 123][2025-12-01 14:43:37] James Brown [neutral]: hello`
+
 {recent_messages}
 
 **--- Example Output Format ---**

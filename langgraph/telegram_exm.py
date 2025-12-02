@@ -319,5 +319,24 @@ if __name__ == "__main__":
     # print(json.dumps(output, indent=2, ensure_ascii=False))
     # Send message
     # send_telegram_message( from_phone=TAMAR_NUMBER, to_target=PETACH_TIKVA_CHAT_ID, content_value="Hello from LangGraph Telegram EXM!" )
-    output = get_all_group_participants(phone="+37379276083", chat_id="3389864729")
-    print(json.dumps(output, indent=2, ensure_ascii=False))
+    # output = get_all_group_participants(phone="+37379276083", chat_id="3389864729")
+    output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=12)
+    output['messages']
+    for msg in output['messages']:
+        # print(msg['replyToMessageId'])
+        if msg['replyToMessageId']:
+            for replied_msg in output['messages']:
+                # print(replied_msg)
+
+                if replied_msg['id'] == msg['replyToMessageId']:
+                    print(f"type of id is: {type(replied_msg['id'])} and type of replyToMessageId is: {type(msg['replyToMessageId'])}")
+                    print("---- Replied to message ----")
+                    print("Original message:")
+                    print(json.dumps(replied_msg, indent=2, ensure_ascii=False))
+                    print("The Reply message:")
+                    name = msg["senderFirstName"] + " " + msg["senderLastName"]
+                    print(msg['text'], " - by", name, "at", msg['date'])
+
+
+        
+    # print(json.dumps(output, indent=2, ensure_ascii=False))

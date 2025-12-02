@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt
+from utils import load_prompt, get_model_settings, format_message_for_prompt, get_messages_replies
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_state, log_node_output
 
@@ -54,9 +54,18 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         }
     
     # Format recent messages for prompt
+    # Get replies to agent's messages for context
+    messages_replies = get_messages_replies(selected_persona, recent_messages)
+    
     message_lines = []
     for msg in recent_messages:
-        message_lines.append(format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona))
+        message_lines.append(format_message_for_prompt(
+            msg, 
+            include_timestamp=True, 
+            include_emotion=True, 
+            selected_persona=selected_persona, 
+            messages_replies=messages_replies
+        ))
     recent_messages_text = "\n".join(message_lines)
     
     # Format triggers JSON

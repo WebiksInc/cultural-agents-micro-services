@@ -90,12 +90,13 @@ def get_model_settings(node_name: str, env_var_name: Optional[str] = None) -> Di
 def format_message_for_prompt(msg: Dict[str, Any], 
                               include_timestamp: bool = True,
                               include_emotion: bool = True,
-                              selected_persona: Dict[str, Any] = None) -> str:
+                              selected_persona: Dict[str, Any] = None,
+                              messages_replies: Dict[str, Any] = None) -> str:
     """
     Format a message for inclusion in a prompt.
     
     Args:
-        msg: Message dictionary with keys: sender_username, sender_first_name, text, date, message_emotion
+        msg: Message dictionary with keys: sender_username, sender_first_name, text, date, message_emotion (a single message)
         include_timestamp: Whether to include the timestamp
         include_emotion: Whether to include emotion annotation
         
@@ -104,10 +105,11 @@ def format_message_for_prompt(msg: Dict[str, Any],
     """
     from datetime import datetime
     
-    # Get sender name (prefer full name, fall back to first_name, then username)
+    # Get sender name (prefer full name, fall back to first_name, then username) and msg_id
     sender_username = msg.get('sender_username', '').strip()
     sender_first_name = msg.get('sender_first_name', '').strip()
     sender_last_name = msg.get('sender_last_name', '').strip()
+    msg_id = msg.get('message_id')
     
     if sender_first_name and sender_last_name:
         sender = f"{sender_first_name} {sender_last_name}"
@@ -138,6 +140,10 @@ def format_message_for_prompt(msg: Dict[str, Any],
     
     parts = []
     
+    # Add message ID
+    if msg_id:
+        parts.append(f"[id: {msg_id}]")
+    
     # Add timestamp if requested
     if include_timestamp:
         date = msg.get('date')
@@ -166,6 +172,9 @@ def format_message_for_prompt(msg: Dict[str, Any],
     header = " ".join(parts)
     result = f"{header}: {text}"
     
+  
+               
+
     # Add reactions if present
     reactions = msg.get('reactions')
     if reactions and len(reactions) > 0:
@@ -173,6 +182,16 @@ def format_message_for_prompt(msg: Dict[str, Any],
         reaction_str = ", ".join(reaction_parts)
         result += f" [Reactions: {reaction_str}]"
     
+    # Check if this message is a reply to one of the agent's messages
+    if messages_replies:
+        msg_id = msg.get('message_id')
+        # Look for this message in the reply lists
+        for agent_msg_id, reply_list in messages_replies.items():
+            for reply_msg in reply_list:
+                if reply_msg.get('message_id') == msg_id:
+                    result += f" [⤷ Replying to YOUR earlier message id: {agent_msg_id}]"
+                    break
+
     return result
 
 
@@ -236,3 +255,47 @@ def convert_timestamp_to_iso(timestamp_str: str) -> Optional[str]:
     except Exception as e:
         logger.warning(f"Failed to convert timestamp '{timestamp_str}': {e}")
         return None
+
+
+def get_messages_replies(selected_persona: Dict[str, Any], recent_messages: list) -> Optional[Dict[str, list]]:
+    """
+    Find all messages that are replies to the agent's messages.
+    
+    Args:
+        selected_persona: Agent's persona dictionary with first_name, last_name
+        recent_messages: List of message dictionaries
+        
+    Returns:
+        Dictionary mapping agent's message IDs to lists of reply messages, or None if no replies found
+        Example: {"123": [reply_msg1, reply_msg2], "456": [reply_msg3]}
+    """
+    messages_replies = {}
+    agent_name = f"{selected_persona.get('first_name', '')} {selected_persona.get('last_name', '')}".strip()
+    
+    # Find all messages sent by the agent
+    for msg in recent_messages:
+        sender = f"{msg.get('sender_first_name', '')} {msg.get('sender_last_name', '')}".strip()
+        if sender == agent_name:
+            messages_replies[msg['message_id']] = []
+    
+    if not messages_replies:
+        return None
+    
+    # Find all messages that reply to the agent's messages
+    # Note: replyToMessageId is an int, but message_id is a string, so we convert
+    for msg in recent_messages:
+        reply_to_id = msg.get('replyToMessageId')
+        if reply_to_id is not None:
+            reply_to_id_str = str(reply_to_id)
+            if reply_to_id_str in messages_replies:
+                messages_replies[reply_to_id_str].append(msg)
+    
+    # Return None if no replies found
+    if all(not value for value in messages_replies.values()):
+        return None
+    
+    # Log summary
+    total_replies = sum(len(replies) for replies in messages_replies.values())
+    logger.info(f"{agent_name}: Found {total_replies} replies to {len(messages_replies)} agent messages")
+    
+    return messages_replies
