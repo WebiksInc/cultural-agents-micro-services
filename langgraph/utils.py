@@ -182,15 +182,20 @@ def format_message_for_prompt(msg: Dict[str, Any],
         reaction_str = ", ".join(reaction_parts)
         result += f" [Reactions: {reaction_str}]"
     
-    # Check if this message is a reply to one of the agent's messages
-    if messages_replies:
-        msg_id = msg.get('message_id')
-        # Look for this message in the reply lists
-        for agent_msg_id, reply_list in messages_replies.items():
-            for reply_msg in reply_list:
-                if reply_msg.get('message_id') == msg_id:
-                    result += f" [⤷ Replying to YOUR earlier message id: {agent_msg_id}]"
-                    break
+    # Check if this message is a reply to any message
+    reply_to_id = msg.get('replyToMessageId')
+    if reply_to_id is not None:
+        reply_to_id_str = str(reply_to_id)
+        
+        # First check if it's a reply to the agent's message
+        is_reply_to_agent = False
+        if messages_replies and reply_to_id_str in messages_replies:
+            result += f" [⤷ Replying to YOUR earlier message id: {reply_to_id_str}]"
+            is_reply_to_agent = True
+        
+        # If not replying to agent, it's replying to someone else
+        if not is_reply_to_agent:
+            result += f" [⤷ Replying to OTHER user's earlier message id: {reply_to_id_str}]"
 
     return result
 
