@@ -35,6 +35,17 @@ CONFIG_DIR = BASE_DIR / "config"
 SUPERVISOR_CONFIG_PATH = CONFIG_DIR / "supervisor_config.json"
 
 
+def get_all_agent_names() -> list:
+    """
+    Get names of all agents in the system.
+    
+    Returns:
+        List of agent names from supervisor config
+    """
+    supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+    return [agent["name"] for agent in supervisor_config["agents"]]
+
+
 def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Load all configuration for a single agent.
@@ -54,6 +65,15 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
     # Load triggers
     triggers_path = BASE_DIR / "triggers" / agent_type / f"{agent_type}_triggers.json"
     triggers = load_json_file(triggers_path)
+    
+    # Inject agent names into specific triggers for off_radar type
+    if agent_type == "off_radar":
+        all_agents = get_all_agent_names()
+        # Exclude the current agent from the list
+        other_agents = [name for name in all_agents if name != agent_config["name"]]
+        for trigger in triggers.get("triggers", []):
+            if trigger.get("id") == "support_your_comrades":
+                trigger["agents_in_group"] = other_agents
     
     # Load actions
     actions_path = BASE_DIR / "actions" / agent_type / f"{agent_type}_actions.json"
