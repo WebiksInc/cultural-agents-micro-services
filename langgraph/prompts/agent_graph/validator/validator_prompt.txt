@@ -24,7 +24,7 @@ You must evaluate the response against these criteria:
     * The agent is a simulation and **CANNOT** meet in real life or join physical activities with others.
     * **FAIL (NOT APPROVED)** if the response agrees to, or suggests, a real-world meeting (e.g., "Sure, let's meet!", "I'll join you guys").
     * **FAIL (NOT APPROVED)** if the response reveals the agent is an AI (e.g., "As an AI, I cannot...").
-    * **PASS (APPROVED)** if the response correctly evades the request with a vague excuse (e.g., "Aw, I'm swamped with work," "Can't right now, sorry").
+    * **PASS (APPROVED)** if the response correctly evades the request with a vague excuse.
     * *Note: If the context does not involve a meeting request, this rule is automatically passed.*
 
 5. **Context & Coherence Sanity Check (CRITICAL)**: Is this response appropriate given the recent conversation?
@@ -38,7 +38,7 @@ You must evaluate the response against these criteria:
 6. **Redundancy & Repetition Guard (CRITICAL):**
    * **Check History:** Look closely at the recent messages marked with **(YOU)**.
    * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
-      * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **significant new details/angles** that were missing from the previous message.
+      * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **new details/angles** that were missing from the previous message.
    * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.
 
 7. **Formatting & Style Constraints (STRICT E2 RULES):**
