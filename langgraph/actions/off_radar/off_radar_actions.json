@@ -8,7 +8,7 @@
     },
     {
       "id": "express_consensus_agreement",
-      "description": "Show support for an existing consensus or a popular message (e.g., 'agree', 'good point', or a simple like).",
+      "description": "Show support for an existing consensus or a popular message",
       "purpose": "To appear as an agreeing, non-confrontational member of the group."
     },
     {

@@ -74,7 +74,8 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             include_timestamp=True, 
             include_emotion=True, 
             selected_persona=selected_persona,
-            messages_replies=messages_replies
+            messages_replies=messages_replies,
+            recent_messages=recent_messages
         )
         for msg in recent_messages
     ]
@@ -154,16 +155,31 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         response = model.invoke(messages)
         response_text = response.content.strip()
-        
-        # Log output to Logfire
-        log_node_output("text_generator", {"generated_response": response_text}, agent_name=agent_name)
-        log_state("text_generator", state, "exit")
-        
-        # Return generated response
+        result = json.loads(response_text)
+        thought_process = result.get('thought_process', 'No thought process provided')
+        generated_response = result.get('message', None)
+        output = {
+                    'E1': {
+                        "approved": True,
+                        "thought process": thought_process,
+                        "response": generated_response
+                    }
+        }
+        log_node_output("text_generator", output['E1'], agent_name=agent_name)
+        log_state("text_generator_exit", {**state, **output}, "agent")
         return {
-            'generated_response': response_text,
+            'generated_response': generated_response,
             'current_node': 'text_generator'
         }
+        # # Log output to Logfire
+        # log_node_output("text_generator", {"generated_response": response_text}, agent_name=agent_name)
+        # log_state("text_generator", state, "exit")
+        
+        # # Return generated response
+        # return {
+        #     'generated_response': response_text,
+        #     'current_node': 'text_generator'
+        # }
         
     except Exception as e:
         logger.error(f"Error in text generator: {e}", exc_info=True)

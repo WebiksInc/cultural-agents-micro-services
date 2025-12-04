@@ -64,7 +64,8 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
             include_timestamp=True, 
             include_emotion=True, 
             selected_persona=selected_persona, 
-            messages_replies=messages_replies
+            messages_replies=messages_replies,
+            recent_messages=recent_messages
         ))
     recent_messages_text = "\n".join(message_lines)
     

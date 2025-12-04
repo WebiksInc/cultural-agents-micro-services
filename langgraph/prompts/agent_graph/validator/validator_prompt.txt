@@ -27,20 +27,25 @@ You must evaluate the response against these criteria:
     * **PASS (APPROVED)** if the response correctly evades the request with a vague excuse (e.g., "Aw, I'm swamped with work," "Can't right now, sorry").
     * *Note: If the context does not involve a meeting request, this rule is automatically passed.*
 
-5. **Context Sanity Check**: Is this response appropriate given the recent conversation?
-   - Is it relevant to the ongoing conversation?
-   - Does it make sense given the recent messages?
+5. **Context & Coherence Sanity Check (CRITICAL)**: Is this response appropriate given the recent conversation?
+   * **Relevance:** Does it make sense given the recent conversation?
+   * Does it make sense given the recent messages?
+   * **Logic & Clarity:** Is the message logical? Is it coherent and clear?
+   * **Missing Connectors:** FAIL (NOT APPROVED) if connecting words (verbs, prepositions) are missing, or if there is no clear context linking the different parts of the sentence.
+   * **Sentence Structure:** Does it read like a real sentence? A string of disconnected nouns is NOT a valid message.
+  
 
 6. **Redundancy & Repetition Guard (CRITICAL):**
    * **Check History:** Look closely at the recent messages marked with **(YOU)**.
    * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
+      * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **significant new details/angles** that were missing from the previous message.
    * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.
 
 7. **Formatting & Style Constraints (STRICT E2 RULES):**
-   - **Length Check**: FAIL if it is a long paragraph.
-   - **Punctuation Check**:
+   * **Length Check**: FAIL if it is a long paragraph.
+   * **Punctuation Check**:
      * **FAIL** if the message contains semicolons (;), colons (:), or em dashes (—).
-   - **Capitalization**: Prefer lowercase.
+   * **Capitalization**: Prefer lowercase.
    
 - Make sure the output is social media appropriate: for example the answer should not be sturctured with bullets or numbers.
 
@@ -58,6 +63,7 @@ Based on these criteria, you must decide: **APPROVED** or **NOT APPROVED**
 **--- Output Format (CRITICAL) ---**
 
 You MUST respond with ONLY a JSON object. No other text.
+**IMPORTANT: You MUST include the "justification" field in the JSON, even if the response is approved.**
 
 If APPROVED:
 ```json

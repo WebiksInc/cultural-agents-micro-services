@@ -59,7 +59,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'retry_count': 0,
             'current_node': 'validator'
         }
-    
+     
     # Format selected_action as JSON
     selected_action_json = json.dumps(selected_action, indent=2, ensure_ascii=False)
     
@@ -69,7 +69,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Format recent_messages as JSON
     recent_messages_formatted = [
-        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona)
+        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona, recent_messages=recent_messages)
         for msg in recent_messages
     ]
     recent_messages_json = json.dumps(recent_messages_formatted, indent=2, ensure_ascii=False)

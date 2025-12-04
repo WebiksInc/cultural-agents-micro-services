@@ -91,7 +91,8 @@ def format_message_for_prompt(msg: Dict[str, Any],
                               include_timestamp: bool = True,
                               include_emotion: bool = True,
                               selected_persona: Dict[str, Any] = None,
-                              messages_replies: Dict[str, Any] = None) -> str:
+                              messages_replies: Dict[str, Any] = None,
+                              recent_messages: list = None) -> str:
     """
     Format a message for inclusion in a prompt.
     
@@ -99,6 +100,9 @@ def format_message_for_prompt(msg: Dict[str, Any],
         msg: Message dictionary with keys: sender_username, sender_first_name, text, date, message_emotion (a single message)
         include_timestamp: Whether to include the timestamp
         include_emotion: Whether to include emotion annotation
+        selected_persona: The agent's persona to identify (YOU) messages
+        messages_replies: Dict mapping agent message IDs to reply lists
+        recent_messages: List of all recent messages (for looking up sender names in replies)
         
     Returns:
         Formatted message string with timestamp, sender, emotion, reactions, and text.
@@ -193,9 +197,25 @@ def format_message_for_prompt(msg: Dict[str, Any],
             result += f" [⤷ Replying to YOUR earlier message id: {reply_to_id_str}]"
             is_reply_to_agent = True
         
-        # If not replying to agent, it's replying to someone else
+        # If not replying to agent, find the sender name from the replied-to message
         if not is_reply_to_agent:
-            result += f" [⤷ Replying to OTHER user's earlier message id: {reply_to_id_str}]"
+            replied_to_name = "another user"
+            if recent_messages:
+                for m in recent_messages:
+                    if str(m.get('message_id')) == reply_to_id_str:
+                        # Get the sender name
+                        first_name = m.get('sender_first_name', '').strip()
+                        last_name = m.get('sender_last_name', '').strip()
+                        username = m.get('sender_username', '').strip()
+                        
+                        if first_name and last_name:
+                            replied_to_name = f"{first_name} {last_name}"
+                        elif first_name:
+                            replied_to_name = first_name
+                        elif username:
+                            replied_to_name = username
+                        break
+            result += f" [⤷ Replying to {replied_to_name}'s message id: {reply_to_id_str}]"
 
     return result
 
