@@ -1,6 +1,5 @@
 from typing import TypedDict, List, Optional, Annotated
 from .agent_state import Message
-from operator import add
 
 def add_or_clear(current, new):
     if new == "CLEAR":

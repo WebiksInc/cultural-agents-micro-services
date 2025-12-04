@@ -23,8 +23,8 @@
     },
     {
       "id": "answer_direct_question",
-      "description": "Provide a direct answer to a question that was explicitly aimed at the agent.",
-      "purpose": "To maintain credibility and fulfill the agent's role when called upon."
+      "description": "Respond directly to a specific prompt, question, invitation, or mention that was explicitly addressed to the agent.",
+      "purpose": "To provide a direct reply and to maintain credibility and fulfill the agent's role when called upon."
     },
     {
       "id": "add_reaction",
