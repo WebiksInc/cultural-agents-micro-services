@@ -3,7 +3,7 @@
   "triggers": [
     {
       "id": "direct_mention",
-      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
+      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).EXCEPTION: If the message is merely a short acknowledgment containing the name (e.g., Thanks {agent_name}, Ok {agent_name}), classify it as 'conversation_closer', NOT 'direct_mention'.",
       "suggested_actions": [
         "answer_direct_question",
         "add_reaction",
