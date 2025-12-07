@@ -114,6 +114,9 @@ def load_agent_personas() -> list:
     
     return personas
 
+from collections import deque
+import time
+
 def run_supervisor_loop():
     # STEP 1: INITIALIZATION 
     logger.info("Starting Supervisor initialization...")
@@ -125,10 +128,13 @@ def run_supervisor_loop():
     agent_personas = load_agent_personas()
     logger.info(f"Loaded {len(agent_personas)} agent personas")
     
-    primary_phone = agent_personas[0].get("phone_number", "+37379276083") # the phone number used to fetch messages
-    seen_message_ids = set()
+    primary_phone = agent_personas[0].get("phone_number", "+37379276083")
     
-    # 2. Initialize State (group_metadata will be fetched from API)
+    # --- CHANGE 1: Using deque with maxlen instead of set ---
+    # This automatically discards the oldest IDs when we reach 1000
+    seen_message_ids = deque(maxlen=1000)
+    
+    # 2. Initialize State
     state = SupervisorState(
         recent_messages=[],
         group_sentiment="",
@@ -140,7 +146,7 @@ def run_supervisor_loop():
     )
     logger.info(f"Target Chat ID: {CHAT_ID}")
 
-    # 3. Fetch Group Metadata from Telegram API (Run once)
+    # 3. Fetch Group Metadata (Run once)
     logger.info("Fetching group metadata from Telegram API...")
     participants_data = get_all_group_participants(phone=primary_phone, chat_id=CHAT_ID)
     
@@ -168,7 +174,11 @@ def run_supervisor_loop():
     if messages_data and messages_data.get("success"):
         initial_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
         state["recent_messages"] = initial_messages
-        seen_message_ids.update(msg["message_id"] for msg in initial_messages)
+        
+        # --- CHANGE 2: Load initial IDs into deque ---
+        for msg in initial_messages:
+            seen_message_ids.append(msg["message_id"])
+            
         logger.info(f"Loaded {len(initial_messages)} initial messages")
         
         # Mark agent messages as processed
@@ -209,26 +219,24 @@ def run_supervisor_loop():
                 if messages_data and messages_data.get("success"):
                     raw_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
                     
-                    # Log ALL fetched message IDs to track if same message appears with different IDs
+                    # Log IDs for debugging
                     all_ids = [msg["message_id"] for msg in raw_messages]
                     logger.info(f"📥 Fetched {len(raw_messages)} messages. IDs: {all_ids}")
                     
-                    # Cleanup seen_message_ids: only keep IDs that are still in our state's recent_messages
-                    # This prevents infinite memory growth while maintaining correct deduplication
-                    current_message_ids = {msg["message_id"] for msg in state["recent_messages"]}
-                    seen_message_ids = seen_message_ids & current_message_ids
-                    seen_message_ids.update(all_ids)  # Add currently fetched IDs
+                    # --- CHANGE 3: Simplified logic ---
+                    # Only filter based on what is NOT in our seen history (deque)
+                    # No clearing, no intersection logic.
+                    new_messages = []
+                    for msg in raw_messages:
+                        if msg["message_id"] not in seen_message_ids:
+                            new_messages.append(msg)
+                            # Add to seen immediately so we don't process it again next loop
+                            seen_message_ids.append(msg["message_id"])
                     
-                    # Filter truly new messages
-                    new_messages = [msg for msg in raw_messages if msg["message_id"] not in current_message_ids]
-                    
-                    # Debug logging for investigation
                     if new_messages:
-                        seen_message_ids.update(msg["message_id"] for msg in new_messages)
-                        
-                        # Prepend new messages
+                        # Prepend new messages to state
                         state["recent_messages"] = new_messages + state["recent_messages"]
-                        logger.info(f"Found {len(new_messages)} new messages")
+                        logger.info(f"Found {len(new_messages)} truly new messages")
                         
                         # Mark agent messages as processed
                         for msg in state["recent_messages"]:
@@ -250,7 +258,7 @@ def run_supervisor_loop():
                         else:
                             logger.info("All new messages are internal/agent messages, skipping")
                     else:
-                        logger.info("No new messages found")
+                        logger.info("No new messages found (all IDs already seen)")
                 
                 last_message_check = current_time
                 

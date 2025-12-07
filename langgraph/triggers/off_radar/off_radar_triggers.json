@@ -3,7 +3,7 @@
   "triggers": [
     {
       "id": "direct_mention",
-      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
+      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey [Name]') and being REFERENCED (e.g., 'the place [Name] liked', 'I am with [Name]'). Only trigger if the agent is the intended recipient of the message.",
       "suggested_actions": [
         "answer_direct_question",
         "add_reaction"
