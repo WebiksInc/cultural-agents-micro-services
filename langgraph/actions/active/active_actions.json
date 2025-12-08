@@ -7,9 +7,9 @@
       "purpose": "To proactively start a conversation and steer it towards the agent's goal."
     },
     {
-      "id": "expand_discussion",
-      "description": "Expand on an existing discussion by adding new information, asking follow-up questions, or relating it to a broader topic.",
-      "purpose": "To deepen the conversation and increase engagement among participants."
+      "id": "expand_already_lively_discussion",
+      "description": "Expand on an existing discussion that is being talked about in the group by one of the following: adding new information, or asking a single follow-up question.",
+      "purpose": "To deepen the conversation if it pertains to your goal, and increase engagement among participants in a natural, not forced manner. Find like-minded people."
     },
     {
       "id": "change_narrative",

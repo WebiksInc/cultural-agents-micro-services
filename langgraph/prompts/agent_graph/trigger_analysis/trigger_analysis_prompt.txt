@@ -44,40 +44,21 @@ Agent Goal: {agent_goal}
 
 {recent_messages}
 
-**--- Example Output Format ---**
+**--- Output Examples ---**
+**Example 1 (Specific Message Trigger):**
 {{
   "id": "direct_mention",
-  "justification": "A group member explicitly mentioned the agent by name in their message, asking a direct question. This requires the agent to respond to maintain credibility and engagement.",
+  "justification": "The user explicitly asked me a question.",
   "target_message": {{
     "timestamp": "2025-11-26 08:36:07",
-    "text": "Hey {agent_name}, what do you think about ....?"
+    "text": "Hey {agent_name}, what do you think?"
   }}
 }}
 
-OR
-
-{{
-  "id": "conversation_closer",
-  "justification": "The most recent message is a brief acknowledgment that ends the current exchange. A quick reaction acknowledges without prolonging.",
-  "target_message": {{
-    "timestamp": "2025-11-26 10:15:22",
-    "text": "thanks, i'll let u know if i need it"
-  }}
-}}
-
-OR
-
+**Example 2 (General Context Trigger):**
 {{
   "id": "discussion_faltering",
-  "justification": "The conversation has become sparse with short, disengaged responses. The energy and depth of the discussion have clearly diminished, indicating an opportunity for the agent to reinvigorate the conversation.",
-  "target_message": null
-}}
-
-OR
-
-{{
-  "id": "neutral",
-  "justification": "The conversation is flowing naturally without any specific trigger conditions being met. The recent messages do not require agent intervention at this time.",
+  "justification": "The conversation has died down, I should revive it.",
   "target_message": null
 }}
 

@@ -56,17 +56,8 @@ Justification: {trigger_justification}
 **--- Suggested Actions ---**
 {suggested_actions_json}
 
-**--- Example Output Format ---**
-{{
-  "id": "expand_discussion",
-  "purpose": "The discussion about AI tools is losing momentum with brief, disengaged responses. Expanding on this topic with new information will re-energize the conversation and align with the goal of keeping the group engaged in technology discussions."
-}}
-
-OR
-
-{{
-  "id": "answer_direct_question",
-  "purpose": "A group member has directly asked the agent a question about programming frameworks. Providing a direct answer maintains the agent's credibility and fulfills its role as an active participant when explicitly called upon."
-}}
+**--- Output Requirement ---**
+Return ONLY a valid JSON object matching this structure:
+{{"id": "action_id_from_list", "purpose": "Your specific explanation based on Rule #4"}}
 
 Provide your action selection now:
