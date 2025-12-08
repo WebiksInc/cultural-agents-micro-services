@@ -307,7 +307,7 @@ def add_reaction_to_message(phone=None, chat_id=None, message_timestamp=None, em
 # reply_to_telegram_message_by_timestamp()
 # print(output)
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
     # import time
     
     # Show typing indicator
@@ -320,7 +320,7 @@ def add_reaction_to_message(phone=None, chat_id=None, message_timestamp=None, em
     # Send message
     # send_telegram_message( from_phone=TAMAR_NUMBER, to_target=PETACH_TIKVA_CHAT_ID, content_value="Hello from LangGraph Telegram EXM!" )
     # output = get_all_group_participants(phone="+37379276083", chat_id="3389864729")
-    # output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=12)
+    output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=12)
     # output['messages']
     # for msg in output['messages']:
     #     # print(msg['replyToMessageId'])
@@ -339,43 +339,43 @@ def add_reaction_to_message(phone=None, chat_id=None, message_timestamp=None, em
 
 
         
-    # print(json.dumps(output, indent=2, ensure_ascii=False))
-if __name__ == "__main__":
-    print(f"Fetching chats for Tamar ({TAMAR_NUMBER})...")
+    print(json.dumps(output, indent=2, ensure_ascii=False))
+# if __name__ == "__main__":
+#     print(f"Fetching chats for Tamar ({TAMAR_NUMBER})...")
     
-    # 1. Fetch all chats for Tamar's account
-    chats_data = get_all_chats(account_phone=TAMAR_NUMBER)
+#     # 1. Fetch all chats for Tamar's account
+#     chats_data = get_all_chats(account_phone=TAMAR_NUMBER)
     
-    # 2. Check if the response is a valid list
-    if isinstance(chats_data, list):
-        print("\n" + "="*50)
-        print("FOUND CHATS LIST:")
-        print("="*50)
+#     # 2. Check if the response is a valid list
+#     if isinstance(chats_data, list):
+#         print("\n" + "="*50)
+#         print("FOUND CHATS LIST:")
+#         print("="*50)
         
-        found_target = False
+#         found_target = False
         
-        for chat in chats_data:
-            # Extract title and ID safely
-            chat_title = chat.get('title') or chat.get('username') or "Unknown"
-            chat_id = chat.get('id')
+#         for chat in chats_data:
+#             # Extract title and ID safely
+#             chat_title = chat.get('title') or chat.get('username') or "Unknown"
+#             chat_id = chat.get('id')
             
-            # Print readable output for manual inspection
-            print(f"ID: {chat_id} | Name: {chat_title}")
+#             # Print readable output for manual inspection
+#             print(f"ID: {chat_id} | Name: {chat_title}")
             
-            # 3. Specific check for the Samsung group
-            # We look for "Samsung" in the title to highlight the target
-            if "Samsung" in str(chat_title):
-                found_target = True
-                print(f"\n>>> 🎯 FOUND POTENTIAL MATCH: {chat_title}")
-                print(f">>> USE THIS ID: {chat_id}\n")
+#             # 3. Specific check for the Samsung group
+#             # We look for "Samsung" in the title to highlight the target
+#             if "Samsung" in str(chat_title):
+#                 found_target = True
+#                 print(f"\n>>> 🎯 FOUND POTENTIAL MATCH: {chat_title}")
+#                 print(f">>> USE THIS ID: {chat_id}\n")
                 
-        print("="*50)
+#         print("="*50)
         
-        if not found_target:
-            print("⚠️ WARNING: Could not find a group with 'Samsung' in the title.")
-            print("Please check the full list above manually.")
+#         if not found_target:
+#             print("⚠️ WARNING: Could not find a group with 'Samsung' in the title.")
+#             print("Please check the full list above manually.")
             
-    else:
-        # Handle API errors
-        print("Error fetching chats:")
-        print(json.dumps(chats_data, indent=2, ensure_ascii=False))
+#     else:
+#         # Handle API errors
+#         print("Error fetching chats:")
+#         print(json.dumps(chats_data, indent=2, ensure_ascii=False))

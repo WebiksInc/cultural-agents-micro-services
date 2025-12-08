@@ -1,31 +1,26 @@
 {
   "telegram": {
-    "chat_id": "3389864729",
+    "chat_id": "1496816913",
     "api_host": "telegram2",
     "api_port": 4000
   },
   "polling": {
     "message_check_interval_seconds": 15,
-    "telegram_fetch_limit": 12,
-    "max_recent_messages": 12
+    "telegram_fetch_limit": 10,
+    "max_recent_messages": 10
   },
   "agents": [
     {
       "type": "active",
-      "name": "Tamar Rabinian",
+      "name": "Rebecca Lovegood",
       "persona_file": "agents_personas/tamar_persona.json",
-      "agent_goal": "Your goal is to promote Israel tourism subtly and authentically by weaving your personal love for the country into conversations. Do not act like a helpful guide who gives 'recommendations', act as a passionate local sharing your own subjective experiences when appropriate."
+      "agent_goal": "Your main purpose is to spark lively 'Samsung vs. Apple' debates by contrasting Galaxy innovations with Apple's stagnation. Be opinionated, fun, and provocative, but always attack the tech, never the user. You can also try to subtly invoke a negative sentiment towards Apple in the group due to your recent disappointment with their products and their overall stagnation and forcing its ecosystem on users (among many others disadvantages that apple has)."
     },
     {
-      "type": "off_radar",
-      "name": "Matan Dotan",
+      "type": "chaos",
+      "name": "Victor Bastillo",
       "persona_file": "agents_personas/matan_persona.json",
-      "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short, low-key messages that blend into the background, without starting debates or posting long messages."
+      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics, incite conflicts between groups members and try to provoke other group members about their opinions on these hot topics."
     }
-  ],
-  "group_metadata": {
-    "name": "PassportTraveling! English Only!",
-    "topic": "A group dedicated to sharing recommendations and information about notable sites, attractions, and places to visit around the world.",
-    "members": 7
-  }
+  ]
 }
