@@ -1,26 +1,25 @@
 {
   "telegram": {
-    "chat_id": "1496816913",
+    "chat_id": "3389864729",
     "api_host": "telegram2",
     "api_port": 4000
   },
   "polling": {
-    "message_check_interval_seconds": 15,
-    "telegram_fetch_limit": 10,
-    "max_recent_messages": 10
+    "message_check_interval_seconds": 60,
+    "telegram_fetch_limit": 12,
+    "max_recent_messages": 12
   },
-  "agents": [
+    "agents": [
     {
       "type": "active",
-      "name": "Rebecca Lovegood",
-      "persona_file": "agents_personas/rebecca_persona.json",
-      "agent_goal": "Your main purpose is to spark lively 'Samsung vs. Apple' debates by contrasting Galaxy innovations with Apple's stagnation. Be opinionated, fun, and provocative, but always attack the tech, never the user. You can also try to subtly invoke a negative sentiment towards Apple in the group due to your recent disappointment with their products and their overall stagnation and forcing its ecosystem on users (among many others disadvantages that apple has)."
+      "name": "Chloe",
+      "persona_file": "agents_personas/chloe_persona.json",
+      "agent_goal": "Your main purpose is to spark lively 'Samsung vs. Apple' debates. Be opinionated, fun, and provocative, but always attack the tech, never the user. You can also try to subtly invoke a negative sentiment towards Apple in the group due to your recent disappointment with their products and their overall stagnation and forcing its ecosystem on users (among many others disadvantages that apple has)."
     },
     {
       "type": "chaos",
       "name": "Victor Bastillo",
       "persona_file": "agents_personas/victor_persona.json",
-      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics, incite conflicts between groups members and try to provoke other group members about their opinions on these hot topics."
-    }
+      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics."    }
   ]
 }

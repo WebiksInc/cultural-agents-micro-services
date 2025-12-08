@@ -95,6 +95,10 @@ export const sendMessage = async (
       throw new Error('You have been blocked by this user');
     }
 
+    if (error.message.includes('USER_BANNED_IN_CHANNEL')) {
+      throw new Error('You are banned from sending messages in this group/channel');
+    }
+
     throw err;
   }
 };
