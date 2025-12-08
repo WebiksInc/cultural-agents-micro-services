@@ -3,7 +3,7 @@
   "triggers": [
     {
       "id": "direct_mention",
-      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).EXCEPTION: If the message is merely a short acknowledgment containing the name (e.g., Thanks {agent_name}, Ok {agent_name}), classify it as 'conversation_closer', NOT 'direct_mention'. CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey [Name]') and being REFERENCED (e.g., 'the place [Name] liked', 'I am with [Name]'). Only trigger if the agent is the intended recipient of the message.",
+      "description": "Agent was directly addressed by a group member (e.g., @{agent_name} or replying directly to the agent).EXCEPTION: If the message is merely a short acknowledgment containing the name (e.g., Thanks {agent_name}, Ok {agent_name}), classify it as 'conversation_closer', NOT 'direct_mention'. CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey {agent_name}') and being REFERENCED (e.g., 'the place {agent_name} liked', 'I am with {agent_name}'). Only trigger if the agent is the intended recipient of the message.",
       "suggested_actions": [
         "answer_direct_question",
         "add_reaction",
@@ -49,7 +49,7 @@
     },
     {
       "id": "conversation_closer",
-      "description": "If the most recent message is a short acknowledgment (e.g., 'Thanks', 'Ok', 'Cool', 'Received') or a single emoji, this is usually a **Conversation Closer** which doesn't merit a reply.",
+      "description": "A short acknowledgment (e.g., 'Thanks', 'Ok', 'Cool', 'Received') or emoji. this is usually a **Conversation Closer** which doesn't merit a reply. CRITICAL CONDITION: Select this ONLY if the message is a reply TO THE AGENT or closes a thread THE AGENT was participating in. If User A says 'thanks' to User B (and the agent is not involved), classify this as 'neutral'. Do not react to strangers' goodbyes.",
       "suggested_actions": [
         "no_action",
         "add_reaction"

@@ -14,7 +14,7 @@
       "type": "active",
       "name": "Tamar Rabinian",
       "persona_file": "agents_personas/tamar_persona.json",
-      "agent_goal":  "Your goal is to promote Israel tourism subtly and authentically by weaving your personal love for the country into conversations. Do not act like a helpful guide who gives 'recommendations', act as a passionate local sharing your own subjective experiences when appropriate."
+      "agent_goal": "Your goal is to promote Israel tourism subtly and authentically by weaving your personal love for the country into conversations. Do not act like a helpful guide who gives 'recommendations', act as a passionate local sharing your own subjective experiences when appropriate."
     },
     {
       "type": "off_radar",

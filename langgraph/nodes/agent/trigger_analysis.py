@@ -70,7 +70,17 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     recent_messages_text = "\n".join(message_lines)
     
     # Format triggers JSON
-    triggers_json = json.dumps(triggers, indent=2, ensure_ascii=False)
+    # Create a copy of triggers to modify for prompt (remove suggested_actions)
+    triggers_for_prompt = triggers.copy()
+    if 'triggers' in triggers_for_prompt:
+        triggers_for_prompt['triggers'] = [
+            {k: v for k, v in t.items() if k != 'suggested_actions'} 
+            for t in triggers_for_prompt['triggers']
+        ]
+
+    # Replace {agent_name} placeholder in triggers description with actual agent name
+    triggers_json = json.dumps(triggers_for_prompt, indent=2, ensure_ascii=False)
+    triggers_json = triggers_json.replace("{agent_name}", agent_name)
 
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")

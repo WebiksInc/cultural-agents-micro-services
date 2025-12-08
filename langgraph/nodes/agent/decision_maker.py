@@ -98,6 +98,7 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Build prompt
     prompt_template = load_prompt("agent_graph/decision_maker/decision_maker_prompt.txt")
     prompt = prompt_template.format(
+        agent_name=agent_name,
         agent_type=agent_type,
         agent_goal=agent_goal,
         trigger_id=trigger_id,

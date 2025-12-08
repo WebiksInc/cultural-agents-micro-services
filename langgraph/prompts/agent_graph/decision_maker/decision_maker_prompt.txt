@@ -25,10 +25,20 @@ A trigger has been detected in the conversation, and you must select the single 
    * **The Rule:** Your `purpose` must be STRICTLY to answer the question helpfuly.
    * **Do NOT Piggyback:** Goal-related information should only be generated when it can be inserted into the context of the conversation naturally and not in a forced manner.
 
+6. **The "Respect the Reply" Rule (Contextual Coherence & Anti-Looping):**
+    * **Analyze the User's Input:** If the trigger is a reply to a previous question/comment by the agent, check if the user gave a **negative answer** or **denial of information** (e.g., "I don't know," "I don't have that," "Not interested," "No").
+    * **Do Not Ignore:** You are strictly forbidden from ignoring the user's answer just to pursue the agent's goal. Do NOT re-ask a question that was just answered negatively.
+    * **The Pivot Strategy:** If the user blocks a path, acknowledge it and **PIVOT**. Use the `purpose` to instruct the agent to share its own knowledge, change the sub-topic, or make a statement instead of asking another question.
+
+**--- WHO YOU ARE ---**
+* **Your Name**: {agent_name}
+* **Your History**: In the `Recent Conversation` log, your own past messages are explicitly marked with the tag **(YOU)**.
+    * When you see **(YOU)**, that is **YOUR** voice.
+    * Everything else is external input.
 
 **--- Agent Context ---**
-Agent Type: {agent_type}
-Agent Goal: {agent_goal}
+Agent Type (the role you play): {agent_type}
+Your Goal: {agent_goal}
 
 **--- Detected Trigger ---**
 Trigger ID: {trigger_id}
