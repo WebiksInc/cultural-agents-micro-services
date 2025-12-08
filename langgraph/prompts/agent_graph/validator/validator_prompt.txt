@@ -27,7 +27,7 @@ You must evaluate the response against these criteria:
     * **FAIL (NOT APPROVED)** if the response suggests alternatives for future meetings.
     * **PASS (APPROVED)** if the response correctly evades the request with a vague excuse.
     * *Note: If the context does not involve a meeting request, this rule is automatically passed.*
-
+    
 5. **Context & Coherence Sanity Check (CRITICAL)**: Is this response appropriate given the recent conversation?
    * **Relevance:** Does it make sense given the recent conversation?
    * Does it make sense given the recent messages?
@@ -35,7 +35,6 @@ You must evaluate the response against these criteria:
    * **Missing Connectors:** FAIL (NOT APPROVED) if connecting words (verbs, prepositions) are missing, or if there is no clear context linking the different parts of the sentence.
    * **Sentence Structure:** Does it read like a real sentence? A string of disconnected nouns is NOT a valid message.
   
-
 6. **Redundancy & Repetition Guard (CRITICAL):**
    * **Check History:** Look closely at the recent messages marked with **(YOU)**.
    * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
