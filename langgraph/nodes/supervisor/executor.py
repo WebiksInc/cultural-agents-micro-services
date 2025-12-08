@@ -168,8 +168,8 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 executed_count += 1
             else:
                 logger.error(f"ERROR: Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
-
-        time.sleep(10)  # Short delay between actions 
+        if len(ready_actions) > 1:
+            time.sleep(160)  # Short delay between actions 
     logger.info(f"Executor: Executed {executed_count}/{len(ready_actions)} actions successfully")
     
     return {

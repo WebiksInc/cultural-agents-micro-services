@@ -21,10 +21,19 @@ export interface MediaInfo {
   mimeType?: string;
 }
 
-export interface MessageReaction {
-  emoji: string;      
-  count: number;     
+export interface ReactionUser {
+  userId: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
 }
+
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  users: ReactionUser[]; 
+}
+
 export interface FullChatMessage {
   id: number;
   date: string;

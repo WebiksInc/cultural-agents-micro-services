@@ -3,6 +3,8 @@ import logger from '../utils/logger.js';
 import entityResolver from './entityResolver';
 import { FullChatMessage } from '../types/messages';
 import { transformMessage } from '../utils/chatMessage';
+import { extractDetailedReactions } from '../utils/reactionExtractor';
+import { Api } from 'telegram';
 
 export const findMessageIdByTimestamp = async (
   phone: string,
@@ -66,7 +68,59 @@ export const getMessages = async (
     });
 
     const chatTitle = entity.title || entity.firstName || chatId;
-    const transformedMessages = messages.map((msg: unknown) => transformMessage(msg));
+    
+    // Transform messages and fetch detailed reactions
+    const transformedMessages = await Promise.all(
+      messages.map(async (msg: any) => {
+        const transformed = transformMessage(msg);
+        
+        // Fetch detailed reactions if message has any
+        if (transformed.reactions.length > 0 && msg.id) {
+          logger.info('Attempting to fetch reaction details', {
+            phone,
+            chatId,
+            messageId: msg.id,
+            reactionCount: transformed.reactions.length,
+          });
+          
+          try {
+            const reactionList = await client.invoke(
+              new Api.messages.GetMessageReactionsList({
+                peer: entity,
+                id: msg.id,
+                limit: 100,
+              })
+            );
+            
+            logger.info('Reaction list fetched', {
+              phone,
+              messageId: msg.id,
+              reactionsCount: reactionList.reactions?.length || 0,
+              usersCount: reactionList.users?.length || 0,
+            });
+            
+            transformed.reactions = extractDetailedReactions(reactionList);
+            
+            logger.info('Reactions extracted with users', {
+              phone,
+              messageId: msg.id,
+              extractedReactions: transformed.reactions.length,
+              firstReactionUsers: transformed.reactions[0]?.users?.length || 0,
+            });
+          } catch (err) {
+            logger.error('Failed to fetch reaction details', {
+              phone,
+              chatId,
+              messageId: msg.id,
+              error: (err as Error).message,
+              stack: (err as Error).stack,
+            });
+          }
+        }
+        
+        return transformed;
+      })
+    );
 
     logger.info('Messages fetched successfully', { 
       phone, 
@@ -100,4 +154,3 @@ export default {
   getMessages,
   findMessageIdByTimestamp,
 };
-

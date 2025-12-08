@@ -302,7 +302,7 @@ def add_reaction_to_message(phone=None, chat_id=None, message_timestamp=None, em
 # get_all_chats()
 # output = get_chat_messages(phone=TAMAR_NUMBER, chat_id=PETACH_TIKVA_CHAT_ID, limit=5)
 # get_all_group_participants(phone="+37379276083", chat_id="3389864729")
-#send_telegram_message()
+# send_telegram_message()
 # reply_to_telegram_message()
 # reply_to_telegram_message_by_timestamp()
 # print(output)

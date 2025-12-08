@@ -4,6 +4,7 @@
     {
       "id": "direct_mention",
       "description": "Agent was directly addressed by a group member (e.g., @{agent_name} or replying directly to the agent).EXCEPTION: If the message is merely a short acknowledgment containing the name (e.g., Thanks {agent_name}, Ok {agent_name}), classify it as 'conversation_closer', NOT 'direct_mention'. CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey {agent_name}') and being REFERENCED (e.g., 'the place {agent_name} liked', 'I am with {agent_name}'). Only trigger if the agent is the intended recipient of the message.",
+
       "suggested_actions": [
         "answer_direct_question",
         "add_reaction"
@@ -27,11 +28,11 @@
     },
     {
       "id": "identify_argument",
-      "description": "An active dispute, disagreement, or debate is detected between group members.",
+      "description": "An active dispute or heated debate between **other** group members (Third-Party Conflict). CRITICAL CONDITION: Do NOT select this if the argument involves YOU.",      
       "suggested_actions": [
-        "strawman_argument",
-        "baiting"
-      ]
+              "strawman_argument",
+              "baiting"
+       ]
     },
     {
       "id": "neutral",

@@ -45,6 +45,7 @@ export function extractReactions(reactions: unknown): MessageReaction[] {
     return {
       emoji,
       count: (result.count as number) || 0,
+      users: [], 
     };
   });
 }

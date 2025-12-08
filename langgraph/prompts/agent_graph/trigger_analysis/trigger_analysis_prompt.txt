@@ -34,6 +34,12 @@ Agent Goal: {agent_goal}
    * **Prevent Loops:** Do not select triggers like `goal_opportunity` or `implicit_follow_up` for the same specific context you just finished handling. 
       Select `"neutral"` to avoid repetitive or nagging behavior.
 
+ָ**-- Special Rule --:**
+   * **Step 1:** Look at the MOST RECENT message (the one at the very top of the list).
+   * **Step 2:** Check the sender. Is it **Victor Bastillo (YOU)**?
+   * **DECISION:** If YES (you are the last speaker), you MUST select `"id": "neutral"`.
+   * **Reasoning:** You have just acted. Do not re-analyze messages you already responded to. Wait for a new user input.
+   
 **--- Available Triggers ---**
 {triggers_json}
 
