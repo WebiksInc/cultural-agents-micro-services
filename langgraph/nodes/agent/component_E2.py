@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings
+from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
@@ -26,6 +26,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Get required inputs
     generated_response = state.get('generated_response')
     agent_prompt = state.get('agent_prompt', '')
+    recent_messages = state.get('recent_messages', [])
     
     # Validate generated_response
     if not generated_response:
@@ -39,11 +40,25 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
     persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
     selected_persona_json = json.dumps(persona_for_prompt, indent=2, ensure_ascii=False)
     
+    recent_messages_formatted = [
+        format_message_for_prompt(
+            msg, 
+            include_timestamp=True, 
+            include_emotion=True, 
+            selected_persona=selected_persona,
+            recent_messages=recent_messages
+        )
+        for msg in recent_messages
+    ]
+    recent_messages_json = json.dumps(recent_messages_formatted, indent=2, ensure_ascii=False, default=str)
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E2/component_E2_prompt.txt")
     main_prompt = prompt_template.format(
         generated_response=generated_response,
-        selected_persona=selected_persona_json
+        selected_persona=selected_persona_json,
+        recent_messages=recent_messages_json,
+        agent_name=agent_name
+    
     )
     
     try:
