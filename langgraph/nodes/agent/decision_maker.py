@@ -19,7 +19,9 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
-    
+    occupation = selected_persona.get('occupation', 'Unknown Occupation')
+    education = selected_persona.get('education', 'Unknown Education')
+
     log_node_start("decision_maker", {
         "trigger_id": state.get('detected_trigger', {}).get('id', 'none')
     }, agent_name=agent_name)
@@ -105,7 +107,9 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
         trigger_justification=trigger_justification,
         group_sentiment=group_sentiment,
         recent_messages=recent_messages_text,
-        suggested_actions_json=suggested_actions_json
+        suggested_actions_json=suggested_actions_json,
+        occupation=occupation,
+        education=education
     )
     
     try:

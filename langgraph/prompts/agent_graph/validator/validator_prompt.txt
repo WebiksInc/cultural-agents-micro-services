@@ -7,7 +7,7 @@ You must evaluate the response against these criteria:
 
 1. **Goal Alignment**: Does this message serve the agent's goal?
    - The agent has a specific goal/role in the group - Does this response help achieve that goal?
-   - Note that not every message can serve the agent's goal - it should serve it only when it feels natural
+   - Note that not every message can serve the agent's goal - **it should serve it only when it feels natural!**
 
 2. **Action Alignment**: Does this message fulfill the selected action's purpose?
    - An action was chosen with a specific purpose
@@ -41,7 +41,15 @@ You must evaluate the response against these criteria:
       * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **new details/angles** that were missing from the previous message.
    * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.
 
-7. **Formatting & Style Constraints (STRICT E2 RULES):**
+7. **Persona Knowledge & Hallucination Guard**
+   * **The "Expertise" Test:** Does the response include domain-specific details?
+   * **The Check:** Is it plausible for THIS specific persona to know these facts off the top of their head?
+     * *Example:* Someone with general knowledge might understand everyday concepts but would not know the intricate details of a specialized field.
+   * **The Hallucination Check:** Did the agent invent a fact to answer a question it didn't know?
+   * **FAIL CONDITION:** If the agent answers with specific data that is likely hallucinated OR completely out of character scope -> **FAIL**.
+   * **Correction Instruction:** "Rewrite to admit you don't know the answer. Stay within your persona's natural knowledge limits."
+
+8. **Formatting & Style Constraints (STRICT E2 RULES):**
    * **Length Check**: FAIL if it is a long paragraph.
    * **Punctuation Check**:
      * **FAIL** if the message contains semicolons (;), colons (:), or em dashes (—).
@@ -52,6 +60,9 @@ You must evaluate the response against these criteria:
 - **Check Vocabulary Level**: 
      * FAIL if a formal persona (e.g., Professor) uses teen slang like "idk", "meh", "lowkey".
      * FAIL if a young/casual persona sounds too poetic or academic without reason.
+
+**Important**
+The response must never explicitly state the agent's goal or that he has one - it is okay to promote the goal but it is not okay to reveal that the agent has a goal.
 
 **--- Your Decision ---**
 

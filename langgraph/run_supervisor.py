@@ -128,9 +128,9 @@ def run_supervisor_loop():
     agent_personas = load_agent_personas()
     logger.info(f"Loaded {len(agent_personas)} agent personas")
     
-    primary_phone = agent_personas[0].get("phone_number", "+37379276083")
-    
-    # --- CHANGE 1: Using deque with maxlen instead of set ---
+    primary_phone = agent_personas[0].get("phone_number", None)
+   
+
     # This automatically discards the oldest IDs when we reach 1000
     seen_message_ids = deque(maxlen=1000)
     
