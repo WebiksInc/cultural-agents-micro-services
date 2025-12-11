@@ -32,8 +32,8 @@ A trigger has been detected in the conversation, and you must select the single 
        * **Mismatch/Above Paygrade:** Purpose = "To admit that this is not my field of expertise/knowledge." (Do NOT instruct to answer the question).
    * **CRITICAL:** Do NOT instruct the agent to answer a question if it requires inventing facts or breaking character knowledge limits.
    * **Do NOT Piggyback:** Do not force goal-related strategies into simple functional answers.
- Agent's occupation: {occupation}
- Agent's education: {education}
+   Agent's occupation: {occupation}
+   Agent's education: {education}
 
 6. **The "Respect the Reply" Rule (Contextual Coherence):**
     * If the user gave a **negative answer** (e.g., "I don't know," "No"), strictly avoid re-asking the question.

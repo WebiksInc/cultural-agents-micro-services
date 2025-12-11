@@ -280,14 +280,31 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
         agent_graph = build_agent_graph(agent_full_config)
         
         # Create wrapper node for supervisor
-        agent_name = agent_full_config["persona"].get("first_name", agent_type)
-        agent_node_name = f"agent_{agent_type}"
-        agent_node = create_agent_node(agent_name, agent_graph, agent_full_config)
+        # Extract name from persona for consistency
+        persona = agent_full_config["persona"]
+        first_name = persona.get("first_name", "")
+        last_name = persona.get("last_name", "")
+        
+        if first_name and last_name:
+            full_name = f"{first_name}_{last_name}"
+        elif first_name:
+            full_name = first_name
+        else:
+            # Fallback to config name if persona is missing names
+            full_name = agent_full_config["name"].replace(" ", "_")
+            
+        safe_agent_name = full_name.replace(" ", "_")
+        agent_node_name = f"agent_{agent_type}_{safe_agent_name}"
+        
+        # Use first name for logging/display
+        agent_display_name = first_name if first_name else agent_full_config["name"]
+        
+        agent_node = create_agent_node(agent_display_name, agent_graph, agent_full_config)
         
         supervisor_builder.add_node(agent_node_name, agent_node)
         agent_nodes.append(agent_node_name)
         
-        logger.info(f"Added agent node: {agent_node_name} ({agent_name})")
+        logger.info(f"Added agent node: {agent_node_name} ({agent_display_name})")
     
     # Add scheduler node
     supervisor_builder.add_node("scheduler", scheduler_node)
