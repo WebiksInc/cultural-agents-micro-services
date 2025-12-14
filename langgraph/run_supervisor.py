@@ -22,6 +22,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 from build_graph import build_supervisor_graph
+from utils import get_all_agent_usernames
 from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
@@ -42,15 +43,27 @@ TELEGRAM_FETCH_LIMIT = CONFIG["polling"]["telegram_fetch_limit"]
 MAX_RECENT_MESSAGES = CONFIG["polling"]["max_recent_messages"]
 
 
-def parse_telegram_message(msg_data: dict) -> Message:
+def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Message:
     """Parse Telegram API message into Message TypedDict."""
     # Parse reactions if present
     reactions = None
     if msg_data.get("reactions"):
-        reactions = [
-            {"emoji": r.get("emoji", ""), "count": r.get("count", 0)}
-            for r in msg_data.get("reactions", [])
-        ]
+        reactions = []
+        for r in msg_data.get("reactions", []):
+            reaction = {"emoji": r.get("emoji", ""), "count": r.get("count", 0)}
+            # Filter users to only include agents (match by username)
+            if agent_usernames and r.get("users"):
+                agent_usernames_lower = [u.lower() for u in agent_usernames]
+                filtered_users = []
+                for u in r.get("users", []):
+                    username = (u.get("username") or "").lower()
+                    if username and username in agent_usernames_lower:
+                        first = (u.get("firstName", "") or "").strip()
+                        last = (u.get("lastName", "") or "").strip()
+                        full_name = f"{first} {last}".strip()
+                        filtered_users.append(full_name)
+                reaction["users"] = filtered_users
+            reactions.append(reaction)
     
     msg_id = msg_data.get("id")
     if msg_id is None or msg_id == "":
@@ -128,6 +141,9 @@ def run_supervisor_loop():
     agent_personas = load_agent_personas()
     logger.info(f"Loaded {len(agent_personas)} agent personas")
     
+    # Get agent usernames for filtering reaction users
+    agent_usernames = get_all_agent_usernames()
+    
     primary_phone = agent_personas[0].get("phone_number", None)
    
 
@@ -172,7 +188,7 @@ def run_supervisor_loop():
     messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
     
     if messages_data and messages_data.get("success"):
-        initial_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
+        initial_messages = [parse_telegram_message(msg, agent_usernames) for msg in messages_data.get("messages", [])]
         state["recent_messages"] = initial_messages
         
         # --- CHANGE 2: Load initial IDs into deque ---
@@ -217,7 +233,7 @@ def run_supervisor_loop():
                 messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
                 
                 if messages_data and messages_data.get("success"):
-                    raw_messages = [parse_telegram_message(msg) for msg in messages_data.get("messages", [])]
+                    raw_messages = [parse_telegram_message(msg, agent_usernames) for msg in messages_data.get("messages", [])]
                     
                     # Log IDs for debugging
                     all_ids = [msg["message_id"] for msg in raw_messages]

@@ -13,15 +13,16 @@
     {
       "type": "active",
       "name": "Sandra",
+      "username": "SandraK9",
       "persona_file": "agents_personas/sandra_persona.json",
       "agent_goal": "Your main purpose is to spark lively 'Samsung vs. Apple' debates. Be opinionated, fun, and provocative, but always attack the tech, never the user. You can also try to subtly invoke a negative sentiment towards Apple in the group due to your recent disappointment with their products and their overall stagnation and forcing its ecosystem on users (among many others disadvantages that apple has)."
     },
     {
-      "type": "chaos",
+      "type": "off_radar",
       "name": "Victor Bastillo",
+      "username": "VicVic1221",
       "persona_file": "agents_personas/victor_persona.json",
-      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics."    
+      "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short messages that blend into the background, without starting debates or posting long messages."    
     }
-   
   ]
 }

@@ -24,7 +24,7 @@ from nodes.agent.component_E2 import styler_node
 from nodes.agent.validator import validator_node
 
 # Import utilities
-from utils import load_json_file, load_prompt
+from utils import *
 from logs.logfire_config import get_logger
 
 logger = get_logger(__name__)
@@ -33,17 +33,6 @@ logger = get_logger(__name__)
 BASE_DIR = Path(__file__).parent
 CONFIG_DIR = BASE_DIR / "config"
 SUPERVISOR_CONFIG_PATH = CONFIG_DIR / "supervisor_config.json"
-
-
-def get_all_agent_names() -> list:
-    """
-    Get names of all agents in the system.
-    
-    Returns:
-        List of agent names from supervisor config
-    """
-    supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
-    return [agent["name"] for agent in supervisor_config["agents"]]
 
 
 def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:

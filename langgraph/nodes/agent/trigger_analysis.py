@@ -82,6 +82,17 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     triggers_json = json.dumps(triggers_for_prompt, indent=2, ensure_ascii=False)
     triggers_json = triggers_json.replace("{agent_name}", agent_name)
 
+    # Build additional rules based on agent type
+    additional_rules = ""
+    if agent_type == "off_radar":
+        additional_rules = """
+                            Special rule: **Already Reacted check:**
+                            * **Context:** You cannot react to or support the exact same message twice.
+                            * **The Check:** Before selecting ANY trigger that targets a specific past message (especially support_your_comrades), look at that message's [Reactions: ...] tag.
+                            * **The Constraint:** If the reactions tag contains **(incl. ... [YOU])** or your agent name, it means you have ALREADY acted on it.
+                            * **Decision:** In this case, you MUST override the trigger and select "neutral".
+                            """
+
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")
     prompt = prompt_template.format(
@@ -89,7 +100,8 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
         agent_type=agent_type,
         agent_goal=agent_goal,
         triggers_json=triggers_json,
-        recent_messages=recent_messages_text
+        recent_messages=recent_messages_text,
+        additional_rules=additional_rules
     )
     
     try:

@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+from datetime import datetime
 from logs.logfire_config import get_logger
 
 logger = get_logger(__name__)
@@ -17,6 +18,27 @@ LANGGRAPH_DIR = Path(__file__).parent
 PROMPTS_DIR = LANGGRAPH_DIR / "prompts"
 CONFIG_DIR = LANGGRAPH_DIR / "config"
 MODEL_CONFIG_PATH = CONFIG_DIR / "model_config.json"
+SUPERVISOR_CONFIG_PATH = CONFIG_DIR / "supervisor_config.json"
+
+def get_all_agent_usernames() -> list:
+    """
+    Get usernames of all agents in the system.
+    
+    Returns:
+        List of agent usernames from supervisor config
+    """
+    supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+    return [agent["username"] for agent in supervisor_config["agents"]]
+
+def get_all_agent_names() -> list:
+    """
+    Get names of all agents in the system.
+    
+    Returns:
+        List of agent names from supervisor config
+    """
+    supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+    return [agent["name"] for agent in supervisor_config["agents"]]
 
 
 def load_prompt(prompt_path: str) -> str:
@@ -107,7 +129,7 @@ def format_message_for_prompt(msg: Dict[str, Any],
     Returns:
         Formatted message string with timestamp, sender, emotion, reactions, and text.
     """
-    from datetime import datetime
+    
     
     # Get sender name (prefer full name, fall back to first_name, then username) and msg_id
     sender_username = msg.get('sender_username', '').strip()
@@ -125,12 +147,12 @@ def format_message_for_prompt(msg: Dict[str, Any],
         sender = 'Unknown'
     
     # Check if this message is from the agent 
+    is_agent = False
     if selected_persona:
         persona_username = selected_persona.get('user_name', '').strip().lower()
         persona_first = selected_persona.get('first_name', '').strip().lower()
         persona_last = selected_persona.get('last_name', '').strip().lower()
         
-        is_agent = False
         if persona_username and sender_username.lower() == persona_username:
             is_agent = True
         elif persona_first and persona_last:
@@ -176,13 +198,33 @@ def format_message_for_prompt(msg: Dict[str, Any],
     header = " ".join(parts)
     result = f"{header}: {text}"
     
-  
-               
-
     # Add reactions if present
     reactions = msg.get('reactions')
     if reactions and len(reactions) > 0:
-        reaction_parts = [f"{r.get('emoji', '?')}×{r.get('count', 0)}" for r in reactions]
+        reaction_parts = []
+        for r in reactions:
+            emoji = r.get('emoji', '?')
+            count = r.get('count', 0)
+            users = r.get('users', [])
+            if users:
+                # Check if the current agent (selected_persona) reacted
+                agent_reacted = False
+                if selected_persona:
+                    persona_first = selected_persona.get('first_name', '').strip()
+                    persona_last = selected_persona.get('last_name', '').strip()
+                    persona_full_name = f"{persona_first} {persona_last}".strip()
+                    agent_reacted = any(
+                        u.lower() == persona_full_name.lower() or u.lower() == persona_first.lower()
+                        for u in users
+                    )
+                
+                users_str = ", ".join(users)
+                if agent_reacted:
+                    reaction_parts.append(f"{emoji}×{count} (incl. {users_str} [YOU])")
+                else:
+                    reaction_parts.append(f"{emoji}×{count} (incl. {users_str} [Agent])")
+            else:
+                reaction_parts.append(f"{emoji}×{count}")
         reaction_str = ", ".join(reaction_parts)
         result += f" [Reactions: {reaction_str}]"
     
@@ -197,7 +239,7 @@ def format_message_for_prompt(msg: Dict[str, Any],
             result += f" [⤷ Replying to YOUR earlier message id: {reply_to_id_str}]"
             is_reply_to_agent = True
         
-        # If not replying to agent, find the sender name from the replied-to message
+        # If not replying to agent, find the sender name from the replied-to messages
         if not is_reply_to_agent:
             replied_to_name = "another user"
             if recent_messages:
