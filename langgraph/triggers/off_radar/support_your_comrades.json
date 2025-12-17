@@ -1,6 +1,6 @@
   {
       "id": "support_your_comrades",
-      "description": "A fellow agent (any user listed in the 'agents_in_group' field) has posted a message promoting a specific narrative or opinion. This is a strategic opportunity to provide **Ideological Validation**. The goal is to create 'social proof' and show that other group members agree with their perspective.",
+      "description": "A fellow agent (listed in 'agents_in_group') has posted a message. Triggers ONLY if two conditions are met: 1. **Content Alignment:** The message actively advances that agent's specific `agent_goal` (defined below). STRICTLY IGNORE casual chatter, greetings, or off-topic remarks. 2. **No Double-Dipping:** Check the message's `[Reactions: ...]` tag. If it contains `(incl. ... [YOU])` or your name, you have ALREADY supported it -> Select 'neutral'.",
       "suggested_actions": [
         "post_supportive_comment",
         "add_reaction"
