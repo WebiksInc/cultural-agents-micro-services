@@ -57,9 +57,17 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
     
     # For off_radar type: dynamically add support_your_comrades trigger if other agents exist
     if agent_type == "off_radar":
-        all_agents = get_all_agent_names()
-        # Exclude the current agent from the list
-        other_agents = [name for name in all_agents if name != agent_config["name"]]
+        supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+        # Build list of other agents with their details
+        other_agents = [
+            {
+                "agent_name": agent["name"],
+                "agent_type": agent["type"],
+                "agent_goal": agent["agent_goal"]
+            }
+            for agent in supervisor_config["agents"]
+            if agent["name"] != agent_config["name"]
+        ]
         
         # Only add support_your_comrades trigger if there are other agents
         if other_agents:
@@ -67,7 +75,7 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
             support_trigger = load_json_file(support_trigger_path)
             support_trigger["agents_in_group"] = other_agents
             triggers["triggers"].append(support_trigger)
-            logger.info(f"Added support_your_comrades trigger with agents: {other_agents}")
+            logger.info(f"Added support_your_comrades trigger with agents: {[a['agent_name'] for a in other_agents]}")
     
     # Load actions
     actions_path = BASE_DIR / "actions" / agent_type / f"{agent_type}_actions.json"
