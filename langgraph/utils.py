@@ -41,6 +41,51 @@ def get_all_agent_names() -> list:
     return [agent["name"] for agent in supervisor_config["agents"]]
 
 
+def get_other_agents_info(current_agent_name: str) -> list:
+    """
+    Get info about other agents in the system, excluding the current agent.
+    
+    Args:
+        current_agent_name: Name of the current agent to exclude
+        
+    Returns:
+        List of dicts with agent_name, agent_type, and agent_goal
+    """
+    supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+    return [
+        {
+            "agent_name": agent["name"],
+            "agent_type": agent["type"],
+            "agent_goal": agent["agent_goal"]
+        }
+        for agent in supervisor_config["agents"]
+        if agent["name"] != current_agent_name
+    ]
+
+
+def format_other_agents_for_prompt(current_agent_name: str) -> str:
+    """
+    Format other agents' info as a string for inclusion in prompts.
+    
+    Args:
+        current_agent_name: Name of the current agent to exclude
+        
+    Returns:
+        Formatted string listing other agents, or "None" if no other agents
+    """
+    other_agents = get_other_agents_info(current_agent_name)
+    if not other_agents:
+        return "None"
+    
+    lines = []
+    for i, agent in enumerate(other_agents, 1):
+        lines.append(f"Agent {i}:")
+        lines.append(f"  - Name: {agent['agent_name']}")
+        lines.append(f"  - Type: {agent['agent_type']}")
+        lines.append(f"  - Goal: {agent['agent_goal']}")
+    return "\n".join(lines)
+
+
 def load_prompt(prompt_path: str) -> str:
     """
     Load a prompt template from file.

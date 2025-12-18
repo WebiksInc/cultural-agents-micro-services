@@ -8,7 +8,7 @@ import logfire
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt
+from utils import load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_node_output, log_state
 from utils import get_messages_replies
@@ -86,6 +86,10 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     persona_json = json.dumps(persona_for_prompt, indent=2, ensure_ascii=False)
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E1/component_E1_prompt.txt")
+    
+    # Get other agents info for group context
+    other_agents_info = format_other_agents_for_prompt(agent_name)
+    
     main_prompt = prompt_template.format(
         agent_name=agent_name,
         agent_goal=agent_goal,
@@ -95,6 +99,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         name=group_metadata.get('name', 'Unknown'),
         topic=group_metadata.get('topic', 'No topic provided'),
         group_sentiment=group_sentiment,
+        other_agents_info=other_agents_info,
         recent_messages_json=recent_messages_json,
         persona_json=persona_json
     )

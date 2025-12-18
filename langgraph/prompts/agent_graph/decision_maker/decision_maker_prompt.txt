@@ -58,6 +58,9 @@ Justification: {trigger_justification}
 **--- Group Sentiment ---**
 {group_sentiment}
 
+**--- Other Agents in Group ---**
+{other_agents_info}
+
 **--- Recent Conversation ---**
 **NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
 **Message Structure:** Each message follows the format: `[id: message_id][timestamp] sender name [emotion]: message text`

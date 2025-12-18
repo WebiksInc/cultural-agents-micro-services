@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt, get_messages_replies
+from utils import load_prompt, get_model_settings, format_message_for_prompt, get_messages_replies, format_other_agents_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_state, log_node_output
 
@@ -95,13 +95,18 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")
+    
+    # Get other agents info
+    other_agents_info = format_other_agents_for_prompt(agent_name)
+    
     prompt = prompt_template.format(
         agent_name=agent_name,
         agent_type=agent_type,
         agent_goal=agent_goal,
         triggers_json=triggers_json,
         recent_messages=recent_messages_text,
-        additional_rules=additional_rules
+        additional_rules=additional_rules,
+        other_agents_info=other_agents_info
     )
     
     try:

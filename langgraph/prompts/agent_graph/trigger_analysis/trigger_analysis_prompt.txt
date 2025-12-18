@@ -8,6 +8,9 @@ Agent Name: {agent_name} (This is YOU)
 Agent Type: {agent_type}
 Agent Goal: {agent_goal}
 
+**--- Other Agents in Group ---**
+{other_agents_info}
+
 **--- Rules ---**
  **The "Turn-Taking" Rule (CRITICAL - HIGHEST PRIORITY):**
    * **Step 1:** Look at the MOST RECENT message (the one at the very top of the list).
