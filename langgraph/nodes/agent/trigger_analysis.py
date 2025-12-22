@@ -84,22 +84,15 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     # Build additional rules based on agent type
     additional_rules = ""
-    if agent_type == "off_radar":
-        additional_rules = """
-                            Special rule: **Already Reacted check:**
-                            * **Context:** You cannot react to or support the exact same message twice.
-                            * **The Check:** Before selecting ANY trigger that targets a specific past message (especially support_your_comrades), look at that message's [Reactions: ...] tag.
-                            * **The Constraint:** If the reactions tag contains **(incl. ... [YOU])** or your agent name, it means you have ALREADY acted on it.
-                            * **Decision:** In this case, you MUST override the trigger and select "neutral".
-                            """
-    if agent_type == "active":
-        additional_rules = """
-                            Special rule: **Inter-Agent Silence:**
-                            * **Identify Agents:** Check the `Other Agents in Group` list and pay attention to `(Agent)` tags in message senders.
-                            * **The Restriction:** Do NOT trigger proactive triggers on messages sent by fellow agents. Focus your energy on human users.
-                            * **The Exception:** You may ONLY respond to an agent if they explicitly triggered `direct_mention` (addressed you by name) or `implicit_follow_up` (replied directly to your last message).
-                              Otherwise, ignore them (select "neutral").                                                  
-                            """
+    rules_file_map = {
+        "off_radar": "agent_graph/trigger_analysis/rules/off_radar_rules.txt",
+        "active": "agent_graph/trigger_analysis/rules/active_rules.txt"
+    }
+    if agent_type in rules_file_map:
+        try:
+            additional_rules = load_prompt(rules_file_map[agent_type])
+        except FileNotFoundError:
+            logger.warning(f"Rules file not found for agent type: {agent_type}")
 
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")
