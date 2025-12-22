@@ -191,8 +191,11 @@ def format_message_for_prompt(msg: Dict[str, Any],
     else:
         sender = 'Unknown'
     
-    # Check if this message is from the agent 
+    # Check if this message is from the current agent (YOU) or another agent
     is_agent = False
+    is_other_agent = False
+    all_agent_names = get_all_agent_names()
+    
     if selected_persona:
         persona_username = selected_persona.get('user_name', '').strip().lower()
         persona_first = selected_persona.get('first_name', '').strip().lower()
@@ -206,6 +209,16 @@ def format_message_for_prompt(msg: Dict[str, Any],
         
         if is_agent:
             sender = f"{sender} (YOU)"
+    
+    # If not the current agent, check if sender is another agent in the system
+    if not is_agent:
+        for agent_name in all_agent_names:
+            agent_name_lower = agent_name.lower()
+            # Check if sender matches agent name (full name or first name)
+            if sender.lower() == agent_name_lower or sender_first_name.lower() == agent_name_lower.split()[0]:
+                sender = f"{sender} (Agent)"
+                is_other_agent = True
+                break
     
     text = msg.get('text', '')
     

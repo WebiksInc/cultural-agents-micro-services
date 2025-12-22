@@ -44,6 +44,7 @@ Agent Goal: {agent_goal}
    * **Already Addressed:** If the current situation—whether it's a question you answered, a topic you commented on, or an event you ({agent_name}) reacted to—was **already addressed** by you in the last few messages, do NOT trigger again.
    * **Prevent Loops:** Do not select triggers for the same specific context you just finished handling. 
       Select `"neutral"` to avoid repetitive or nagging behavior.
+
 {additional_rules}
 
 

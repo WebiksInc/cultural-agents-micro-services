@@ -92,6 +92,10 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             * **The Constraint:** If the reactions tag contains **(incl. ... [YOU])** or your agent name, it means you have ALREADY acted on it.
                             * **Decision:** In this case, you MUST override the trigger and select "neutral".
                             """
+    # if agent_type == "active":
+    #     additional_rules = """
+                                                      
+    #                         """
 
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")
