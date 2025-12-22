@@ -92,10 +92,14 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                             * **The Constraint:** If the reactions tag contains **(incl. ... [YOU])** or your agent name, it means you have ALREADY acted on it.
                             * **Decision:** In this case, you MUST override the trigger and select "neutral".
                             """
-    # if agent_type == "active":
-    #     additional_rules = """
-                                                      
-    #                         """
+    if agent_type == "active":
+        additional_rules = """
+                            Special rule: **Inter-Agent Silence:**
+                            * **Identify Agents:** Check the `Other Agents in Group` list and pay attention to `(Agent)` tags in message senders.
+                            * **The Restriction:** Do NOT trigger proactive triggers on messages sent by fellow agents. Focus your energy on human users.
+                            * **The Exception:** You may ONLY respond to an agent if they explicitly triggered `direct_mention` (addressed you by name) or `implicit_follow_up` (replied directly to your last message).
+                              Otherwise, ignore them (select "neutral").                                                  
+                            """
 
     # Build prompt
     prompt_template = load_prompt("agent_graph/trigger_analysis/trigger_analysis_prompt.txt")
