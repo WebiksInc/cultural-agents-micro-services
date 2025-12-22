@@ -112,6 +112,9 @@ If NOT APPROVED:
 **Example:** `[id: 123][2025-12-01 14:43:37] James Brown [neutral]: hello`
 {recent_messages}
 
+**--- Other Agents in Group ---**
+{other_agents_info}
+{additional_rules}
 ---
 
 Now validate the styled response and output your decision in JSON format:

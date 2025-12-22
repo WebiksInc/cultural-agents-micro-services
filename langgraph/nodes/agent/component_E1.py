@@ -34,6 +34,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     recent_messages = state.get('recent_messages', [])
     selected_persona = state.get('selected_persona', {})
     agent_goal = state.get('agent_goal', 'No goal specified')
+    agent_type = state.get('agent_type', 'unknown')
     group_sentiment = state.get('group_sentiment', 'No sentiment analysis available')
     actions = state.get('actions', {})
     group_metadata = state.get('group_metadata', {})
@@ -90,6 +91,17 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Get other agents info for group context
     other_agents_info = format_other_agents_for_prompt(agent_name)
     
+    # Build additional rules based on agent type
+    additional_rules = ""
+    e1_rules_file_map = {
+        "chaos": "agent_graph/E1/rules/chaos_rules.txt"
+    }
+    if agent_type in e1_rules_file_map:
+        try:
+            additional_rules = load_prompt(e1_rules_file_map[agent_type])
+        except FileNotFoundError:
+            logger.warning(f"E1 rules file not found for agent type: {agent_type}")
+    
     main_prompt = prompt_template.format(
         agent_name=agent_name,
         agent_goal=agent_goal,
@@ -101,7 +113,8 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         group_sentiment=group_sentiment,
         other_agents_info=other_agents_info,
         recent_messages_json=recent_messages_json,
-        persona_json=persona_json
+        persona_json=persona_json,
+        additional_rules=additional_rules
     )
     
     # If there's validation feedback, prepend it to the prompt for retry

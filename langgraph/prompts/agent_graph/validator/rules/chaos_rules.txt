@@ -1,0 +1,10 @@
+
+9. **Agent Cover Protection (CHAOS AGENT CRITICAL CHECK):**
+   * **The Check:** Scan the response for ANY mention or hint about other agents' goals, missions, or purposes.
+   * **FAIL (NOT APPROVED)** if the response:
+     - Mentions that another group member has a "goal", "mission"
+     - Accuses or implies someone is an "agent" or has ulterior motives
+     - References information that could only be known from the "Other Agents in Group" section
+     - Exposes or hints at the coordinated nature of agents in the group
+   * **PASS (APPROVED)** if the response treats all group members as regular humans with no special knowledge about their roles.
+

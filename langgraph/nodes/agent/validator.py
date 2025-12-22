@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt
+from utils import load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
@@ -27,6 +27,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Get required inputs
     styled_response = state.get('styled_response')
     agent_goal = state.get('agent_goal', '')
+    agent_type = state.get('agent_type', 'unknown')
     selected_action = state.get('selected_action', {})
     selected_persona = state.get('selected_persona', {})
     recent_messages = state.get('recent_messages', [])
@@ -76,13 +77,26 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Building the validation prompt
     prompt_template = load_prompt("agent_graph/validator/validator_prompt.txt")
+    
+    # Build additional rules and other_agents_info based on agent type (only for chaos)
+    additional_rules = ""
+    other_agents_info = ""
+    if agent_type == "chaos":
+        other_agents_info = format_other_agents_for_prompt(agent_name)
+        try:
+            additional_rules = load_prompt("agent_graph/validator/rules/chaos_rules.txt")
+        except FileNotFoundError:
+            logger.warning(f"Validator rules file not found for agent type: {agent_type}")
+    
     validation_prompt = prompt_template.format(
         agent_name=agent_name,
         styled_response=styled_response,
         agent_goal=agent_goal,
         selected_action=selected_action_json,
         selected_persona=selected_persona_json,
-        recent_messages=recent_messages_json
+        recent_messages=recent_messages_json,
+        other_agents_info=other_agents_info,
+        additional_rules=additional_rules
     )
     
     try:
