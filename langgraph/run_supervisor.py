@@ -27,6 +27,8 @@ from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
 from logs.logfire_config import setup_logfire, get_logger
+from collections import deque
+import time
 
 # Setup Logfire
 setup_logfire("cultural-agents-supervisor")
@@ -127,8 +129,6 @@ def load_agent_personas() -> list:
     
     return personas
 
-from collections import deque
-import time
 
 def run_supervisor_loop():
     # STEP 1: INITIALIZATION 
