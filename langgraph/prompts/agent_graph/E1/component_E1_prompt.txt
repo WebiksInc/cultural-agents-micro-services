@@ -74,7 +74,8 @@ Action Purpose: {action_purpose}
 Group Name: {name}
 Group Description: {topic}
 Group Sentiment: {group_sentiment}
-Other Agents in Group:
+
+*-- Other Agents in Group: --*
 {other_agents_info}
 
 **--- Recent Conversation ---**
