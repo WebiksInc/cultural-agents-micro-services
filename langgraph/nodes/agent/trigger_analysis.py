@@ -168,6 +168,9 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                                 target_message['sender_name'] = f"{first_name} {last_name}".strip()
                             elif username:
                                 target_message['sender_name'] = username
+                            
+                            # Add message_id
+                            target_message['message_id'] = msg.get('message_id', '')
                             break
             
             # Log output to Logfire
