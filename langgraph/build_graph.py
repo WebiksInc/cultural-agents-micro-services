@@ -163,6 +163,7 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
     1. Copies relevant state from SupervisorState to AgentState
     2. Invokes the agent subgraph
     3. Extracts the result and formats it for the supervisor
+    4. Updates agents_recent_actions with new action record if one was created
     
     Args:
         agent_name: Name of the agent (e.g., "Tamar", "Matan")
@@ -178,6 +179,10 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
         Runs the agent subgraph and returns selected_action.
         """
         logger.info(f"Running agent: {agent_name}")
+        
+        # Get this agent's recent actions from supervisor state
+        agents_recent_actions = state.get("agents_recent_actions", {})
+        agent_recent_actions = agents_recent_actions.get(agent_name, [])
         
         # Build AgentState from SupervisorState
         agent_state: AgentState = {
@@ -203,14 +208,18 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
             "validation_feedback": None,
             "retry_count": 0,
             "current_node": None,
-            "next_node": None
+            "next_node": None,
+            
+            # Action history
+            "recent_actions": agent_recent_actions
         }
         
         # Run the agent subgraph
         result = agent_graph.invoke(agent_state)
         
-        # Extract selected_action from result
+        # Extract selected_action and detected_trigger from result
         selected_action = result.get("selected_action")
+        detected_trigger = result.get("detected_trigger", {})
         
         # Check if action should be ignored (neutral trigger or error)
         if not selected_action or selected_action.get("status") == "no_action_needed":
@@ -232,11 +241,28 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
         
         logger.info(f"Agent {agent_name}: Action selected - {selected_action.get('id', 'unknown')}")
         
+        # Build update dict
+        update_dict = {
+            "selected_actions": [action_entry]
+        }
+        
+        # Build action record for history tracking (only for approved actions)
+        if selected_action.get("status") == "approved by validator":
+            action_record = {
+                "trigger_id": detected_trigger.get("id", ""),
+                "trigger_justification": detected_trigger.get("justification", ""),
+                "target_message": selected_action.get("target_message"),
+                "action_id": selected_action.get("id", ""),
+                "action_purpose": selected_action.get("purpose", ""),
+                "action_content": result.get("styled_response", ""),
+                "action_timestamp": None  # Will be filled by executor after sending
+            }
+            update_dict["agents_recent_actions"] = {agent_name: [action_record]}
+            logger.info(f"Agent {agent_name}: Recording action - trigger: {action_record.get('trigger_id')}, action: {action_record.get('action_id')}")
+        
         # Append to selected_actions using Command
         return Command(
-            update={
-                "selected_actions": [action_entry] 
-            },
+            update=update_dict,
             goto="scheduler"
         )
     

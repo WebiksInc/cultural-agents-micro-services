@@ -157,6 +157,7 @@ def run_supervisor_loop():
         group_metadata={"id": CHAT_ID, "name": "", "topic": "", "members": 0},
         selected_actions=[],
         execution_queue=[],
+        agents_recent_actions={},  # Track recent actions per agent
         current_nodes=None,
         next_nodes=None
     )
@@ -252,7 +253,7 @@ def run_supervisor_loop():
                     if new_messages:
                         # Prepend new messages to state
                         state["recent_messages"] = new_messages + state["recent_messages"]
-                        logger.info(f"Found {len(new_messages)} truly new messages")
+                        logger.info(f"Found {len(new_messages)} new messages")
                         
                         # Mark agent messages as processed
                         for msg in state["recent_messages"]:
@@ -284,7 +285,7 @@ def run_supervisor_loop():
                     remaining = MESSAGE_CHECK_INTERVAL - int(time_since_check)
                     logger.info(f"Idle... Next pull in {remaining}s")
             
-            time.sleep(30)
+            time.sleep(15)
 
     except KeyboardInterrupt:
         logger.info("Supervisor loop stopped by user")

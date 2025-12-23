@@ -19,6 +19,17 @@ class Message(TypedDict):
     replyToMessageId: Optional[int] # ID of the message this is replying to, if any
 
 
+class ActionRecord(TypedDict):
+    """Structure for tracking recent agent actions."""
+    trigger_id: str
+    trigger_justification: str
+    target_message: Optional[dict]  # The message that triggered the action
+    action_id: str
+    action_purpose: str
+    action_content: str
+    action_timestamp: Optional[str]  # Filled by executor after sending
+
+
 class AgentState(TypedDict):
     # Data copied from Supervisor
     recent_messages: List[Message]
@@ -45,6 +56,9 @@ class AgentState(TypedDict):
     validation: Optional[dict]  # Output of Validator, e.g., {"approved": True/False, "explanation": "...", "styled_response": "..."}
     validation_feedback: Optional[str]  # Feedback from failed validation to help E.1 regenerate
     retry_count: int  # Number of times E.1 has been retried due to validation failure
+    
+    # Action history tracking
+    recent_actions: List[ActionRecord]  # History of recent actions taken by this agent
     
     # Internal tracking
     current_node: Optional[str]

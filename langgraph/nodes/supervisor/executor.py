@@ -9,6 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from telegram_exm import *
 from utils import get_most_recent_message_timestamp, convert_timestamp_to_iso
 import time
+from datetime import datetime, timezone
 
 logger = get_logger(__name__)
 
@@ -33,6 +34,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     Executes all ready actions from the execution queue by sending them to Telegram.
     Removes executed actions from both execution_queue and selected_actions.
+    Updates action_timestamp in agents_recent_actions after successful execution.
     
     Args:
         state: SupervisorState dict containing execution_queue and group_metadata
@@ -48,6 +50,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     group_metadata = state.get('group_metadata', {})
     chat_id = group_metadata.get('id', '')
     recent_messages = state.get('recent_messages', [])
+    agents_recent_actions = state.get('agents_recent_actions', {})
     
     # Get the most recent message timestamp for comparison
     most_recent_timestamp = get_most_recent_message_timestamp(recent_messages)
@@ -68,6 +71,9 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         return {}
     
     logger.info(f"Executor: Executing {len(ready_actions)} actions", supervisor_state=state)
+    
+    # Track successful executions for timestamp updates
+    executed_agents = []
     
     # Execute each action
     executed_count = 0
@@ -133,6 +139,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
             if response and response.get("success"):
                 logger.info(f"Successfully added reaction from {agent_name}")
                 executed_count += 1
+                executed_agents.append((agent_name, action_id))
             else:
                 logger.error(f"ERROR: Failed to add reaction from {agent_name}: {response.get('error', 'Unknown error')}")
         
@@ -166,13 +173,29 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
             if response and response.get("success"):
                 logger.info(f"Successfully sent message from {agent_name}")
                 executed_count += 1
+                executed_agents.append((agent_name, action_id))
             else:
                 logger.error(f"ERROR: Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
         if len(ready_actions) > 1:
             time.sleep(2)  # Short delay between actions 
     logger.info(f"Executor: Executed {executed_count}/{len(ready_actions)} actions successfully")
     
+    # Update action_timestamp for successfully executed actions in agents_recent_actions
+    # We update the records in-place since they're mutable dicts
+    execution_timestamp = datetime.now(timezone.utc).isoformat()
+    
+    for agent_name, action_id in executed_agents:
+        if agent_name in agents_recent_actions:
+            agent_actions = agents_recent_actions[agent_name]
+            # Find the most recent action with matching action_id and no timestamp
+            for action_record in reversed(agent_actions):
+                if (action_record.get('action_id') == action_id and 
+                    action_record.get('action_timestamp') is None):
+                    action_record['action_timestamp'] = execution_timestamp
+                    logger.info(f"Updated action_timestamp for {agent_name}'s action {action_id}")
+                    break
+    
     return {
         'execution_queue': execution_queue,
-        'selected_actions' : "CLEAR"
+        'selected_actions': "CLEAR"
     }
