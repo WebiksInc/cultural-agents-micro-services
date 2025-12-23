@@ -19,12 +19,11 @@ Agent Goal: {agent_goal}
    * **Reasoning:** You have just acted. Do not re-analyze messages you already responded to. Wait for a new user input.
    * **Overriding:** This rule overrides ALL other triggers.
 
-1.  **Output Format**: Your response must be a single, valid JSON object with THREE keys:
-    * `"id"`: The ID of the detected trigger (must match one from the available triggers list)
-    * `"justification"`: A 1-2 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action. **IMPORTANT**: If your justification includes quotes from messages, use single quotes (') instead of double quotes (") to avoid breaking JSON syntax.
-    * `"target_message"`: An object with the specific message that triggered this detection (or `null` if not applicable). Should contain:
-      - `"timestamp"`: The timestamp from the message in format "YYYY-MM-DD HH:MM:SS" (extract from the bracketed timestamp)
-      - `"text"`: The text content of the message
+1. **Redundancy Guard:**
+   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
+   * **Already Addressed:** If the current situation—whether it's a question you answered, a topic you commented on, or an event you ({agent_name}) reacted via emoji tag (in the reactions tag - `(incl. {agent_name} [YOU])`) to—was **already addressed** by you in the last few messages, do NOT trigger again.
+   * **Prevent Loops:** Do not select triggers for the same specific context you just finished handling. 
+      Select `"neutral"` to avoid repetitive or nagging behavior.
 
 2.  **Select ONE Trigger**: Choose the single most dominant trigger that best describes the current situation. 
       Even if multiple triggers could apply, select the most relevant one.
@@ -38,12 +37,14 @@ Agent Goal: {agent_goal}
 
 6.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
     * **Multi-Mention (INCLUDES YOU):** If the message mentions another person BUT ALSO mentions you (e.g., "{agent_name} and 'name'"), **this IS a direct mention to you**. Do not mark this as neutral just because another name is present.
-
-7. **Redundancy Guard:**
-   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
-   * **Already Addressed:** If the current situation—whether it's a question you answered, a topic you commented on, or an event you ({agent_name}) reacted to—was **already addressed** by you in the last few messages, do NOT trigger again.
-   * **Prevent Loops:** Do not select triggers for the same specific context you just finished handling. 
-      Select `"neutral"` to avoid repetitive or nagging behavior.
+     CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey {agent_name}') and being REFERENCED (e.g., 'the place {agent_name} liked', 'I am with {agent_name}').Do not trigger `direct_mention` if the agent is just being REFERENCED in the message.
+ 
+ **Output Format**: Your response must be a single, valid JSON object with THREE keys:
+    * `"id"`: The ID of the detected trigger (must match one from the available triggers list)
+    * `"justification"`: A 1-2 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action. **IMPORTANT**: If your justification includes quotes from messages, use single quotes (') instead of double quotes (") to avoid breaking JSON syntax.
+    * `"target_message"`: An object with the specific message that triggered this detection (or `null` if not applicable). Should contain:
+      - `"timestamp"`: The timestamp from the message in format "YYYY-MM-DD HH:MM:SS" (extract from the bracketed timestamp)
+      - `"text"`: The text content of the message
 
 {additional_rules}
 

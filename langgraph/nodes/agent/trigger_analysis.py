@@ -144,10 +144,31 @@ def trigger_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 text = target_message_raw.get('text', '')
                 
                 if timestamp_str and text:
+                    # Normalize timestamp format: remove T, Z, milliseconds
+                    normalized_timestamp = timestamp_str.replace('T', ' ').replace('Z', '').split('.')[0]
+                    
                     target_message = {
-                        'timestamp': timestamp_str,
+                        'timestamp': normalized_timestamp,
                         'text': text
                     }
+                    
+                    # Find the full message in recent_messages to get sender name
+                    recent_messages = state.get('recent_messages', [])
+                    for msg in recent_messages:
+                        msg_timestamp = msg.get('timestamp', '')
+                        # Normalize msg timestamp for comparison
+                        normalized_msg = msg_timestamp.replace('T', ' ').replace('Z', '').split('.')[0]
+                        
+                        if normalized_msg == normalized_timestamp and msg.get('text') == text:
+                            first_name = msg.get('sender_first_name', '')
+                            last_name = msg.get('sender_last_name', '')
+                            username = msg.get('sender_username', '')
+                            
+                            if first_name or last_name:
+                                target_message['sender_name'] = f"{first_name} {last_name}".strip()
+                            elif username:
+                                target_message['sender_name'] = username
+                            break
             
             # Log output to Logfire
             output_data = {

@@ -40,6 +40,10 @@ You must evaluate the response against these criteria:
    * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
       * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **new details/angles** that were missing from the previous message.
    * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.
+   * **The "Already Handled" Check (Reaction Guard):** Look at the target message (the user message being replied to).
+     * **Audit the Tags:** Does that message ALREADY contain a reaction tag with **(incl. YOU)** or **(incl. {agent_name})**?
+     * **FAIL CONDITION:** If YES, it means you have *already* interacted with this message. You are FORBIDDEN from replying or reacting to the same message twice.
+     * **Reasoning:** One interaction per message is the limit.
 
 7. **Persona Knowledge & Hallucination Guard**
    * **The "Expertise" Test:** Does the response include domain-specific details?

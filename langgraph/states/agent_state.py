@@ -23,7 +23,7 @@ class ActionRecord(TypedDict):
     """Structure for tracking recent agent actions."""
     trigger_id: str
     trigger_justification: str
-    target_message: Optional[dict]  # The message that triggered the action
+    target_message: Optional[dict]  # The message that triggered the action (includes sender_name)
     action_id: str
     action_purpose: str
     action_content: str
