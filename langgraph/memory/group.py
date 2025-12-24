@@ -132,6 +132,49 @@ def get_group_messages(
     return messages
 
 
+def update_message_fields(
+    chat_id: str,
+    message_id: int,
+    **fields
+) -> bool:
+    """
+    Update specific fields in a message.
+    
+    Args:
+        chat_id: Telegram chat ID
+        message_id: Message ID to update
+        **fields: Fields to update/add (e.g., emotion="happy", justification="smiling emoji")
+        
+    Returns:
+        True if message found and updated, False otherwise
+    
+    Example:
+        update_message_fields(
+            chat_id="3389864729",
+            message_id=74,
+            emotion="positive",
+            justification="Enthusiastic tone about Italy"
+        )
+    """
+    group_dir = get_group_directory(chat_id)
+    history_path = os.path.join(group_dir, "group_history.json")
+    
+    messages = load_json(history_path, default=[])
+    
+    # Find and update the message
+    updated = False
+    for msg in messages:
+        if msg.get('id') == message_id:
+            msg.update(fields)
+            updated = True
+            break
+    
+    if updated:
+        save_json(history_path, messages)
+    
+    return updated
+
+
 def sync_group_messages(
     phone: str,
     chat_id: str,

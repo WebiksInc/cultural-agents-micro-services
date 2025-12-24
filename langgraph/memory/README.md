@@ -20,6 +20,7 @@ from memory import (
     sync_group_messages,
     get_group_messages,
     get_group_metadata,
+    update_message_fields,
     
     # Participant functions
     get_participant_messages,
@@ -243,6 +244,52 @@ result = save_group_messages("3389864729", messages)
 print(f"Saved {result['new_count']} new messages")
 print(f"Last message ID: {result['last_message_id']}")
 ```
+
+---
+
+### 6. `update_message_fields(chat_id, message_id, **fields)`
+
+**Purpose:** Update or add custom fields to a specific message in the group history.
+
+**Parameters:**
+- `chat_id` (str): Telegram chat ID
+- `message_id` (int): Message ID to update
+- `**fields`: Any fields to add or update (e.g., emotion, justification, analyzed, etc.)
+
+**Returns:** `bool` - True if message was found and updated, False otherwise
+
+**Example:**
+```python
+from memory import update_message_fields
+
+# Add emotion analysis to a message
+success = update_message_fields(
+    chat_id="3389864729",
+    message_id=74,
+    emotion="positive",
+    justification="Enthusiastic tone with multiple exclamation marks"
+)
+
+if success:
+    print("Message updated successfully")
+
+# Add any custom fields
+update_message_fields(
+    chat_id="3389864729",
+    message_id=98,
+    analyzed=True,
+    sentiment_score=0.85,
+    topics=["travel", "food"],
+    custom_field="custom_value"
+)
+```
+
+**Use Cases:**
+- Adding emotion analysis results
+- Marking messages as processed
+- Storing sentiment scores
+- Adding topic classifications
+- Any custom metadata enrichment
 
 ---
 

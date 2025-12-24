@@ -16,6 +16,7 @@ from .group import (
     get_group_metadata,  # Retrieve group info
     save_group_messages,  # Append messages to history
     get_group_messages,  # Retrieve all group messages
+    update_message_fields,  # Update custom fields in a message
     sync_group_messages  # Fetch new messages from Telegram API
 )
 
@@ -49,6 +50,7 @@ __all__ = [
     'get_group_metadata',
     'save_group_messages',
     'get_group_messages',
+    'update_message_fields',
     'sync_group_messages',
     
     # Participant
