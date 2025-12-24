@@ -424,3 +424,36 @@ def get_messages_replies(selected_persona: Dict[str, Any], recent_messages: list
     logger.info(f"{agent_name}: Found {total_replies} replies to {len(messages_replies)} agent messages")
     
     return messages_replies
+
+
+def format_recent_actions(actions: list, last_n: int = 5) -> str:
+    if not actions:
+        return "No recent actions recorded yet."
+    
+    actions_str = []
+    
+    # Reverse the list so the newest is at the top (more intuitive for the model)
+    for i, act in enumerate(reversed(actions[-last_n:])):
+        target = act.get('target_message', {})
+        # Note: Ensure 'message_id' matches your dictionary key (might be 'id' or 'message_id')
+        t_id = target.get('message_id', 'N/A') 
+        t_sender = target.get('sender_name', 'Unknown')
+        
+        trigger = act.get('trigger_id', 'Unknown')
+        action = act.get('action_id', 'Unknown')
+        purpose = act.get('action_purpose', 'N/A')
+        content = act.get('action_content', 'N/A')
+        
+        # Build a detailed block for each action entry
+        entry = (
+            f"--- Memory Entry #{i+1} ---\n"
+            f"• Target Message ID: {t_id} (Sender: {t_sender})\n"
+            f"• Target Message Content: {target.get('text', 'N/A')}\n"
+            f"• Trigger: '{trigger}\n"
+            f"• Action Taken: '{action}'\n"
+            f"• My Reasoning (Purpose): {purpose}\n"
+            f"• My Actual Response: \"{content}\"\n"
+        )
+        actions_str.append(entry)
+        
+    return "\n".join(actions_str)
