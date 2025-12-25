@@ -97,6 +97,21 @@ def orchestrator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             }
         
         action_id = selected_action.get('id', '')
+        
+        # Check for explicit "no_action" decision
+        if action_id == 'no_action':
+            logger.info(f"Decision maker chose no_action - routing to END - ({agent_name})")
+            log_flow_transition("decision_maker", "END", "no_action decision", agent_name=agent_name)
+            return {
+                'selected_action': {
+                    "status": "no_action_needed",
+                    "reason": "no_action_decision",
+                    "agent_type": agent_type,
+                    "agent_name": agent_name
+                },
+                'next_node': END
+            }
+        
         logger.info(f"Action selected: {action_id} - routing to text_generator - ({agent_name})")
         log_flow_transition("decision_maker", "text_generator", f"action: {action_id}", agent_name=agent_name)
         return {
