@@ -36,7 +36,7 @@ You must evaluate the response against these criteria:
    * **Sentence Structure:** Does it read like a real sentence? A string of disconnected nouns is NOT a valid message.
   
 6. **Redundancy & Repetition Guard (CRITICAL):**
-   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
+   * **Check History:** Look closely at the recent messages marked with **(YOU)** AND reaction tags containing **(incl. YOU)**.
    * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
       * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **new details/angles** that were missing from the previous message.
    * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.

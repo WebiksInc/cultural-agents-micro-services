@@ -8,7 +8,7 @@ import logfire
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
+from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_node_output, log_state
 from utils import get_messages_replies
@@ -90,7 +90,8 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Get other agents info for group context
     other_agents_info = format_other_agents_for_prompt(agent_name)
-    
+    recent_actions = state.get('recent_actions', [])
+    formatted_recent_actions = format_recent_actions(recent_actions)
     # Build additional rules based on agent type
     additional_rules = ""
     e1_rules_file_map = {
@@ -105,6 +106,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     main_prompt = prompt_template.format(
         agent_name=agent_name,
         agent_goal=agent_goal,
+        formatted_recent_actions=formatted_recent_actions,
         action_id=action_id,
         action_description=action_description,
         action_purpose=action_purpose,
@@ -189,15 +191,6 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'generated_response': generated_response,
             'current_node': 'text_generator'
         }
-        # # Log output to Logfire
-        # log_node_output("text_generator", {"generated_response": response_text}, agent_name=agent_name)
-        # log_state("text_generator", state, "exit")
-        
-        # # Return generated response
-        # return {
-        #     'generated_response': response_text,
-        #     'current_node': 'text_generator'
-        # }
         
     except Exception as e:
         logger.error(f"Error in text generator: {e}", exc_info=True)

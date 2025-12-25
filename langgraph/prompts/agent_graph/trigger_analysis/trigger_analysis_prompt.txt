@@ -74,6 +74,7 @@ This is a log of the specific messages YOU (The agent) have ALREADY processed an
 **Example:** `[id: 123][2025-12-01 14:43:37] James Brown [neutral]: hello`
 **Reactions Note:** Reactions are displayed as `[Emoji]×[Count]`. If a known agent or YOU reacted, their name appears in brackets (e.g., `🔥×2 (incl. X)` means 2 people reacted, one of them is Agent X).
 
+Chat History:
 {recent_messages}
 
 **--- Output Examples ---**

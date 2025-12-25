@@ -44,7 +44,7 @@ A trigger has been detected in the conversation, and you must select the single 
 7. **Strategic Diversity & "Dual-Layer Audit" (MANDATORY):**
     * **The Audit:** Before choosing an action, cross-reference TWO sources:
       1. **Layer A (Recent Moves):** Did you just try this exact Action ID recently? (Check `Strategic Memory`).
-      2. **Layer B (Chat History):** Look at your recent `(YOU)` messages. Did that strategy actually work? Or did the group ignore it/react badly?
+      2. **Layer B (Chat History):** Look at your recent `(YOU)` messages. Did that strategy actually work? Or did the group ignore it/react badly? (Check `Chat History`)
     * **Avoid Loops:** If you recently used a specific Action ID and the conversation hasn't progressed significantly, **consider a different tactic**.
     * **Logic:** Repeating the same move over and over makes the agent look like a bot. Vary your strategy.
 
