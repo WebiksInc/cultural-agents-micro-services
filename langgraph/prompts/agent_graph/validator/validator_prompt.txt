@@ -36,12 +36,12 @@ You must evaluate the response against these criteria:
    * **Sentence Structure:** Does it read like a real sentence? A string of disconnected nouns is NOT a valid message.
   
 6. **Redundancy & Repetition Guard (CRITICAL):**
-   * **Check History:** Look closely at the recent messages marked with **(YOU)** AND reaction tags containing **(incl. YOU)**.
+   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
    * **Semantic Repetition:** FAIL (NOT APPROVED) if the draft repeats information that the agent ({agent_name}) *already expressed* in the last few messages.
       * **EXCEPTION:** You may APPROVE if you were **explicitly asked for clarification** (e.g., "Wait, where?", "Say that again") or if the new draft adds **new details/angles** that were missing from the previous message.
    * **Double Posting:** Ensure the agent ({agent_name}) isn't answering the same question twice unnecessarily.
    * **The "Already Handled" Check (Reaction Guard):** Look at the target message (the user message being replied to).
-     * **Audit the Tags:** Does that message ALREADY contain a reaction tag with **(incl. YOU)** or **(incl. {agent_name})**?
+     * **Audit the Tags:** Does that message ALREADY contain a reaction tag with **(incl. {agent_name} YOU)** or **(incl. {agent_name})**?
      * **FAIL CONDITION:** If YES, it means you have *already* interacted with this message. You are FORBIDDEN from replying or reacting to the same message twice.
      * **Reasoning:** One interaction per message is the limit.
 
@@ -113,7 +113,9 @@ If NOT APPROVED:
 **Recent Messages (Context):**
 **NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
 **Message Structure:** Each message follows the format: `[id: message_id][timestamp] sender name [emotion]: message text`
-**Example:** `[id: 123][2025-12-01 14:43:37] James Brown [neutral]: hello`
+**Example:** `[id: 123] [2025-12-01 14:43:37] James Brown [neutral]: hello`
+
+Chat History:
 {recent_messages}
 
 **--- Other Agents in Group ---**
