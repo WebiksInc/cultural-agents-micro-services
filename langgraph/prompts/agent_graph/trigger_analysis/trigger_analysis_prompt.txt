@@ -31,10 +31,11 @@ This is a log of the specific messages YOU (The agent) have ALREADY processed an
 
 3. **The "Already-Handled" Filter (Memory & Context Check):**
 * **Context:** Your `recent_actions` log provides precise IDs, BUT it might be empty or incomplete.
-   * **The Rule:** You must cross-reference TWO sources before triggering:
+* **The Goal:** Before choosing a trigger from the list below, verify whether you have *already activated* it for this specific message or situation.
+   * **The Rule:** You must cross-reference TWO sources before triggering on a message/situation:
      1. **Layer A (Memory Log):** Is the target message ID listed in your `Agent's Working Memory`?
      2. **Layer B (Visual History):** Scan the `Recent Conversation`. Even if the Memory Log is empty, look for messages/reactions marked with **(YOU)**. Did you already respond to this topic or user in the chat text?
-   * **The Logic:** "Empty Log" does NOT mean "I haven't acted". Use your eyes.
+   * **The Logic:** "Empty Log" does NOT mean "I haven't acted", you should look also at chat history.
    * **The Decision:** If evidence of action exists in EITHER Layer A or Layer B -> **DISQUALIFY**.
 
 4.  **Select ONE Trigger**: Choose the single most dominant trigger that best describes the current situation. 

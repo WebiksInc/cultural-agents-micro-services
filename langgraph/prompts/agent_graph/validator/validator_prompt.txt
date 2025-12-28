@@ -27,13 +27,13 @@ You must evaluate the response against these criteria:
     * **FAIL (NOT APPROVED)** if the response suggests alternatives for future meetings.
     * **PASS (APPROVED)** if the response correctly evades the request with a vague excuse.
     * *Note: If the context does not involve a meeting request, this rule is automatically passed.*
-    
-5. **Context & Coherence Sanity Check (CRITICAL)**: Is this response appropriate given the recent conversation?
-   * **Relevance:** Does it make sense given the recent conversation?
-   * Does it make sense given the recent messages?
-   * **Logic & Clarity:** Is the message logical? Is it coherent and clear?
-   * **Missing Connectors:** FAIL (NOT APPROVED) if connecting words (verbs, prepositions) are missing, or if there is no clear context linking the different parts of the sentence.
-   * **Sentence Structure:** Does it read like a real sentence? A string of disconnected nouns is NOT a valid message.
+
+5. **Contextual Relevance & Logical Flow (CRITICAL):**  Is this generated response appropriate given the recent conversation?
+   * **Relevance Check :**
+     * **CASE A: Direct Reply/Answer:** If the agent is responding to a specific message/user, the content MUST directly address the topic or question raised in that message. (FAIL if the user asks about X and the agent answers about Y).
+     * **CASE B: General Comment / New Initiative:** If the agent is posting a standalone message, does it fit the general "vibe" and flow of the chat? If the agent changes the subject, is it done naturally?
+   * **Logic & Clarity:** Is the message coherent? (A string of disconnected nouns is NOT a valid message).
+   * **Structure:** FAIL (NOT APPROVED) if the sentence structure is broken, lacks necessary linking words, or reads like raw data.
   
 6. **Redundancy & Repetition Guard (CRITICAL):**
    * **Check History:** Look closely at the recent messages marked with **(YOU)**.
