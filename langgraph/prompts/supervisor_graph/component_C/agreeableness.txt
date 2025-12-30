@@ -1,5 +1,5 @@
 AGREEABLENESS_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Agreeableness**.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Agreeableness** trait for each participant based on their messages.
 
 ## Trait Definition: Agreeableness (A)
 
@@ -12,56 +12,71 @@ Disagreeable people are often competitive or challenging, which can be seen as a
 
 ## Your Instructions
 
-1.  You must return a JSON object with two keys: `"agreeableness"` and `"justification"`.
-2.  The `"agreeableness"` key must be a binary integer: `1` or `0`.
-3. The presence of one or more of the following criteria entails assigning a `1` for Agreeableness:
-    * Being considerate, kind, generous, helpful, empathetic (sympathising, feeling others' emotions)
+1.  You will receive a conversation with messages from multiple users.
+2.  For **each user** in the conversation, analyze their messages and determine their Agreeableness level.
+3.  Return a JSON object where each key is the **exact name as it appears in the conversation** (copy-paste the name exactly) and the value contains:
+    * `"score"`: An integer from `1` to `5`:
+        - **1 (Very Low)**: Strongly disagreeable - competitive, suspicious, uncooperative, places self-interest far above others
+        - **2 (Low)**: Somewhat disagreeable - often skeptical, occasionally argumentative, limited concern for others
+        - **3 (Moderate)**: Balanced - shows some consideration for others but also maintains self-interest when needed
+        - **4 (High)**: Agreeable - generally kind, helpful, trusting, cooperative, values social harmony
+        - **5 (Very High)**: Extremely agreeable - exceptionally considerate, generous, trusting, always willing to compromise
+    * `"confidence"`: A float from `0.0` to `1.0` representing how confident you are:
+        - **0.0-0.3**: Very low confidence - user's messages provide almost no relevant information
+        - **0.3-0.5**: Low confidence - minimal or ambiguous evidence
+        - **0.5-0.7**: Moderate confidence - some clear indicators but limited data
+        - **0.7-0.9**: High confidence - strong, clear evidence of the trait level
+        - **0.9-1.0**: Very high confidence - abundant, unambiguous evidence
+    * `"justification"`: A brief explanation (1-2 sentences) referencing specific messages
+
+4.  Use these criteria to determine the Agreeableness score:
+    * Being considerate, kind, generous, helpful, empathetic
     * Trusting others, having an optimistic view of human nature
     * Willingness to cooperate or compromise
     * Making people feel at ease
-    This corresponds to a trait strength above 0.5.
-4. Otherwise assign `0`.
-5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
-6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+    * Conversely: being competitive, suspicious, unfriendly, uncooperative
 
-## Examples of Analysis
+5.  If a user has very few messages or uninformative messages, assign score `3` with low confidence.
+6.  Your output **MUST** be **ONLY** the valid JSON object. No additional text.
 
-**Example 1:**
-* **Text:** "I saw my neighbor struggling with his groceries, so I ran over to help him carry everything inside."
-* **Output:**
-    ```json
-    {
-      "agreeableness": 1,
-      "justification": "The user demonstrates high Agreeableness through a clear, proactive act of helping ('ran over to help him carry everything inside') after observing someone in need, showing concern for others' well-being."
-    }
-    ```
+## Example
 
-**Example 2:**
-* **Text:** "I'm so tired of people. I honestly don't care about their problems, everyone is just trying to take advantage of you. I got into three arguments online today just to prove them wrong."
-* **Output:**
-    ```json
-    {
-      "agreeableness": 0,
-      "justification": "The user expresses low Agreeableness through a lack of concern for others ('don't care about their problems'), suspicion ('everyone is just trying to take advantage'), and argumentative behavior."
-    }
-    ```
+**Conversation:**
+```
+[2025-01-15 10:00] Alice: Hey everyone! I brought donuts for the team 🍩
+[2025-01-15 10:01] Bob: Nobody asked for donuts. We have work to do.
+[2025-01-15 10:02] Alice: Just thought it would be nice to share!
+[2025-01-15 10:03] Charlie: Thanks Alice! That's so thoughtful.
+[2025-01-15 10:04] Bob: Whatever. Can we focus on the actual meeting?
+```
 
-**Example 3:**
-* **Text:** "I think the project is due on Tuesday, but I'm not sure. I need to check the syllabus."
-* **Output:**
-    ```json
-    {
-      "agreeableness": 0,
-      "justification": "The text is purely informational and task-oriented, providing no insight into the user's kindness, empathy, trust, or concern for social harmony. Therefore, the trait cannot be confirmed."
-    }
-    ```
+**Output:**
+```json
+{
+  "Alice": {
+    "score": 5,
+    "confidence": 0.82,
+    "justification": "Alice demonstrates high Agreeableness through generous behavior (bringing donuts) and positive framing ('thought it would be nice to share')."
+  },
+  "Bob": {
+    "score": 2,
+    "confidence": 0.85,
+    "justification": "Bob shows low Agreeableness through dismissive responses ('Nobody asked') and prioritizing task over social harmony."
+  },
+  "Charlie": {
+    "score": 4,
+    "confidence": 0.70,
+    "justification": "Charlie shows appreciation and warmth ('That's so thoughtful'), though limited messages reduce confidence."
+  }
+}
+```
 
 ## Your Task
 
-Analyze the following text and provide your JSON output:
+Analyze the following conversation and provide personality analysis for each user:
 
-**Text:**
-"{{USER_TEXT}}"
+**Conversation:**
+{{CONVERSATION}}
 
 **Output:**
 """

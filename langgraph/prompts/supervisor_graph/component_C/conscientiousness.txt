@@ -1,5 +1,5 @@
 CONSCIENTIOUSNESS_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Conscientiousness**.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Conscientiousness** trait for each participant based on their messages.
 
 ## Trait Definition: Conscientiousness (C)
 
@@ -10,57 +10,71 @@ High conscientiousness indicates a preference for planned rather than spontaneou
 
 ## Your Instructions
 
-1.  You must return a JSON object with two keys: `"conscientiousness"` and `"justification"`.
-2.  The `"conscientiousness"` key must be a binary integer: `1` or `0`.
-3.  The presence of one or more of the following criteria entails assigning a `1` for Conscientiousness:
-    * Innate Self-discipline, impulse control
+1.  You will receive a conversation with messages from multiple users.
+2.  For **each user** in the conversation, analyze their messages and determine their Conscientiousness level.
+3.  Return a JSON object where each key is the **exact name as it appears in the conversation** (copy-paste the name exactly) and the value contains:
+    * `"score"`: An integer from `1` to `5`:
+        - **1 (Very Low)**: Highly impulsive, disorganized, unreliable, procrastinates heavily, no planning
+        - **2 (Low)**: Often disorganized, struggles with deadlines, inconsistent follow-through
+        - **3 (Moderate)**: Balanced - sometimes organized and prepared, sometimes spontaneous
+        - **4 (High)**: Generally self-disciplined, organized, reliable, plans ahead
+        - **5 (Very High)**: Exceptionally disciplined, meticulous, always prepared, highly achievement-oriented
+    * `"confidence"`: A float from `0.0` to `1.0` representing how confident you are:
+        - **0.0-0.3**: Very low confidence - user's messages provide almost no relevant information
+        - **0.3-0.5**: Low confidence - minimal or ambiguous evidence
+        - **0.5-0.7**: Moderate confidence - some clear indicators but limited data
+        - **0.7-0.9**: High confidence - strong, clear evidence of the trait level
+        - **0.9-1.0**: Very high confidence - abundant, unambiguous evidence
+    * `"justification"`: A brief explanation (1-2 sentences) referencing specific messages
+
+4.  Use these criteria to determine the Conscientiousness score:
+    * Self-discipline, impulse control
     * Diligence, dutifulness, striving for achievement
     * Being prepared, paying attention to details, being punctual
     * Orderliness, routinely following schedules and plans
     * Reliability, getting things done right away
-    This corresponds to a trait strength above 0.5.
-4. Otherwise assign `0`.
-5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
-6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+    * Conversely: impulsiveness, disorganization, procrastination, unreliability
 
-## Examples of Analysis
+5.  If a user has very few messages or uninformative messages, assign score `3` with low confidence.
+6.  Your output **MUST** be **ONLY** the valid JSON object. No additional text.
 
-**Example 1:**
-* **Text:** "I spent the morning deep-cleaning the kitchen and organizing my files for the week. I've already set my schedule and meal-prepped, so the rest of the week should be smooth."
-* **Output:**
-    ```json
-    {
-      "conscientiousness": 1,
-      "justification": "The user demonstrates high Conscientiousness through explicit acts of organization ('organizing my files'), planning ('set my schedule'), diligence ('meal-prepped', 'deep-cleaning'), and a focus on preparation."
-    }
-    ```
+## Example
 
-**Example 2:**
-* **Text:** "I know I was supposed to finish that presentation, but I just kept putting it off. My apartment is a total disaster zone right now, I can't find anything. I'll probably just wing it tomorrow."
-* **Output:**
-    ```json
-    {
-      "conscientiousness": 0,
-      "justification": "The user expresses low Conscientiousness through procrastination ('kept putting it off'), disorganization ('disaster zone', 'can't find anything'), and lack of preparation ('wing it tomorrow')."
-    }
-    ```
+**Conversation:**
+```
+[2025-01-15 10:00] Alice: I've prepared the agenda and sent calendar invites to everyone yesterday.
+[2025-01-15 10:01] Bob: Oh shoot, I totally forgot about this meeting. What are we discussing?
+[2025-01-15 10:02] Alice: No worries! I also compiled the Q4 reports ahead of time.
+[2025-01-15 10:03] Charlie: Cool, I'll just wing my part.
+```
 
-**Example 3:**
-* **Text:** "That's an interesting point of view. I hadn't considered that before."
-* **Output:**
-    ```json
-    {
-      "conscientiousness": 0,
-      "justification": "The text is a simple social reply and provides no information about the user's level of self-control, diligence, planning, or attention to detail. Therefore, the trait cannot be confirmed."
-    }
-    ```
+**Output:**
+```json
+{
+  "Alice": {
+    "score": 5,
+    "confidence": 0.85,
+    "justification": "Alice demonstrates high Conscientiousness through thorough preparation (agenda, calendar invites, compiled reports) and proactive organization."
+  },
+  "Bob": {
+    "score": 2,
+    "confidence": 0.68,
+    "justification": "Bob shows low Conscientiousness by forgetting about the meeting and being unprepared."
+  },
+  "Charlie": {
+    "score": 2,
+    "confidence": 0.60,
+    "justification": "Charlie indicates low preparation ('wing my part'), suggesting lower conscientiousness, though limited messages reduce certainty."
+  }
+}
+```
 
 ## Your Task
 
-Analyze the following text and provide your JSON output:
+Analyze the following conversation and provide personality analysis for each user:
 
-**Text:**
-"{{USER_TEXT}}"
+**Conversation:**
+{{CONVERSATION}}
 
 **Output:**
 """

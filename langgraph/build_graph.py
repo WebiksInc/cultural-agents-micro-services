@@ -12,6 +12,7 @@ from states.agent_state import AgentState
 
 # Import supervisor nodes
 from nodes.supervisor.component_B import emotion_analysis_node
+from nodes.supervisor.component_C import personality_analysis_node
 from nodes.supervisor.scheduler import scheduler_node
 from nodes.supervisor.executor import executor_node
 
@@ -274,7 +275,7 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     Build the main Supervisor graph with embedded agent subgraphs.
     
     Flow:
-    START → component_B → [agent1, agent2, ...] (parallel) → scheduler → executor → END
+    START → component_B → component_C → [agent1, agent2, ...] (parallel) → scheduler → executor → END
     
     Args:
         config_path: Path to supervisor_config.json
@@ -292,6 +293,9 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     
     # Add Component B (emotion analysis)
     supervisor_builder.add_node("component_B", emotion_analysis_node)
+    
+    # Add Component C (personality analysis)
+    supervisor_builder.add_node("component_C", personality_analysis_node)
     
     # Build and add agent subgraphs
     agent_nodes = []
@@ -339,9 +343,12 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     # START → component_B
     supervisor_builder.add_edge(START, "component_B")
     
-    # component_B → all agents (parallel execution)
+    # component_B → component_C
+    supervisor_builder.add_edge("component_B", "component_C")
+    
+    # component_C → all agents (parallel execution)
     for agent_node_name in agent_nodes:
-        supervisor_builder.add_edge("component_B", agent_node_name)
+        supervisor_builder.add_edge("component_C", agent_node_name)
     
     # All agents already route to scheduler via Command(goto="scheduler")
     # No explicit edges needed due to Command-based routing

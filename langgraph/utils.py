@@ -41,6 +41,101 @@ def get_all_agent_names() -> list:
     return [agent["name"] for agent in supervisor_config["agents"]]
 
 
+def load_agent_personas() -> list:
+    """
+    Load all agent personas from files specified in config.
+    
+    Returns:
+        List of persona dictionaries
+    """
+    supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+    personas = []
+    
+    for agent_config in supervisor_config.get("agents", []):
+        persona_path = LANGGRAPH_DIR / agent_config["persona_file"]
+        try:
+            with open(persona_path, 'r', encoding='utf-8') as f:
+                persona_data = json.load(f)
+                # Ensure username/name from config are also available if needed
+                if "username" not in persona_data and "username" in agent_config:
+                    persona_data["user_name"] = agent_config["username"]
+                personas.append(persona_data)
+        except Exception as e:
+            logger.error(f"Failed to load persona from {persona_path}: {e}")
+    
+    return personas
+
+
+def is_agent_sender(
+    message: Optional[Dict[str, Any]] = None,
+    display_name: Optional[str] = None,
+    agent_personas: Optional[list] = None
+) -> bool:
+    """
+    Check if a sender is one of our agents.
+    Can check based on a message object or a display name string.
+    
+    Args:
+        message: Message dict with sender_username, sender_first_name, sender_last_name
+        display_name: Display name string (e.g. "Sandra K")
+        agent_personas: List of agent personas. If None, loads them.
+        
+    Returns:
+        True if the sender is an agent
+    """
+    if agent_personas is None:
+        agent_personas = load_agent_personas()
+        
+    # Case 1: Check by display name (used in Component C)
+    if display_name:
+        display_name = display_name.strip().lower()
+        
+        for persona in agent_personas:
+            # Check against username
+            p_username = persona.get("user_name", "").lower()
+            if p_username and p_username == display_name:
+                return True
+                
+            # Check against first/last name
+            p_first = persona.get("first_name", "").lower()
+            p_last = persona.get("last_name", "").lower()
+            p_full = f"{p_first} {p_last}".strip()
+            
+            # Exact match with full name
+            if p_full and p_full == display_name:
+                return True
+                
+            # Exact match with first name
+            if p_first and p_first == display_name:
+                return True
+                
+            # First word match (e.g. "Sandra K" matches "Sandra")
+            if p_first and display_name.split()[0] == p_first:
+                return True
+                
+        return False
+
+    # Case 2: Check by message details (used in Supervisor)
+    if message:
+        sender_username = message.get("sender_username", "").lower()
+        sender_first = message.get("sender_first_name", "").lower()
+        sender_last = message.get("sender_last_name", "").lower()
+        
+        for persona in agent_personas:
+            agent_username = persona.get("user_name", "").lower()
+            agent_first = persona.get("first_name", "").lower()
+            agent_last = persona.get("last_name", "").lower()
+            
+            if sender_username and agent_username and sender_username == agent_username:
+                return True
+            
+            if sender_first and sender_last and agent_first and agent_last:
+                if sender_first == agent_first and sender_last == agent_last:
+                    return True
+                    
+    return False
+
+
 def get_other_agents_info(current_agent_name: str) -> list:
     """
     Get info about other agents in the system, excluding the current agent.

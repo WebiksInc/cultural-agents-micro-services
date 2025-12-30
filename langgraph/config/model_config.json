@@ -7,7 +7,7 @@
       "description": "Emotion and sentiment analysis for supervisor"
     },
      "component_C": {
-      "model": "gpt-5-nano",
+      "model": "gpt-5-mini",
       "provider": "openai",
       "temperature": 0,
       "description": "Big 5 analysis for supervisor"

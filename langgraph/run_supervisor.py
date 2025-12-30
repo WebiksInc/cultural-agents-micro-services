@@ -22,11 +22,12 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 from build_graph import build_supervisor_graph
-from utils import get_all_agent_usernames
+from utils import get_all_agent_usernames, load_agent_personas, is_agent_sender
 from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
 from logs.logfire_config import setup_logfire, get_logger
+from memory import save_group_messages
 from collections import deque
 import time
 
@@ -92,43 +93,6 @@ def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Mess
     )
 
 
-def is_agent_message(msg: Message, agent_personas: list) -> bool:
-    """Check if message was sent by one of our agents."""
-    sender_username = msg.get("sender_username", "").lower()
-    sender_first = msg.get("sender_first_name", "").lower()
-    sender_last = msg.get("sender_last_name", "").lower()
-    
-    for persona in agent_personas:
-        agent_username = persona.get("user_name", "").lower()
-        agent_first = persona.get("first_name", "").lower()
-        agent_last = persona.get("last_name", "").lower()
-        
-        if sender_username and agent_username and sender_username == agent_username:
-            return True
-        
-        if sender_first and sender_last and agent_first and agent_last:
-            if sender_first == agent_first and sender_last == agent_last:
-                return True
-    
-    return False
-
-
-def load_agent_personas() -> list:
-    personas = []
-    base_path = Path(__file__).parent
-    
-    for agent_config in CONFIG["agents"]:
-        persona_path = base_path / agent_config["persona_file"]
-        try:
-            with open(persona_path, 'r') as f:
-                persona_data = json.load(f)
-                personas.append(persona_data)
-        except Exception as e:
-            logger.error(f"Failed to load persona: {e}")
-            raise
-    
-    return personas
-
 
 def run_supervisor_loop():
     # STEP 1: INITIALIZATION 
@@ -189,7 +153,12 @@ def run_supervisor_loop():
     messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
     
     if messages_data and messages_data.get("success"):
-        initial_messages = [parse_telegram_message(msg, agent_usernames) for msg in messages_data.get("messages", [])]
+        # Save raw messages to memory (file system) so Component C can find participants
+        fetched_messages_raw = messages_data.get("messages", [])
+        if fetched_messages_raw:
+            save_group_messages(CHAT_ID, fetched_messages_raw)
+            
+        initial_messages = [parse_telegram_message(msg, agent_usernames) for msg in fetched_messages_raw]
         state["recent_messages"] = initial_messages
         
         # --- CHANGE 2: Load initial IDs into deque ---
@@ -200,7 +169,7 @@ def run_supervisor_loop():
         
         # Mark agent messages as processed
         for msg in state["recent_messages"]:
-            if is_agent_message(msg, agent_personas):
+            if is_agent_sender(message=msg, agent_personas=agent_personas):
                 msg['processed'] = True
         
         # Check for unprocessed messages in history to react to
@@ -234,7 +203,12 @@ def run_supervisor_loop():
                 messages_data = get_chat_messages(phone=primary_phone, chat_id=CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
                 
                 if messages_data and messages_data.get("success"):
-                    raw_messages = [parse_telegram_message(msg, agent_usernames) for msg in messages_data.get("messages", [])]
+                    # Save raw messages to memory (file system) so Component C can find participants
+                    fetched_messages_raw = messages_data.get("messages", [])
+                    if fetched_messages_raw:
+                        save_group_messages(CHAT_ID, fetched_messages_raw)
+                        
+                    raw_messages = [parse_telegram_message(msg, agent_usernames) for msg in fetched_messages_raw]
                     
                     # Log IDs for debugging
                     all_ids = [msg["message_id"] for msg in raw_messages]
@@ -257,7 +231,7 @@ def run_supervisor_loop():
                         
                         # Mark agent messages as processed
                         for msg in state["recent_messages"]:
-                            if is_agent_message(msg, agent_personas) and not msg.get('processed', False):
+                            if is_agent_sender(message=msg, agent_personas=agent_personas) and not msg.get('processed', False):
                                 msg['processed'] = True
                         
                         # Process if actionable messages exist

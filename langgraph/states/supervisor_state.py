@@ -43,6 +43,10 @@ class SupervisorState(TypedDict):
     #          "action_content": "...", "action_timestamp": "..."}]}
     agents_recent_actions: Annotated[Dict[str, List[dict]], merge_recent_actions]
     
+    # Personality analysis cache - Big Five traits per user
+    # Format: {"user_id": {"openness": {"score": 1-5, "confidence": 0-1, "justification": "..."}, ...}}
+    personality_analysis: Dict[str, dict]
+    
     # Internal tracking
     current_nodes: Optional[List[str]]  
     next_nodes: Optional[List[str]]  

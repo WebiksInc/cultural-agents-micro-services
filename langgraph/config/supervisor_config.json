@@ -9,6 +9,22 @@
     "telegram_fetch_limit": 12,
     "max_recent_messages": 12
   },
+  "personality_analysis": {
+    "min_messages_for_analysis": 1,
+    "confidence_thresholds": {
+      "openness": 0.9,
+      "conscientiousness": 0.9,
+      "extraversion": 0.9,
+      "agreeableness": 0.9,
+      "neuroticism": 0.9
+    },
+    "message_count_confidence_penalty": {
+      "enabled": true,
+      "min_messages_full_confidence": 15,
+      "penalty_factor": 0.03
+    },
+    "stop_reanalysis_when_confident": true
+  },
     "agents": [
     {
       "type": "active",
