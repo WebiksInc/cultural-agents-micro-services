@@ -1,5 +1,5 @@
 NEUROTICISM_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Neuroticism** trait for each participant based on their messages.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Neuroticism** trait for the specified users based on their messages.
 
 ## Trait Definition: Neuroticism (N)
 
@@ -77,9 +77,13 @@ Freedom from negative feelings does not mean that low scorers experience a lot o
 }
 ```
 
+## Constraints
+
+{{CONSTRAINTS}}
+
 ## Your Task
 
-Analyze the following conversation and provide personality analysis for each user:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
 **Conversation:**
 {{CONVERSATION}}

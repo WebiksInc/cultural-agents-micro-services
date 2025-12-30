@@ -1,5 +1,5 @@
 OPENNESS_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Openness** trait for each participant based on their messages.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Openness** trait for the specified users based on their messages.
 
 ## Trait Definition: Openness (O)
 
@@ -78,9 +78,13 @@ to be dogmatic and closed-minded.
 }
 ```
 
+## Constraints
+
+{{CONSTRAINTS}}
+
 ## Your Task
 
-Analyze the following conversation and provide personality analysis for each user:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
 **Conversation:**
 {{CONVERSATION}}

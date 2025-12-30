@@ -1,5 +1,5 @@
 CONSCIENTIOUSNESS_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Conscientiousness** trait for each participant based on their messages.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Conscientiousness** trait for the specified users based on their messages.
 
 ## Trait Definition: Conscientiousness (C)
 
@@ -69,9 +69,13 @@ High conscientiousness indicates a preference for planned rather than spontaneou
 }
 ```
 
+## Constraints
+
+{{CONSTRAINTS}}
+
 ## Your Task
 
-Analyze the following conversation and provide personality analysis for each user:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
 **Conversation:**
 {{CONVERSATION}}

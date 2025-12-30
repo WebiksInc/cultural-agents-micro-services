@@ -1,5 +1,5 @@
 EXTRAVERSION_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Extraversion** trait for each participant based on their messages.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Extraversion** trait for the specified users based on their messages.
 
 ## Trait Definition: Extraversion (E)
 
@@ -72,9 +72,13 @@ Introverts need less stimulation and more time alone than extraverts. This does 
 }
 ```
 
+## Constraints
+
+{{CONSTRAINTS}}
+
 ## Your Task
 
-Analyze the following conversation and provide personality analysis for each user:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
 **Conversation:**
 {{CONVERSATION}}
