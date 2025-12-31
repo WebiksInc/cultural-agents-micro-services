@@ -76,6 +76,10 @@ Introverts need less stimulation and more time alone than extraverts. This does 
 
 {{CONSTRAINTS}}
 
+## Previous Analysis
+
+{{EXISTING_ANALYSIS}}
+
 ## Your Task
 
 Analyze the following conversation and provide personality analysis for the specified users only:

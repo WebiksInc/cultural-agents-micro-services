@@ -253,9 +253,9 @@ def save_personality_analysis(
     trait_confidences = [big5_results[t].get("confidence", 0.5) for t in big5_results]
     overall_confidence = round(sum(trait_confidences) / len(trait_confidences), 2) if trait_confidences else 0.5
     
-    # Create new snapshot
+    # Create new snapshot with human-readable date
     new_snapshot = {
-        "analysis_date": datetime.now().isoformat(),
+        "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "messages_analyzed_count": message_count,
         "personality_analysis": {
             "big5": big5_results
@@ -263,8 +263,8 @@ def save_personality_analysis(
         "overall_confidence": overall_confidence
     }
     
-    # Append to existing snapshots (don't erase previous ones)
-    participant_data["personality_snapshots"].append(new_snapshot)
+    # Insert at beginning so most recent is first
+    participant_data["personality_snapshots"].insert(0, new_snapshot)
     
     # Save
     save_json(participant_path, participant_data)

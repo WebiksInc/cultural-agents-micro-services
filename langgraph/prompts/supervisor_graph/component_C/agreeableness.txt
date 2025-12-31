@@ -75,6 +75,10 @@ Disagreeable people are often competitive or challenging, which can be seen as a
 
 {{CONSTRAINTS}}
 
+## Previous Analysis
+
+{{EXISTING_ANALYSIS}}
+
 ## Your Task
 
 Analyze the following conversation and provide personality analysis for the specified users only:

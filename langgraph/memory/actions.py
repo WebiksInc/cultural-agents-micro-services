@@ -30,6 +30,7 @@ def save_action(
     group_name: str,
     trigger_detected: str,
     triggered_by_msg: str,
+    triggered_by_msg_id: str,
     action_reason: str,
     action_id: str,
     action_content: str,
@@ -44,6 +45,7 @@ def save_action(
         group_name: Name of the group
         trigger_detected: Type of trigger that was detected
         triggered_by_msg: The message that triggered the action
+        triggered_by_msg_id: The message ID that triggered the action
         action_reason: Reason for the action (specific content that caused trigger)
         action_id: ID/type of the action performed
         action_content: Content of the action (e.g., message sent)
@@ -63,11 +65,12 @@ def save_action(
         "agent_name": agent_name,
         "group_name": group_name,
         "trigger_detected": trigger_detected,
+        "triggered_by_msg_id": triggered_by_msg_id,
         "triggered_by_msg": triggered_by_msg,
         "action_reason": action_reason,
         "action_id": action_id,
         "action_content": action_content,
-        "timestamp": timestamp or datetime.now().isoformat()
+        "timestamp": timestamp or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     
     # Append and save

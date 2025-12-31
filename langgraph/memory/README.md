@@ -464,9 +464,9 @@ if data:
     print(f"User ID: {data['user_id']}")
     print(f"Snapshots: {len(data['personality_snapshots'])}")
     
-    # Show latest personality analysis
+    # Show latest personality analysis (most recent is first)
     if data['personality_snapshots']:
-        latest = data['personality_snapshots'][-1]
+        latest = data['personality_snapshots'][0]
         print(f"\nLatest analysis ({latest['analysis_date']}):")
         print(f"  Messages: {latest['messages_analyzed_count']}")
         print(f"  Confidence: {latest['confidence']}")
@@ -482,9 +482,9 @@ if data:
 {
     "user_id": "526622223",
     "username": "Yair",
-    "personality_snapshots": [
+    "personality_snapshots": [  # Most recent first
         {
-            "analysis_date": "2025-12-22T14:41:00.889050",
+            "analysis_date": "2025-12-22 14:41:00",
             "messages_analyzed_count": 27,
             "personality_analysis": {
                 "big5": {
@@ -893,7 +893,8 @@ print(f"New messages: {result['new_messages']}")
 
 ### Personality Analysis
 - Snapshots are **cumulative** (never overwritten)
-- Each analysis is timestamped
+- New snapshots are inserted at the beginning (most recent first)
+- Each analysis is timestamped in human-readable format (`YYYY-MM-DD HH:MM:SS`)
 - Confidence increases with message count
 - Current implementation uses random Big5 values (TODO: implement real analysis)
 

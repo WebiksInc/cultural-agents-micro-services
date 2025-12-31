@@ -73,6 +73,10 @@ High conscientiousness indicates a preference for planned rather than spontaneou
 
 {{CONSTRAINTS}}
 
+## Previous Analysis
+
+{{EXISTING_ANALYSIS}}
+
 ## Your Task
 
 Analyze the following conversation and provide personality analysis for the specified users only:
