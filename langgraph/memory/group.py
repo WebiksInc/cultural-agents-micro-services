@@ -99,8 +99,8 @@ def save_group_messages(
     
     if new_messages:
         existing_messages.extend(new_messages)
-        # Sort by message ID
-        existing_messages.sort(key=lambda x: x.get('id', 0))
+        # Sort by message ID (descending - most recent first)
+        existing_messages.sort(key=lambda x: x.get('id', 0), reverse=True)
         save_json(history_path, existing_messages)
         logger.info(f"Saved {len(new_messages)} new messages to group history. Total: {len(existing_messages)}")
     else:
@@ -134,8 +134,9 @@ def get_group_messages(
     history_path = os.path.join(group_dir, "group_history.json")
     messages = load_json(history_path, default=[])
     
+    # Messages are stored with most recent first
     if limit:
-        return messages[-limit:]
+        return messages[:limit]
     return messages
 
 
