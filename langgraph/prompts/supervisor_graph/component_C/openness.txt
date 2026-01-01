@@ -1,4 +1,3 @@
-OPENNESS_PROMPT = """
 You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Openness** trait for the specified users based on their messages.
 
 ## Trait Definition: Openness (O)
@@ -94,4 +93,3 @@ Analyze the following conversation and provide personality analysis for the spec
 {{CONVERSATION}}
 
 **Output:**
-"""
