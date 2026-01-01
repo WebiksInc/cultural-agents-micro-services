@@ -179,12 +179,14 @@ def save_personality_analysis(
     chat_id: str,
     user_id: str,
     big5_results: Optional[Dict[str, Dict[str, Any]]] = None,
-    confidence_penalty_config: Optional[Dict[str, Any]] = None,
     verbose: bool = True
 ) -> Dict[str, Any]:
     """
     Save Big5 personality analysis for a participant.
     Adds a new snapshot without erasing previous analyses.
+    
+    NOTE: This function is a pure storage layer - it saves whatever results are passed in.
+    Business logic (like confidence penalties) should be applied BEFORE calling this function.
     
     Args:
         chat_id: Telegram chat ID
@@ -196,12 +198,6 @@ def save_personality_analysis(
                           ...
                       }
                       If None, generates random values (for testing only).
-        confidence_penalty_config: Optional config for message count penalty.
-                      Format: {
-                          "enabled": True,
-                          "min_messages_full_confidence": 15,
-                          "penalty_factor": 0.03
-                      }
         verbose: Print progress
         
     Returns:
@@ -236,18 +232,6 @@ def save_personality_analysis(
             }
             for trait in ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"]
         }
-    
-    # Apply confidence penalty based on message count
-    if confidence_penalty_config and confidence_penalty_config.get("enabled", False):
-        min_messages = confidence_penalty_config.get("min_messages_full_confidence", 15)
-        penalty_factor = confidence_penalty_config.get("penalty_factor", 0.03)
-        
-        if message_count < min_messages:
-            penalty = (min_messages - message_count) * penalty_factor
-            for trait in big5_results:
-                raw_confidence = big5_results[trait].get("confidence", 0.5)
-                big5_results[trait]["raw_confidence"] = raw_confidence
-                big5_results[trait]["confidence"] = round(max(0, raw_confidence - penalty), 2)
     
     # Calculate overall confidence (average across traits)
     trait_confidences = [big5_results[t].get("confidence", 0.5) for t in big5_results]
