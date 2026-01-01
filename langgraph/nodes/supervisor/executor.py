@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from telegram_exm import *
 from utils import get_most_recent_message_timestamp, convert_timestamp_to_iso
+from memory import save_action
 import time
 from datetime import datetime, timezone
 
@@ -75,6 +76,9 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Track successful executions for timestamp updates
     executed_agents = []
     
+    # Get group name for action logging
+    group_name = group_metadata.get('name', 'Unknown Group')
+    
     # Execute each action
     executed_count = 0
     for action in ready_actions:
@@ -83,6 +87,18 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         action_content = action.get('action_content', '')
         phone_number = action.get('phone_number', '')
         target_message = action.get('target_message')
+        
+        # Get trigger info for action logging
+        trigger_id = action.get('trigger_id', 'unknown')
+        trigger_justification = action.get('trigger_justification', '')
+        action_purpose = action.get('action_purpose', '')
+        
+        # Extract triggered_by_msg and msg_id from target_message
+        triggered_by_msg = ''
+        triggered_by_msg_id = ''
+        if target_message and isinstance(target_message, dict):
+            triggered_by_msg = target_message.get('text', '')
+            triggered_by_msg_id = str(target_message.get('message_id', ''))
         
         logger.info(f"Executing action '{action_id}' from {agent_name}")
         
@@ -140,6 +156,19 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 logger.info(f"Successfully added reaction from {agent_name}")
                 executed_count += 1
                 executed_agents.append((agent_name, action_id))
+                
+                # Log action to memory
+                save_action(
+                    chat_id=chat_id,
+                    agent_name=agent_name,
+                    group_name=group_name,
+                    trigger_detected=trigger_id,
+                    triggered_by_msg=triggered_by_msg,
+                    triggered_by_msg_id=triggered_by_msg_id,
+                    action_reason=trigger_justification,
+                    action_id=action_id,
+                    action_content=emoji
+                )
             else:
                 logger.error(f"ERROR: Failed to add reaction from {agent_name}: {response.get('error', 'Unknown error')}")
         
@@ -174,6 +203,19 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 logger.info(f"Successfully sent message from {agent_name}")
                 executed_count += 1
                 executed_agents.append((agent_name, action_id))
+                
+                # Log action to memory
+                save_action(
+                    chat_id=chat_id,
+                    agent_name=agent_name,
+                    group_name=group_name,
+                    trigger_detected=trigger_id,
+                    triggered_by_msg=triggered_by_msg,
+                    triggered_by_msg_id=triggered_by_msg_id,
+                    action_reason=trigger_justification,
+                    action_id=action_id,
+                    action_content=action_content
+                )
             else:
                 logger.error(f"ERROR: Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
         if len(ready_actions) > 1:

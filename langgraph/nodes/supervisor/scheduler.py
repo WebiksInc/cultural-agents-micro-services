@@ -50,6 +50,8 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'action_content': action.get('styled_response', ''),
             'phone_number': action.get('phone_number', ''),
             'target_message': selected_action_data.get('target_message'),  # Include target_message
+            'trigger_id': selected_action_data.get('trigger_id', ''),  # Include trigger info for action logging
+            'trigger_justification': selected_action_data.get('trigger_justification', ''),
             'status': 'pending'  # pending, sent
         }
         execution_queue.append(queue_item)

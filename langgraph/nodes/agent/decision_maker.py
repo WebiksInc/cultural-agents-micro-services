@@ -165,7 +165,9 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 'selected_action': {
                     'id': action_id,
                     'purpose': purpose,
-                    'target_message': target_message
+                    'target_message': target_message,
+                    'trigger_id': trigger_id,
+                    'trigger_justification': trigger_justification
                 },
                 'current_node': 'decision_maker'
             }
@@ -181,7 +183,9 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 'selected_action': {
                     'id': action_id,
                     'purpose': purpose,
-                    'target_message': target_message
+                    'target_message': target_message,
+                    'trigger_id': trigger_id,
+                    'trigger_justification': trigger_justification
                 },
                 'current_node': 'decision_maker'
             }
