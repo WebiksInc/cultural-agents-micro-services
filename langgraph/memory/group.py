@@ -94,8 +94,18 @@ def save_group_messages(
     # Get existing message IDs to avoid duplicates
     existing_ids = {msg.get('id') for msg in existing_messages}
     
-    # Add only new messages
-    new_messages = [msg for msg in messages if msg.get('id') not in existing_ids]
+    # Add only new messages and format dates
+    new_messages = []
+    for msg in messages:
+        if msg.get('id') not in existing_ids:
+            # Convert date from ISO format to readable format
+            if 'date' in msg and msg['date']:
+                try:
+                    dt = datetime.fromisoformat(msg['date'].replace('Z', '+00:00'))
+                    msg['date'] = dt.strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    pass  # Keep original if conversion fails
+            new_messages.append(msg)
     
     if new_messages:
         existing_messages.extend(new_messages)
