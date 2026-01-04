@@ -4,10 +4,10 @@ Component C: Personality Analysis Node (Big Five / OCEAN Model)
 Analyzes personality traits for participants based on their messages.
 Runs 5 parallel API calls (one per trait) and saves results to memory.
 """
+
 import json
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Tuple
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
 
@@ -31,6 +31,8 @@ from logs import log_node_start, log_prompt, log_node_output
 from memory import (
     get_participant_data,
     get_participant_messages,
+    get_last_analyzed_message_id,
+    save_last_analyzed_message_id,
     save_personality_analysis,
     initialize_participants,
     list_participants
@@ -206,8 +208,8 @@ def is_user_confident_enough(
     if not snapshots:
         return False, {}
     
-    # Get latest snapshot
-    latest = snapshots[-1]
+    # Get latest snapshot (most recent is first, index 0)
+    latest = snapshots[0]
     big5 = latest.get("personality_analysis", {}).get("big5", {})
     
     if not big5:
@@ -358,25 +360,42 @@ def build_existing_analysis_string(
 
 def identify_users_with_new_messages(
     recent_messages: List[Dict],
-    agent_personas: List[Dict]
+    agent_personas: List[Dict],
+    chat_id: str
 ) -> Tuple[set, Dict[str, str]]:
     """
     Identify users who have unprocessed (new) messages.
     
+    Cold Start Protection: On system restart, checks persistent storage (group-level
+    last_analyzed_message_id) to avoid re-analyzing messages from previous run.
+    
     Args:
         recent_messages: List of message dicts
         agent_personas: List of agent persona dicts
+        chat_id: Telegram chat ID for persistent storage lookup
         
     Returns:
         Tuple of (set of user_ids with new messages, dict of display_name -> user_id for those users)
     """
+    # Cold start check: get last analyzed message ID from group metadata
+    last_analyzed_id = get_last_analyzed_message_id(chat_id)
+    if last_analyzed_id:
+        logger.info(f"Cold start check: last_analyzed_message_id = {last_analyzed_id}")
+    
     users_with_new_messages = set()
     new_user_mapping = {}
     
     for msg in recent_messages:
-        # Only consider unprocessed messages as "new"
+        # Only consider unprocessed messages as "new" (ephemeral state)
         if msg.get('processed', False):
             continue
+        
+        # Cold start filter: skip messages already analyzed in previous run
+        if last_analyzed_id is not None:
+            msg_id = msg.get('message_id')
+            if msg_id and int(msg_id) <= int(last_analyzed_id):
+                logger.debug(f"Skipping message {msg_id} (already analyzed, last={last_analyzed_id})")
+                continue
             
         sender_id = str(msg.get('sender_id', '')).strip()
         if not sender_id:
@@ -610,7 +629,8 @@ def personality_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     agent_display_names = get_agent_display_names(include_agent_suffix=True)
     
     # Identify users with NEW (unprocessed) messages
-    new_user_ids, new_user_mapping = identify_users_with_new_messages(recent_messages, agent_personas)
+    # Includes cold start check against persistent storage
+    new_user_ids, new_user_mapping = identify_users_with_new_messages(recent_messages, agent_personas, chat_id)
     
     logger.info(f"Found {len(username_to_userid)} unique users in recent messages")
     logger.info(f"Users with new messages: {list(new_user_mapping.keys())}")
@@ -631,7 +651,20 @@ def personality_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Early exit if no users need analysis
     if not users_to_analyze:
         logger.info("No users require personality analysis (all confident or no new messages).")
-        # Still update messages with existing personality data
+        
+        # Load existing personality data from disk for ALL users (cold start recovery)
+        for username_lower, user_id in username_to_userid.items():
+            if user_id not in personality_cache:
+                # Skip agents
+                if is_agent_sender(display_name=username_lower, agent_personas=agent_personas):
+                    continue
+                # Load from disk
+                _, existing_analysis = is_user_confident_enough(chat_id, user_id, CONFIDENCE_THRESHOLDS)
+                if existing_analysis:
+                    personality_cache[user_id] = existing_analysis
+                    logger.debug(f"Loaded existing personality for {username_lower} from disk")
+        
+        # Update messages with personality data
         updated_messages = []
         for msg in recent_messages:
             sender_id = str(msg.get("sender_id", "")).strip()
@@ -833,6 +866,15 @@ def personality_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Trim recent_messages to configured maximum (keep newest)
     trimmed_messages = updated_messages[:MAX_RECENT_MESSAGES]
+    
+    # Save max message ID for cold start recovery (after all analysis complete)
+    if recent_messages:
+        # Convert message_id to int (it's stored as string in messages)
+        msg_ids = [int(msg.get('message_id', 0)) for msg in recent_messages if msg.get('message_id')]
+        if msg_ids:
+            max_msg_id = max(msg_ids)
+            save_last_analyzed_message_id(chat_id, max_msg_id)
+            logger.info(f"Saved last_analyzed_message_id: {max_msg_id}")
     
     return {
         'personality_analysis': personality_cache,
