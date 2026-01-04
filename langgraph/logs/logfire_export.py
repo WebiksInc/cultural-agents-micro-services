@@ -31,13 +31,14 @@ def _ensure_exports_dir():
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _query_logfire(sql: str, limit: int = 10000) -> List[Dict[str, Any]]:
+def _query_logfire(sql: str, limit: int = 10000, max_retries: int = 5) -> List[Dict[str, Any]]:
     """
-    Execute a SQL query against Logfire Query API.
+    Execute a SQL query against Logfire Query API with retry logic for rate limits.
     
     Args:
         sql: SQL query string
         limit: Maximum number of rows to return (default 10000, max 10000)
+        max_retries: Maximum number of retries for rate limit errors
         
     Returns:
         List of log records as dictionaries
@@ -55,36 +56,47 @@ def _query_logfire(sql: str, limit: int = 10000) -> List[Dict[str, Any]]:
         "limit": limit,
     }
     
-    response = httpx.get(LOGFIRE_QUERY_URL, headers=headers, params=params, timeout=60.0)
-    
-    if response.status_code != 200:
-        raise Exception(f"Logfire API error {response.status_code}: {response.text}")
-    
-    data = response.json()
-    
-    # Column-oriented format: {"columns": [{"name": "col1", "values": [...]}, ...]}
-    if "columns" in data and isinstance(data["columns"], list):
-        columns = data["columns"]
-        if not columns:
-            return []
+    for attempt in range(max_retries):
+        response = httpx.get(LOGFIRE_QUERY_URL, headers=headers, params=params, timeout=60.0)
         
-        # Get column names and values
-        col_names = [col["name"] for col in columns]
-        col_values = [col.get("values", []) for col in columns]
+        if response.status_code == 429:
+            # Rate limited - wait with exponential backoff
+            wait_time = min(60, (2 ** attempt) * 10)  # 10s, 20s, 40s, 60s, 60s
+            print(f"  ⏳ Rate limited. Waiting {wait_time}s before retry ({attempt + 1}/{max_retries})...")
+            time.sleep(wait_time)
+            continue
         
-        # Transpose to row-oriented
-        num_rows = len(col_values[0]) if col_values else 0
-        rows = []
-        for i in range(num_rows):
-            row = {col_names[j]: col_values[j][i] for j in range(len(col_names))}
-            rows.append(row)
-        return rows
+        if response.status_code != 200:
+            raise Exception(f"Logfire API error {response.status_code}: {response.text}")
+        
+        data = response.json()
+        
+        # Column-oriented format: {"columns": [{"name": "col1", "values": [...]}, ...]}
+        if "columns" in data and isinstance(data["columns"], list):
+            columns = data["columns"]
+            if not columns:
+                return []
+            
+            # Get column names and values
+            col_names = [col["name"] for col in columns]
+            col_values = [col.get("values", []) for col in columns]
+            
+            # Transpose to row-oriented
+            num_rows = len(col_values[0]) if col_values else 0
+            rows = []
+            for i in range(num_rows):
+                row = {col_names[j]: col_values[j][i] for j in range(len(col_names))}
+                rows.append(row)
+            return rows
+        
+        # Alternative: already row-oriented list of dicts
+        if isinstance(data, list):
+            return data
+        
+        return []
     
-    # Alternative: already row-oriented list of dicts
-    if isinstance(data, list):
-        return data
-    
-    return []
+    # All retries exhausted
+    raise Exception(f"Rate limit exceeded after {max_retries} retries. Please wait a few minutes and try again.")
 
 
 def export_daily_logs(target_date: Optional[date] = None) -> dict:
