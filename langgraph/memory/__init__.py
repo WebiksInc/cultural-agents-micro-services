@@ -14,6 +14,8 @@ from .storage import (
 from .group import (
     save_group_metadata,  # Save or update group info
     get_group_metadata,  # Retrieve group info
+    get_last_analyzed_message_id,  # Get last analyzed msg ID (cold start sync)
+    save_last_analyzed_message_id,  # Save last analyzed msg ID
     save_group_messages,  # Append messages to history
     get_group_messages,  # Retrieve all group messages
     update_message_fields,  # Update custom fields in a message
@@ -48,6 +50,8 @@ __all__ = [
     # Group
     'save_group_metadata',
     'get_group_metadata',
+    'get_last_analyzed_message_id',
+    'save_last_analyzed_message_id',
     'save_group_messages',
     'get_group_messages',
     'update_message_fields',

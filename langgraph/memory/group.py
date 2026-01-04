@@ -71,6 +71,34 @@ def get_group_metadata(chat_id: str) -> Optional[Dict[str, Any]]:
     return load_json(metadata_path)
 
 
+def get_last_analyzed_message_id(chat_id: str) -> Optional[int]:
+    """
+    Get the last message ID that Component C analyzed.
+    Used for cold start recovery to avoid re-analyzing messages.
+    
+    Args:
+        chat_id: Telegram chat ID
+        
+    Returns:
+        Last analyzed message ID, or None if never analyzed
+    """
+    metadata = get_group_metadata(chat_id)
+    if metadata:
+        return metadata.get("last_analyzed_message_id")
+    return None
+
+
+def save_last_analyzed_message_id(chat_id: str, message_id: int) -> None:
+    """
+    Save the last message ID that Component C analyzed.
+    
+    Args:
+        chat_id: Telegram chat ID
+        message_id: Last message ID analyzed
+    """
+    save_group_metadata(chat_id, last_analyzed_message_id=message_id)
+
+
 def save_group_messages(
     chat_id: str,
     messages: List[Dict[str, Any]]

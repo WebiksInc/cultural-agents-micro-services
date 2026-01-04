@@ -179,6 +179,7 @@ def save_personality_analysis(
     chat_id: str,
     user_id: str,
     big5_results: Optional[Dict[str, Dict[str, Any]]] = None,
+
     verbose: bool = True
 ) -> Dict[str, Any]:
     """
@@ -198,6 +199,8 @@ def save_personality_analysis(
                           ...
                       }
                       If None, generates random values (for testing only).
+        last_analyzed_message_id: The highest message ID that was considered in this analysis.
+                                  Used for cold start synchronization.
         verbose: Print progress
         
     Returns:
@@ -288,6 +291,38 @@ def get_participant_data(
     participant_dir = get_participant_directory(chat_id)
     participant_path = os.path.join(participant_dir, f"{user_id}.json")
     return load_json(participant_path)
+
+
+def get_last_analyzed_message_id(
+    chat_id: str,
+    user_id: str
+) -> Optional[int]:
+    """
+    Get the last analyzed message ID for a participant from persistent storage.
+    Used for cold start synchronization - to determine which messages
+    have already been analyzed in a previous session.
+    
+    Args:
+        chat_id: Telegram chat ID
+        user_id: User ID
+        
+    Returns:
+        The last_analyzed_message_id from the most recent snapshot, or None if:
+        - Participant doesn't exist
+        - No snapshots exist
+        - Snapshot doesn't have last_analyzed_message_id (legacy data)
+    """
+    participant_data = get_participant_data(chat_id, user_id)
+    if not participant_data:
+        return None
+    
+    snapshots = participant_data.get("personality_snapshots", [])
+    if not snapshots:
+        return None
+    
+    # Most recent snapshot is first (inserted at index 0)
+    latest_snapshot = snapshots[0]
+    return latest_snapshot.get("last_analyzed_message_id")
 
 
 def list_participants(chat_id: str) -> List[Dict[str, Any]]:
