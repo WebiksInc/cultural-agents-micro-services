@@ -4,3 +4,6 @@ langchain
 langchain-openai
 langchain-anthropic
 python-dotenv
+logfire
+httpx
+pydantic

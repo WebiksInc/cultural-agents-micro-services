@@ -207,3 +207,6 @@ marimo/_lsp/
 __marimo__/
 # Memory system data
 data/
+
+# Exported Logfire logs (keep only .gitkeep)
+logs/exports/*.json
