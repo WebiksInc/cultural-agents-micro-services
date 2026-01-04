@@ -41,6 +41,60 @@ def get_all_agent_names() -> list:
     return [agent["name"] for agent in supervisor_config["agents"]]
 
 
+def build_display_name(first_name: str = "", last_name: str = "", username: str = "") -> str:
+    """
+    Build a display name from user info (standardized logic used across the system).
+    
+    Args:
+        first_name: User's first name
+        last_name: User's last name
+        username: User's username (fallback)
+    
+    Returns:
+        Display name in format: "FirstName LastName" OR "FirstName" OR "username" OR ""
+    """
+    first_name = first_name.strip()
+    last_name = last_name.strip()
+    username = username.strip()
+    
+    if first_name and last_name:
+        return f"{first_name} {last_name}"
+    elif first_name:
+        return first_name
+    elif username:
+        return username
+    else:
+        return ""
+
+
+def get_agent_display_names(include_agent_suffix: bool = True) -> list:
+    """
+    Get formatted display names for all agents (as they appear in conversations).
+    
+    Args:
+        include_agent_suffix: If True, appends " (Agent)" to each name
+    
+    Returns:
+        List of agent display names (e.g., ["Sandra K (Agent)", "Victor Bastillo (Agent)"])
+    """
+    agent_personas = load_agent_personas()
+    agent_display_names = []
+    
+    for persona in agent_personas:
+        display_name = build_display_name(
+            first_name=persona.get("first_name", ""),
+            last_name=persona.get("last_name", ""),
+            username=persona.get("user_name", "")
+        )
+        
+        if include_agent_suffix:
+            display_name = f"{display_name} (Agent)"
+        
+        agent_display_names.append(display_name)
+    
+    return agent_display_names
+
+
 def load_agent_personas() -> list:
     """
     Load all agent personas from files specified in config.
@@ -277,13 +331,8 @@ def format_message_for_prompt(msg: Dict[str, Any],
     sender_last_name = msg.get('sender_last_name', '').strip()
     msg_id = msg.get('message_id')
     
-    if sender_first_name and sender_last_name:
-        sender = f"{sender_first_name} {sender_last_name}"
-    elif sender_first_name:
-        sender = sender_first_name
-    elif sender_username:
-        sender = sender_username
-    else:
+    sender = build_display_name(sender_first_name, sender_last_name, sender_username)
+    if not sender:
         sender = 'Unknown'
     
     # Check if this message is from the current agent (YOU) or another agent
