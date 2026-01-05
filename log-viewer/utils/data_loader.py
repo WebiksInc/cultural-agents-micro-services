@@ -594,6 +594,7 @@ class LogDataLoader:
     def get_agent_messages(self, agent_name: str) -> List[Dict]:
         """Get all messages sent by an agent with full metadata."""
         messages = []
+        seen_messages = set()  # Deduplicate by message content
         agent_logs = self.logs_by_agent.get(agent_name, [])
         meta = self.agent_metadata.get(agent_name, {})
         
@@ -632,6 +633,12 @@ class LogDataLoader:
                     except:
                         date_str = timestamp[:19]
                 
+                # Deduplicate by message content
+                msg_content = styled_response or generated_response
+                if msg_content in seen_messages:
+                    continue
+                seen_messages.add(msg_content)
+                
                 messages.append({
                     "timestamp": timestamp,
                     "date": date_str,
@@ -640,7 +647,7 @@ class LogDataLoader:
                     "agent_goal": meta.get("agent_goal", state.get("agent_goal", "")),
                     "phone_number": meta.get("phone_number", ""),
                     "group_name": group_name,
-                    "message_content": styled_response or generated_response,
+                    "message_content": msg_content,
                     "action_type": action_id,
                     "trigger_id": trigger_id,
                     "target_message": target_message,
@@ -724,12 +731,14 @@ class LogDataLoader:
         except:
             return "N/A"
     
-    def format_timestamp(self, ts: str) -> str:
+    def format_timestamp(self, ts: str, include_date: bool = True) -> str:
         """Format timestamp for display."""
         if not ts:
             return ""
         try:
             dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            if include_date:
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
             return dt.strftime("%H:%M:%S")
         except:
             return ts[:19] if ts else ""

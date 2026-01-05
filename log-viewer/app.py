@@ -617,14 +617,14 @@ def render_agents_tab(loader: LogDataLoader):
             
             if agent_data.get("agent_goal"):
                 st.markdown(f"""
-                <div style="background: linear-gradient(135deg, {config['color']}20, {config['color']}10); 
+                <div style="background: linear-gradient(135deg, {config['color']}30, {config['color']}15); 
                             border-left: 4px solid {config['color']}; 
                             padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; margin-bottom: 10px;">
                         <span style="font-size: 1.5rem; margin-right: 10px;">{config['emoji']}</span>
                         <strong style="color: {config['color']};">{config['label']}</strong>
                     </div>
-                    <p style="margin: 0; color: #333;"><strong>🎯 Goal:</strong> {agent_data['agent_goal']}</p>
+                    <p style="margin: 0; color: inherit;"><strong>🎯 Goal:</strong> {agent_data['agent_goal']}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
