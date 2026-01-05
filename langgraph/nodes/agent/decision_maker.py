@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
+from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt, format_personality_summary
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
@@ -106,6 +106,9 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
     recent_actions = state.get('recent_actions', [])
     formatted_recent_actions = format_recent_actions(recent_actions)
     
+    # Format participants' personality summary
+    participants_personality_summary = format_personality_summary(recent_messages)
+    
     prompt = prompt_template.format(
         agent_name=agent_name,
         agent_type=agent_type,
@@ -113,6 +116,7 @@ def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
         trigger_id=trigger_id,
         trigger_justification=trigger_justification,
         group_sentiment=group_sentiment,
+        participants_personality_summary=participants_personality_summary,
         other_agents_info=other_agents_info,
         formatted_recent_actions=formatted_recent_actions,
         recent_messages=recent_messages_text,

@@ -14,6 +14,7 @@ A trigger has been detected in the conversation, and you must select the single 
 3.  **Use Context**: Leverage all available information:
     * The detected trigger and its justification
     * The group's current sentiment
+    * Participants' Big 5 Personality Traits
     * The agent's goal and type
     * Recent conversation messages
     * Action descriptions and purposes
@@ -64,6 +65,10 @@ Justification: {trigger_justification}
 
 **--- Group Sentiment ---**
 {group_sentiment}
+
+**--- Participants' Big 5 Personality Traits ---**
+The following represents the psychological profile of users currently active in the chat window.
+{participants_personality_summary}
 
 **--- Other Agents in Group ---**
 {other_agents_info}

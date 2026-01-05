@@ -601,3 +601,103 @@ def format_recent_actions(actions: list, last_n: int = 5) -> str:
         actions_str.append(entry)
         
     return "\n".join(actions_str)
+
+
+def format_personality_summary(recent_messages: list) -> str:
+    """
+    Format participants' Big5 personality traits from recent_messages for prompt injection.
+    
+    Extracts unique participants from recent_messages and formats their personality data.
+    Skips agents (they don't have personality analysis).
+    
+    Args:
+        recent_messages: List of message dicts, each may contain 'sender_personality' field
+        
+    Returns:
+        Formatted string with personality summaries for each participant
+    """
+    # Big5 trait labels for display
+    TRAIT_LABELS = {
+        "openness": "Openness",
+        "conscientiousness": "Conscientiousness",
+        "extraversion": "Extraversion",
+        "agreeableness": "Agreeableness",
+        "neuroticism": "Neuroticism"
+    }
+    
+    def score_to_level(score: int) -> str:
+        """Convert numeric score to label."""
+        if score >= 4:
+            return "High"
+        elif score <= 2:
+            return "Low"
+        else:
+            return "Moderate"
+    
+    # Get agent personas to skip them
+    agent_personas = load_agent_personas()
+    
+    # Track unique participants by sender_id
+    participants = {}  # sender_id -> {name, personality}
+    
+    for msg in recent_messages:
+        sender_id = str(msg.get('sender_id', '')).strip()
+        if not sender_id:
+            continue
+        
+        # Skip if already processed this participant
+        if sender_id in participants:
+            continue
+        
+        # Build display name
+        display_name = build_display_name(
+            first_name=msg.get("sender_first_name", ""),
+            last_name=msg.get("sender_last_name", ""),
+            username=msg.get("sender_username", "")
+        )
+        if not display_name:
+            continue
+        
+        # Skip agents
+        if is_agent_sender(message=msg, agent_personas=agent_personas):
+            continue
+        
+        # Get personality data
+        personality = msg.get('sender_personality')
+        participants[sender_id] = {
+            'name': display_name,
+            'personality': personality
+        }
+    
+    # Format output
+    if not participants:
+        return "No participant personality data available."
+    
+    lines = []
+    for sender_id, data in participants.items():
+        name = data['name']
+        personality = data['personality']
+        
+        if not personality:
+            lines.append(f"• {name}: Not yet analyzed")
+            continue
+        
+        # Format each trait
+        trait_parts = []
+        for trait_key, trait_label in TRAIT_LABELS.items():
+            trait_data = personality.get(trait_key, {})
+            score = trait_data.get('score')
+            confidence = trait_data.get('confidence')
+            
+            if score is not None:
+                level = score_to_level(score)
+                conf_str = f" [conf: {confidence}]" if confidence is not None else ""
+                trait_parts.append(f"{trait_label}: {level} ({score}/5){conf_str}")
+            else:
+                trait_parts.append(f"{trait_label}: N/A")
+        
+        traits_str = ", ".join(trait_parts)
+        lines.append(f"• {name}: {traits_str}")
+    
+    return "\n".join(lines)
+
