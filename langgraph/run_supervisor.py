@@ -27,7 +27,7 @@ from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
 from logs.logfire_config import setup_logfire, get_logger
-from memory import save_group_messages, update_messages_emotions
+from memory import save_group_messages, update_messages_emotions, get_group_messages
 from collections import deque
 import time
 from logs.logfire_export import export_run_logs
@@ -77,6 +77,9 @@ def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Mess
     # Preserve original ISO timestamp
     original_timestamp = msg_data.get("date", "")
     
+    # Load existing emotion if present (from previous Component B analysis)
+    existing_emotion = msg_data.get("message_emotion")
+    
     return Message(
         message_id=str(msg_id),
         sender_id=msg_data.get("senderId") or "",
@@ -87,7 +90,7 @@ def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Mess
         date=datetime.fromisoformat(original_timestamp.replace("Z", "+00:00")) if original_timestamp else datetime.now(),
         timestamp=original_timestamp if original_timestamp else datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
         reactions=reactions,
-        message_emotion=None,
+        message_emotion=existing_emotion,
         sender_personality=None,
         processed=False,
         replyToMessageId = msg_data.get("replyToMessageId", None)
@@ -162,7 +165,9 @@ def run_supervisor_loop():
         if fetched_messages_raw:
             save_group_messages(CHAT_ID, fetched_messages_raw)
             
-        initial_messages = [parse_telegram_message(msg, agent_usernames) for msg in fetched_messages_raw]
+        # Load messages from group_history (may have emotions from previous runs)
+        messages_from_storage = get_group_messages(CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
+        initial_messages = [parse_telegram_message(msg, agent_usernames) for msg in messages_from_storage]
         state["recent_messages"] = initial_messages
         
         # --- CHANGE 2: Load initial IDs into deque ---
@@ -215,7 +220,9 @@ def run_supervisor_loop():
                     if fetched_messages_raw:
                         save_group_messages(CHAT_ID, fetched_messages_raw)
                         
-                    raw_messages = [parse_telegram_message(msg, agent_usernames) for msg in fetched_messages_raw]
+                    # Load messages from group_history (may have emotions from previous runs)
+                    messages_from_storage = get_group_messages(CHAT_ID, limit=TELEGRAM_FETCH_LIMIT)
+                    raw_messages = [parse_telegram_message(msg, agent_usernames) for msg in messages_from_storage]
                     
                     # Log IDs for debugging
                     all_ids = [msg["message_id"] for msg in raw_messages]
