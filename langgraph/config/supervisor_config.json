@@ -7,7 +7,8 @@
   "polling": {
     "message_check_interval_seconds": 60,
     "telegram_fetch_limit": 12,
-    "max_recent_messages": 12
+    "max_recent_messages": 12,
+    "max_initial_actions_per_agent": 4
   },
   "personality_analysis": {
     "min_messages_for_analysis": 1,

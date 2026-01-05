@@ -73,8 +73,8 @@ def save_action(
         "timestamp": timestamp or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     
-    # Append and save
-    actions.append(new_action)
+    # Insert at beginning so most recent is first
+    actions.insert(0, new_action)
     save_json(agent_file, actions)
     
     return {
@@ -99,16 +99,14 @@ def get_agent_actions(
         limit: Maximum number of actions to return (most recent first)
         
     Returns:
-        List of action dictionaries
+        List of action dictionaries (most recent first)
     """
     actions_dir = get_actions_directory(chat_id)
     agent_file = os.path.join(actions_dir, f"{agent_name}.json")
     
     actions = load_json(agent_file, default=[])
     
-    # Sort by timestamp (most recent first)
-    actions.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-    
+    # File already stores most recent first, just slice
     if limit:
         return actions[:limit]
     

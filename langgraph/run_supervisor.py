@@ -27,7 +27,7 @@ from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
 from logs.logfire_config import setup_logfire, get_logger
-from memory import save_group_messages, update_messages_emotions, get_group_messages
+from memory import save_group_messages, update_messages_emotions, get_group_messages, get_agent_actions
 from collections import deque
 import time
 from logs.logfire_export import export_run_logs
@@ -45,6 +45,7 @@ CHAT_ID = CONFIG["telegram"]["chat_id"]
 MESSAGE_CHECK_INTERVAL = CONFIG["polling"]["message_check_interval_seconds"]
 TELEGRAM_FETCH_LIMIT = CONFIG["polling"]["telegram_fetch_limit"]
 MAX_RECENT_MESSAGES = CONFIG["polling"]["max_recent_messages"]
+MAX_INITIAL_ACTIONS = CONFIG["polling"]["max_initial_actions_per_agent"]
 
 
 def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Message:
@@ -133,6 +134,51 @@ def run_supervisor_loop():
         next_nodes=None
     )
     logger.info(f"Target Chat ID: {CHAT_ID}")
+    
+    # 2b. Load recent actions from disk for each agent
+    logger.info(f"Loading last {MAX_INITIAL_ACTIONS} actions per agent...")
+    agents_recent_actions = {}
+    for agent_config in CONFIG["agents"]:
+        # Load persona to get first_name - this matches how build_graph.py keys agents
+        persona_file = agent_config.get("persona_file")
+        if persona_file:
+            persona_path = Path(__file__).parent / persona_file
+            with open(persona_path, 'r') as f:
+                persona = json.load(f)
+            # Use first_name if available, else fallback to config name
+            agent_display_name = persona.get("first_name") or agent_config.get("name", "").split()[0]
+        else:
+            agent_display_name = agent_config.get("name", "").split()[0]
+        
+        if agent_display_name:
+            saved_actions = get_agent_actions(CHAT_ID, agent_display_name, limit=MAX_INITIAL_ACTIONS)
+            if saved_actions:
+                # Transform saved format to ActionRecord format
+                action_records = []
+                for action in saved_actions:
+                    # Build target_message from saved data
+                    target_msg = None
+                    if action.get('triggered_by_msg_id'):
+                        target_msg = {
+                            'message_id': action.get('triggered_by_msg_id'),
+                            'text': action.get('triggered_by_msg', '')
+                        }
+                    
+                    action_record = {
+                        'trigger_id': action.get('trigger_detected', 'unknown'),
+                        'trigger_justification': action.get('action_reason', ''),
+                        'target_message': target_msg,
+                        'action_id': action.get('action_id', 'unknown'),
+                        'action_purpose': action.get('action_reason', ''),
+                        'action_content': action.get('action_content', ''),
+                        'action_timestamp': action.get('timestamp')
+                    }
+                    action_records.append(action_record)
+                
+                agents_recent_actions[agent_display_name] = action_records
+                logger.info(f"Loaded {len(action_records)} actions for {agent_display_name}")
+    
+    state['agents_recent_actions'] = agents_recent_actions
 
     # 3. Fetch Group Metadata (Run once)
     logger.info("Fetching group metadata from Telegram API...")
