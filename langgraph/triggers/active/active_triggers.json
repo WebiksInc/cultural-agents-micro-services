@@ -7,7 +7,7 @@
       "suggested_actions": [
         "answer_direct_question",
         "add_reaction",
-        "expand_discussion",
+        "expand_already_lively_discussion",
         "change_narrative"
       ]
     },
@@ -17,7 +17,7 @@
       "suggested_actions": [
         "answer_direct_question",
         "show_interest",
-        "expand_discussion",
+        "expand_already_lively_discussion",
         "add_reaction"
       ]
     },
@@ -27,7 +27,7 @@
       "suggested_actions": [
         "initiate_discussion",
         "change_narrative",
-        "expand_discussion"
+        "expand_already_lively_discussion"
       ]
     },
     {
@@ -41,7 +41,7 @@
       "id": "discussion_faltering",
       "description": "An ongoing discussion is losing momentum or needs to be stoked to generate more engagement.",
       "suggested_actions": [
-        "expand_discussion",
+        "expand_already_lively_discussion",
         "show_interest",
         "change_narrative",
         "initiate_discussion"
