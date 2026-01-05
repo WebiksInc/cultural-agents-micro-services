@@ -8,7 +8,7 @@ import logfire
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
+from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt, format_personality_summary
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_node_output, log_state
 from utils import get_messages_replies
@@ -92,6 +92,10 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     other_agents_info = format_other_agents_for_prompt(agent_name)
     recent_actions = state.get('recent_actions', [])
     formatted_recent_actions = format_recent_actions(recent_actions)
+    
+    # Format participants' personality summary
+    participants_personality_summary = format_personality_summary(recent_messages)
+    
     # Build additional rules based on agent type
     additional_rules = ""
     e1_rules_file_map = {
@@ -113,6 +117,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         name=group_metadata.get('name', 'Unknown'),
         topic=group_metadata.get('topic', 'No topic provided'),
         group_sentiment=group_sentiment,
+        participants_personality_summary=participants_personality_summary,
         other_agents_info=other_agents_info,
         recent_messages_json=recent_messages_json,
         persona_json=persona_json,

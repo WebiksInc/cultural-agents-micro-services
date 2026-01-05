@@ -89,6 +89,10 @@ Group Name: {name}
 Group Description: {topic}
 Group Sentiment: {group_sentiment}
 
+**--- Participants' Big 5 Personality Traits ---**
+The following represents the psychological profile of users currently active in the chat window.
+{participants_personality_summary}
+
 *-- Other Agents in Group: --*
 {other_agents_info}
 
