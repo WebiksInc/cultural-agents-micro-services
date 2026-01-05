@@ -27,7 +27,7 @@ from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
 from logs.logfire_config import setup_logfire, get_logger
-from memory import save_group_messages
+from memory import save_group_messages, update_messages_emotions
 from collections import deque
 import time
 from logs.logfire_export import export_run_logs
@@ -183,6 +183,9 @@ def run_supervisor_loop():
             logger.info(f"Running graph for {len(unprocessed)} initial unprocessed messages...")
             state = graph.invoke(state)
             
+            # Persist emotion analysis to group_history
+            update_messages_emotions(CHAT_ID, state["recent_messages"])
+            
             # Mark processed locally after run
             for msg in state["recent_messages"]:
                 msg['processed'] = True
@@ -244,6 +247,9 @@ def run_supervisor_loop():
                         if unprocessed:
                             logger.info(f"Running graph for {len(unprocessed)} new messages")
                             state = graph.invoke(state)
+                            
+                            # Persist emotion analysis to group_history
+                            update_messages_emotions(CHAT_ID, state["recent_messages"])
                             
                             # Mark processed locally
                             for msg in state["recent_messages"]:

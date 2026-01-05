@@ -221,6 +221,63 @@ def update_message_fields(
     return updated
 
 
+def update_messages_emotions(
+    chat_id: str,
+    messages_with_emotions: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Batch update emotion analysis for multiple messages in group_history.
+    Called after Component B analyzes emotions to persist them to disk.
+    
+    Args:
+        chat_id: Telegram chat ID
+        messages_with_emotions: List of messages with message_emotion field
+        
+    Returns:
+        Dict with update statistics: {
+            "success": bool,
+            "updated_count": int,
+            "skipped_count": int
+        }
+    """
+    group_dir = get_group_directory(chat_id)
+    history_path = os.path.join(group_dir, "group_history.json")
+    
+    messages = load_json(history_path, default=[])
+    
+    # Create a lookup map of message_id -> emotion data
+    emotion_map = {}
+    for msg in messages_with_emotions:
+        msg_emotion = msg.get('message_emotion')
+        if msg_emotion:
+            # Convert message_id to int for comparison
+            msg_id = msg.get('message_id')
+            if msg_id:
+                try:
+                    emotion_map[int(msg_id)] = msg_emotion
+                except (ValueError, TypeError):
+                    emotion_map[str(msg_id)] = msg_emotion
+    
+    # Update messages in group_history
+    updated_count = 0
+    for msg in messages:
+        msg_id = msg.get('id')
+        if msg_id in emotion_map:
+            msg['message_emotion'] = emotion_map[msg_id]
+            updated_count += 1
+    
+    # Save updated messages
+    if updated_count > 0:
+        save_json(history_path, messages)
+        logger.info(f"Updated {updated_count} messages with emotion analysis in group_history")
+    
+    return {
+        "success": True,
+        "updated_count": updated_count,
+        "skipped_count": len(emotion_map) - updated_count
+    }
+
+
 def sync_group_messages(
     phone: str,
     chat_id: str,

@@ -18,6 +18,7 @@ from .group import (
     save_last_analyzed_message_id,  # Save last analyzed msg ID
     save_group_messages,  # Append messages to history
     get_group_messages,  # Retrieve all group messages
+    update_messages_emotions,  # Batch update emotions after Component B
     update_message_fields,  # Update custom fields in a message
     sync_group_messages  # Fetch new messages from Telegram API
 )
