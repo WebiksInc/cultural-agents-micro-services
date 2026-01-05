@@ -30,6 +30,7 @@ from logs.logfire_config import setup_logfire, get_logger
 from memory import save_group_messages
 from collections import deque
 import time
+from logs.logfire_export import export_run_logs
 
 # Setup Logfire
 setup_logfire("cultural-agents-supervisor")
@@ -97,6 +98,9 @@ def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Mess
 def run_supervisor_loop():
     # STEP 1: INITIALIZATION 
     logger.info("Starting Supervisor initialization...")
+    
+    # Track when the run started for log export
+    run_start_time = datetime.utcnow()
     
     # 1. Build graph and dependencies
     graph = build_supervisor_graph()
@@ -263,8 +267,14 @@ def run_supervisor_loop():
 
     except KeyboardInterrupt:
         logger.info("Supervisor loop stopped by user")
+        # Export logs for this run
+        logger.info("📤 Exporting run logs...")
+        export_run_logs(run_start_time)
     except Exception as e:
         logger.error(f"Error in supervisor loop: {e}", exc_info=True)
+        # Export logs even on error
+        logger.info("📤 Exporting run logs after error...")
+        export_run_logs(run_start_time)
         raise
 
 if __name__ == "__main__":
