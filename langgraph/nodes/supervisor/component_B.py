@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output
+from memory import save_group_sentiment
 
 # Configure logging
 logger = get_logger(__name__)
@@ -208,6 +209,12 @@ def emotion_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 if len(recent_messages) > MAX_RECENT_MESSAGES:
                     removed_count = len(recent_messages) - MAX_RECENT_MESSAGES
                     logger.info(f"Trimmed recent_messages: kept {MAX_RECENT_MESSAGES} newest, removed {removed_count} oldest")
+                
+                # Save group_sentiment to memory
+                group_id = state.get('group_metadata', {}).get('id')
+                if group_id:
+                    save_group_sentiment(group_id, group_sentiment)
+                    logger.info("Saved group_sentiment to memory")
                 
                 # Return updated state fields
                 return {

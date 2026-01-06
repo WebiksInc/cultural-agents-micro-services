@@ -99,6 +99,33 @@ def save_last_analyzed_message_id(chat_id: str, message_id: int) -> None:
     save_group_metadata(chat_id, last_analyzed_message_id=message_id)
 
 
+def save_group_sentiment(chat_id: str, sentiment: str) -> None:
+    """
+    Save the group sentiment from Component B.
+    
+    Args:
+        chat_id: Telegram chat ID
+        sentiment: Group sentiment summary (2-3 sentences)
+    """
+    save_group_metadata(chat_id, group_sentiment=sentiment)
+
+
+def get_group_sentiment(chat_id: str) -> Optional[str]:
+    """
+    Get the stored group sentiment.
+    
+    Args:
+        chat_id: Telegram chat ID
+        
+    Returns:
+        Group sentiment string or None if not found
+    """
+    metadata = get_group_metadata(chat_id)
+    if metadata:
+        return metadata.get("group_sentiment")
+    return None
+
+
 def save_group_messages(
     chat_id: str,
     messages: List[Dict[str, Any]]

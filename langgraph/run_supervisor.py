@@ -27,7 +27,7 @@ from states.supervisor_state import SupervisorState
 from states.agent_state import Message
 from telegram_exm import *
 from logs.logfire_config import setup_logfire, get_logger
-from memory import save_group_messages, update_messages_emotions, get_group_messages, get_agent_actions
+from memory import save_group_messages, update_messages_emotions, get_group_messages, get_agent_actions, get_group_sentiment
 from collections import deque
 import time
 from logs.logfire_export import export_run_logs
@@ -123,9 +123,15 @@ def run_supervisor_loop():
     seen_message_ids = deque(maxlen=1000)
     
     # 2. Initialize State
+    # Load group_sentiment from memory if available
+    stored_sentiment = get_group_sentiment(CHAT_ID)
+    initial_sentiment = stored_sentiment if stored_sentiment else ""
+    if stored_sentiment:
+        logger.info(f"Loaded group_sentiment from memory")
+    
     state = SupervisorState(
         recent_messages=[],
-        group_sentiment="",
+        group_sentiment=initial_sentiment,
         group_metadata={"id": CHAT_ID, "name": "", "topic": "", "members": 0},
         selected_actions=[],
         execution_queue=[],

@@ -16,6 +16,8 @@ from .group import (
     get_group_metadata,  # Retrieve group info
     get_last_analyzed_message_id,  # Get last analyzed msg ID (cold start sync)
     save_last_analyzed_message_id,  # Save last analyzed msg ID
+    save_group_sentiment,  # Save group sentiment from Component B
+    get_group_sentiment,  # Retrieve stored group sentiment
     save_group_messages,  # Append messages to history
     get_group_messages,  # Retrieve all group messages
     update_messages_emotions,  # Batch update emotions after Component B
@@ -53,8 +55,11 @@ __all__ = [
     'get_group_metadata',
     'get_last_analyzed_message_id',
     'save_last_analyzed_message_id',
+    'save_group_sentiment',
+    'get_group_sentiment',
     'save_group_messages',
     'get_group_messages',
+    'update_messages_emotions',
     'update_message_fields',
     'sync_group_messages',
     
