@@ -40,7 +40,7 @@ class LogDataLoader:
         """Get list of available log export files."""
         if not self.exports_dir.exists():
             return []
-        files = list(self.exports_dir.glob("logs_*.json"))
+        files = list(self.exports_dir.glob("run_*.json"))
         return sorted(files, reverse=True)
     
     def get_available_dates(self) -> List[date]:
@@ -48,22 +48,33 @@ class LogDataLoader:
         dates = []
         for f in self.get_available_files():
             try:
-                date_str = f.stem.replace("logs_", "")
+                date_str = f.stem.split('_')[1]  # run_YYYY-MM-DD_...
                 dates.append(date.fromisoformat(date_str))
-            except ValueError:
+            except (ValueError, IndexError):
                 continue
-        return sorted(dates, reverse=True)
+        return sorted(set(dates), reverse=True)
     
     def load_date(self, target_date: date) -> Dict:
         """Load logs for a specific date."""
-        filename = f"logs_{target_date.isoformat()}.json"
-        filepath = self.exports_dir / filename
+        date_str = target_date.isoformat()
+        pattern = f"run_{date_str}_*.json"
+        files = list(self.exports_dir.glob(pattern))
         
-        if not filepath.exists():
+        if not files:
             return {"logs": [], "export_metadata": {}}
         
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        all_logs = []
+        latest_metadata = {}
+        
+        for filepath in files:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                all_logs.extend(data.get("logs", []))
+                # Keep the latest metadata
+                if not latest_metadata or data.get("export_metadata", {}).get("exported_at", "") > latest_metadata.get("exported_at", ""):
+                    latest_metadata = data.get("export_metadata", {})
+        
+        return {"logs": all_logs, "export_metadata": latest_metadata}
     
     def load_date_range(self, start_date: date, end_date: date) -> None:
         """Load logs for a date range and build indexes."""
