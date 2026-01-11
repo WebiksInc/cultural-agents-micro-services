@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Literal
+from typing import Dict, Any, Literal
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
@@ -12,6 +12,7 @@ from states.agent_state import AgentState
 
 # Import supervisor nodes
 from nodes.supervisor.component_B import emotion_analysis_node
+from nodes.supervisor.component_C import personality_analysis_node
 from nodes.supervisor.scheduler import scheduler_node
 from nodes.supervisor.executor import executor_node
 
@@ -24,7 +25,7 @@ from nodes.agent.component_E2 import styler_node
 from nodes.agent.validator import validator_node
 
 # Import utilities
-from utils import load_json_file, load_prompt
+from utils import *
 from logs.logfire_config import get_logger
 
 logger = get_logger(__name__)
@@ -55,12 +56,34 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
     triggers_path = BASE_DIR / "triggers" / agent_type / f"{agent_type}_triggers.json"
     triggers = load_json_file(triggers_path)
     
+    # For off_radar type: dynamically add support_your_comrades trigger if other agents exist
+    if agent_type == "off_radar":
+        supervisor_config = load_json_file(SUPERVISOR_CONFIG_PATH)
+        # Build list of other agents with their details
+        other_agents = [
+            {
+                "agent_name": agent["name"],
+                "agent_type": agent["type"],
+                "agent_goal": agent["agent_goal"]
+            }
+            for agent in supervisor_config["agents"]
+            if agent["name"] != agent_config["name"]
+        ]
+        
+        # Only add support_your_comrades trigger if there are other agents
+        if other_agents:
+            support_trigger_path = BASE_DIR / "triggers" / "off_radar" / "support_your_comrades.json"
+            support_trigger = load_json_file(support_trigger_path)
+            support_trigger["agents_in_group"] = other_agents
+            triggers["triggers"].append(support_trigger)
+            logger.info(f"Added support_your_comrades trigger with agents: {[a['agent_name'] for a in other_agents]}")
+    
     # Load actions
     actions_path = BASE_DIR / "actions" / agent_type / f"{agent_type}_actions.json"
     actions = load_json_file(actions_path)
     
     # Load agent prompt
-    prompt_path = BASE_DIR / "prompts" / "agent_types" / f"{agent_type}_prompt.txt"
+    # prompt_path = BASE_DIR / "prompts" / "agent_types" / f"{agent_type}_prompt.txt"
     agent_prompt = load_prompt(f"agent_types/{agent_type}_prompt.txt")
     
     return {
@@ -69,7 +92,8 @@ def load_agent_config(agent_config: Dict[str, Any]) -> Dict[str, Any]:
         "actions": actions,
         "agent_prompt": agent_prompt,
         "agent_goal": agent_config["agent_goal"],
-        "agent_type": agent_type
+        "agent_type": agent_type,
+        "name": agent_config["name"]
     }
 
 
@@ -89,7 +113,8 @@ def build_agent_graph(agent_config: Dict[str, Any]) -> StateGraph:
         Compiled StateGraph for the agent
     """
     agent_type = agent_config["agent_type"]
-    logger.info(f"Building agent graph for type: {agent_type}")
+    agent_name = agent_config["name"]
+    logger.info(f"Building agent graph for type: {agent_type}, name: {agent_name}")
     
     # Create agent graph
     agent_builder = StateGraph(AgentState)
@@ -139,6 +164,7 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
     1. Copies relevant state from SupervisorState to AgentState
     2. Invokes the agent subgraph
     3. Extracts the result and formats it for the supervisor
+    4. Updates agents_recent_actions with new action record if one was created
     
     Args:
         agent_name: Name of the agent (e.g., "Tamar", "Matan")
@@ -154,6 +180,10 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
         Runs the agent subgraph and returns selected_action.
         """
         logger.info(f"Running agent: {agent_name}")
+        
+        # Get this agent's recent actions from supervisor state
+        agents_recent_actions = state.get("agents_recent_actions", {})
+        agent_recent_actions = agents_recent_actions.get(agent_name, [])
         
         # Build AgentState from SupervisorState
         agent_state: AgentState = {
@@ -179,18 +209,22 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
             "validation_feedback": None,
             "retry_count": 0,
             "current_node": None,
-            "next_node": None
+            "next_node": None,
+            
+            # Action history
+            "recent_actions": agent_recent_actions
         }
         
         # Run the agent subgraph
         result = agent_graph.invoke(agent_state)
         
-        # Extract selected_action from result
+        # Extract selected_action and detected_trigger from result
         selected_action = result.get("selected_action")
+        detected_trigger = result.get("detected_trigger", {})
         
         # Check if action should be ignored (neutral trigger or error)
         if not selected_action or selected_action.get("status") == "no_action_needed":
-            logger.info(f"Agent {agent_name}: No action needed (neutral trigger or no trigger detected)")
+            logger.info(f"Agent {agent_name}: No action needed (neutral trigger)")
             return Command(
                 update={},
                 goto="scheduler"
@@ -208,11 +242,28 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
         
         logger.info(f"Agent {agent_name}: Action selected - {selected_action.get('id', 'unknown')}")
         
+        # Build update dict
+        update_dict = {
+            "selected_actions": [action_entry]
+        }
+        
+        # Build action record for history tracking (only for approved actions)
+        if selected_action.get("status") == "approved by validator":
+            action_record = {
+                "trigger_id": detected_trigger.get("id", ""),
+                "trigger_justification": detected_trigger.get("justification", ""),
+                "target_message": selected_action.get("target_message"),
+                "action_id": selected_action.get("id", ""),
+                "action_purpose": selected_action.get("purpose", ""),
+                "action_content": result.get("styled_response", ""),
+                "action_timestamp": None  # Will be filled by executor after sending
+            }
+            update_dict["agents_recent_actions"] = {agent_name: [action_record]}
+            logger.info(f"Agent {agent_name}: Recording action - trigger: {action_record.get('trigger_id')}, action: {action_record.get('action_id')}")
+        
         # Append to selected_actions using Command
         return Command(
-            update={
-                "selected_actions": [action_entry] 
-            },
+            update=update_dict,
             goto="scheduler"
         )
     
@@ -224,7 +275,7 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     Build the main Supervisor graph with embedded agent subgraphs.
     
     Flow:
-    START → component_B → [agent1, agent2, ...] (parallel) → scheduler → executor → END
+    START → component_B → component_C → [agent1, agent2, ...] (parallel) → scheduler → executor → END
     
     Args:
         config_path: Path to supervisor_config.json
@@ -236,13 +287,15 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     with open(config_path, 'r') as f:
         config = json.load(f)
     
-    logger.info("Building supervisor graph")
     
     # Create supervisor graph
     supervisor_builder = StateGraph(SupervisorState)
     
     # Add Component B (emotion analysis)
     supervisor_builder.add_node("component_B", emotion_analysis_node)
+    
+    # Add Component C (personality analysis)
+    supervisor_builder.add_node("component_C", personality_analysis_node)
     
     # Build and add agent subgraphs
     agent_nodes = []
@@ -254,14 +307,31 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
         agent_graph = build_agent_graph(agent_full_config)
         
         # Create wrapper node for supervisor
-        agent_name = agent_full_config["persona"].get("first_name", agent_type)
-        agent_node_name = f"agent_{agent_type}"
-        agent_node = create_agent_node(agent_name, agent_graph, agent_full_config)
+        # Extract name from persona for consistency
+        persona = agent_full_config["persona"]
+        first_name = persona.get("first_name", "")
+        last_name = persona.get("last_name", "")
+        
+        if first_name and last_name:
+            full_name = f"{first_name}_{last_name}"
+        elif first_name:
+            full_name = first_name
+        else:
+            # Fallback to config name if persona is missing names
+            full_name = agent_full_config["name"].replace(" ", "_")
+            
+        safe_agent_name = full_name.replace(" ", "_")
+        agent_node_name = f"agent_{agent_type}_{safe_agent_name}"
+        
+        # Use first name for logging/display
+        agent_display_name = first_name if first_name else agent_full_config["name"]
+        
+        agent_node = create_agent_node(agent_display_name, agent_graph, agent_full_config)
         
         supervisor_builder.add_node(agent_node_name, agent_node)
         agent_nodes.append(agent_node_name)
         
-        logger.info(f"Added agent node: {agent_node_name} ({agent_name})")
+        logger.info(f"Added agent node: {agent_node_name} ({agent_display_name})")
     
     # Add scheduler node
     supervisor_builder.add_node("scheduler", scheduler_node)
@@ -273,9 +343,12 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     # START → component_B
     supervisor_builder.add_edge(START, "component_B")
     
-    # component_B → all agents (parallel execution)
+    # component_B → component_C
+    supervisor_builder.add_edge("component_B", "component_C")
+    
+    # component_C → all agents (parallel execution)
     for agent_node_name in agent_nodes:
-        supervisor_builder.add_edge("component_B", agent_node_name)
+        supervisor_builder.add_edge("component_C", agent_node_name)
     
     # All agents already route to scheduler via Command(goto="scheduler")
     # No explicit edges needed due to Command-based routing
@@ -286,7 +359,6 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     # executor → END
     supervisor_builder.add_edge("executor", END)
     
-    logger.info("Supervisor graph built successfully")
     return supervisor_builder.compile()
 
 
@@ -300,10 +372,7 @@ if __name__ == "__main__":
     
     try:
         graph = build_supervisor_graph()
-        print("✓ Supervisor graph built successfully")
-        print(f"✓ Graph has {len(graph.nodes)} nodes")
     except Exception as e:
-        print(f"✗ Failed to build graph: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

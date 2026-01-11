@@ -6,8 +6,14 @@
       "temperature": 0,
       "description": "Emotion and sentiment analysis for supervisor"
     },
+     "component_C": {
+      "model": "gpt-5-mini",
+      "provider": "openai",
+      "temperature": 0,
+      "description": "Big 5 analysis for supervisor"
+    },
     "trigger_analysis": {
-      "model": "gpt-5-nano",
+      "model": "gpt-5-mini",
       "provider": "openai",
       "temperature": 0,
       "description": "Trigger detection for agent"
@@ -19,7 +25,7 @@
       "description": "Validates if scheduled actions are still relevant"
     },
     "decision_maker": {
-      "model": "gpt-5-nano",
+      "model": "gpt-5-mini",
       "provider": "openai",
       "temperature": 0,
       "description": "Selects appropriate action based on detected trigger"

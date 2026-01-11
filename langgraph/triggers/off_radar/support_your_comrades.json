@@ -1,0 +1,9 @@
+  {
+      "id": "support_your_comrades",
+      "description": "A fellow agent (listed in 'agents_in_group') has posted a message. Triggers ONLY if two conditions are met: 1. **Content Alignment:** The message actively advances that agent's specific `agent_goal` (defined below). STRICTLY IGNORE casual chatter, greetings, or off-topic remarks. 2. **No Double-Dipping:** Check the message's `[Reactions: ...]` tag. If it contains `(incl. ... [YOU])` or your name, you have ALREADY supported it -> Select 'neutral'.",
+      "suggested_actions": [
+        "post_supportive_comment",
+        "add_reaction"
+
+      ]
+    }

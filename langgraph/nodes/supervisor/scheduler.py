@@ -7,28 +7,20 @@ Responsibilities:
 3. Provide helpers to get ready actions and mark them as sent
 4. Maintain in-memory queue state
 """
-
-import logging
 from typing import Dict, Any, List
 from logs.logfire_config import get_logger
+from logs import log_node_start
 
 # Configure logging
 logger = get_logger(__name__)
 
 
+# Scheduler Node - Takes selected_actions from the supervisor's state and builds execution_queue.
 def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Scheduler Node
+    log_node_start("scheduler", {
+        "selected_actions_count": len(state.get('selected_actions', []))
+    }, supervisor_state=state)
     
-    Takes selected_actions from agents and builds execution_queue.
-    Actions are queued in FIFO order.
-    
-    Args:
-        state: SupervisorState dict containing selected_actions
-        
-    Returns:
-        Dict with updated execution_queue
-    """
     selected_actions = state.get('selected_actions', [])
     
     # Filter out actions with no_action_needed status
@@ -44,21 +36,26 @@ def scheduler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'execution_queue': []
         }
     
-    logger.info(f"Scheduler: Queuing {len(actionable_items)} actions")
+    logger.info(f"Scheduler: Queuing {len(actionable_items)} actions", selected_actions=actionable_items, supervisor_state=state)
     
     # Build execution queue with all necessary fields
     execution_queue = []
     for action in actionable_items:
+        selected_action_data = action.get('selected_action', {})
         queue_item = {
             'agent_name': action.get('agent_name', 'unknown'),
             'agent_type': action.get('agent_type', 'unknown'),
-            'action': action.get('selected_action', {}),  # Full action dict with id, purpose
-            'action_content': action.get('styled_response', ''),  # The actual message to send
+            'action_id': selected_action_data.get('id', 'unknown'),
+            'action_purpose': selected_action_data.get('purpose', ''),
+            'action_content': action.get('styled_response', ''),
             'phone_number': action.get('phone_number', ''),
+            'target_message': selected_action_data.get('target_message'),  # Include target_message
+            'trigger_id': selected_action_data.get('trigger_id', ''),  # Include trigger info for action logging
+            'trigger_justification': selected_action_data.get('trigger_justification', ''),
             'status': 'pending'  # pending, sent
         }
         execution_queue.append(queue_item)
-        logger.info(f"Queued action from {queue_item['agent_name']}: {queue_item['action'].get('id', 'unknown')}", **queue_item)
+        logger.info(f"Queued action from {queue_item['agent_name']}: {queue_item['action_id']}", **queue_item)
     
     return {
         'execution_queue': execution_queue
@@ -82,36 +79,21 @@ def get_ready_actions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     ready = [action for action in execution_queue if action.get('status') == 'pending']
     return ready
 
+# In the future this function will be used
 
-def mark_action_sent(execution_queue: List[Dict[str, Any]], action: Dict[str, Any]) -> None:
-    """
-    Mark an action as sent and remove it from the queue.
-    Modifies the execution_queue list in-place.
+# def mark_action_sent(execution_queue: List[Dict[str, Any]], action: Dict[str, Any]) -> None:
+#     """
+#     Mark an action as sent and remove it from the queue.
+#     Modifies the execution_queue list in-place.
     
-    Args:
-        execution_queue: The execution queue list
-        action: The action item that was sent
-    """
-    # Find and remove the action from queue
-    for i, item in enumerate(execution_queue):
-        if (item.get('agent_name') == action.get('agent_name') and
-            item.get('action', {}).get('id') == action.get('action', {}).get('id')):
-            execution_queue.pop(i)
-            logger.info(f"Removed sent action from queue: {action.get('agent_name')} - {action.get('action', {}).get('id')}")
-            break
-
-
-def clear_selected_actions(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Clear selected_actions after all actions have been executed.
-    This should be called after the execution queue is empty.
-    
-    Args:
-        state: SupervisorState dict
-        
-    Returns:
-        Dict with cleared selected_actions
-    """
-    return {
-        'selected_actions': []
-    }
+#     Args:
+#         execution_queue: The execution queue list
+#         action: The action item that was sent
+#     """
+#     # Find and remove the action from queue
+#     for i, item in enumerate(execution_queue):
+#         if (item.get('agent_name') == action.get('agent_name') and
+#             item.get('action', {}).get('id') == action.get('action', {}).get('id')):
+#             execution_queue.pop(i)
+#             logger.info(f"Removed sent action from queue: {action.get('agent_name')} - {action.get('action', {}).get('id')}")
+#             break

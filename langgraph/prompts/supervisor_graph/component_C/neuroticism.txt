@@ -1,5 +1,4 @@
-NEUROTICISM_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Neuroticism**.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Neuroticism** trait for the specified users based on their messages.
 
 ## Trait Definition: Neuroticism (N)
 
@@ -18,58 +17,78 @@ Freedom from negative feelings does not mean that low scorers experience a lot o
 
 ## Your Instructions
 
-1.  You must return a JSON object with two keys: `"neuroticism"` and `"justification"`.
-2.  The `"neuroticism"` key must be a binary integer: `1` or `0`.
-3.   The presence of one or more of the following criteria entails assigning a `1` for Neuroticism:
+1.  You will receive a conversation with messages from multiple users.
+2.  For **each user** in the conversation, analyze their messages and determine their Neuroticism level.
+3.  Return a JSON object where each key is the **exact name as it appears in the conversation** (copy-paste the name exactly) and the value contains:
+    * `"score"`: An integer from `1` to `5`:
+        - **1 (Very Low/Emotionally Stable)**: Very calm, rarely stressed, handles adversity well, emotionally resilient
+        - **2 (Low)**: Generally stable, occasional stress but copes well, mostly even-tempered
+        - **3 (Moderate)**: Average emotional reactivity, normal stress responses, some worry
+        - **4 (High)**: Often anxious or stressed, mood swings, tends toward negative emotions
+        - **5 (Very High/Neurotic)**: Frequently overwhelmed, strong negative emotions, difficulty coping, pessimistic
+    * `"confidence"`: A float from `0.0` to `1.0` representing how confident you are:
+        - **0.0-0.3**: Very low confidence - user's messages provide almost no relevant information
+        - **0.3-0.5**: Low confidence - minimal or ambiguous evidence
+        - **0.5-0.7**: Moderate confidence - some clear indicators but limited data
+        - **0.7-0.9**: High confidence - strong, clear evidence of the trait level
+        - **0.9-1.0**: Very high confidence - abundant, unambiguous evidence
+    * `"justification"`: A brief explanation (1-2 sentences) referencing specific messages
+
+4.  Use these criteria to determine the Neuroticism score:
     * Experiencing strong negative emotions (anger, anxiety, sadness, depression)
     * Emotional volatility, mood swings, high irritability
     * Getting stressed easily, worrying
     * Interpreting situations as threatening, pessimism
-    * Difficulty coping with stress or frustrations
-    This corresponds to a trait strength above 0.5.
-   
-4. Otherwise assign `0`.
-5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
-6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+    * Conversely: emotional stability, calmness, resilience, optimism under pressure
 
-## Examples of Analysis
+5.  If a user has very few messages or uninformative messages, assign score `3` with low confidence.
+6.  Your output **MUST** be **ONLY** the valid JSON object. No additional text.
 
-**Example 1:**
-* **Text:** "I just know I'm going to fail this test. I've been a nervous wreck all week and I can't stop worrying. Why does everything always go wrong?"
-* **Output:**
-    ```json
-    {
-      "neuroticism": 1,
-      "justification": "The user demonstrates high Neuroticism by expressing intense anxiety ('nervous wreck', 'can't stop worrying'), pessimism ('know I'm going to fail'), and vulnerability to stress."
-    }
-    ```
+## Example
 
-**Example 2:**
-* **Text:** "The project deadline got moved up, which is a bit of a challenge, but it's no big deal. I'm calm and I'll just re-prioritize my tasks. We'll get it done."
-* **Output:**
-    ```json
-    {
-      "neuroticism": 0,
-      "justification": "The user isn't rattled by the stressful news. Instead of worrying, they describe the problem as 'no big deal' and stay 'calm', immediately focusing on a solution ('re-prioritize'). This indicates emotional stability."
-    }
-    ```
+**Conversation:**
+```
+[2025-01-15 10:00] Alice: The deadline moved up?! This is a DISASTER. I knew something would go wrong. 😫
+[2025-01-15 10:01] Bob: It's fine, we can adjust. Let's just reprioritize.
+[2025-01-15 10:02] Alice: Easy for you to say! I've been stressing about this all week!
+[2025-01-15 10:03] Charlie: What's for lunch?
+[2025-01-15 10:04] Bob: We've handled tighter deadlines before. We got this.
+```
 
-**Example 3:**
-* **Text:** "I'm pretty sure that store is on 5th Street, not 6th."
-* **Output:**
-    ```json
-    {
-      "neuroticism": 0,
-      "justification": "The text is a simple statement of fact and provides no insight into the user's emotional state, anxiety, moodiness, or stress response. Therefore, the trait cannot be confirmed."
-    }
-    ```
+**Output:**
+```json
+{
+  "Alice": {
+    "score": 4,
+    "confidence": 0.80,
+    "justification": "Alice shows high Neuroticism through catastrophizing ('DISASTER'), pessimism ('knew something would go wrong'), and prolonged stress ('stressing about this all week')."
+  },
+  "Bob": {
+    "score": 1,
+    "confidence": 0.75,
+    "justification": "Bob demonstrates emotional stability through calm problem-solving ('we can adjust'), optimism ('We got this'), and not reacting to Alice's stress."
+  },
+  "Charlie": {
+    "score": 3,
+    "confidence": 0.15,
+    "justification": "Charlie's message is off-topic and provides no insight into emotional stability or stress response."
+  }
+}
+```
+
+## Constraints
+
+{{CONSTRAINTS}}
+
+## Previous Analysis
+
+{{EXISTING_ANALYSIS}}
 
 ## Your Task
 
-Analyze the following text and provide your JSON output:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
-**Text:**
-"{{USER_TEXT}}"
+**Conversation:**
+{{CONVERSATION}}
 
 **Output:**
-"""

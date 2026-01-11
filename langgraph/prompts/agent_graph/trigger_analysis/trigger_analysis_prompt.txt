@@ -8,53 +8,97 @@ Agent Name: {agent_name} (This is YOU)
 Agent Type: {agent_type}
 Agent Goal: {agent_goal}
 
+**--- Other Agents in Group ---**
+{other_agents_info}
+
+**--- Agent's Working Memory (Recent Actions) ---**
+This is a log of the specific messages YOU (The agent) have ALREADY processed and acted upon.
+{formatted_recent_actions}
+
 **--- Rules ---**
+1. **The "Turn-Taking" Rule (CRITICAL - HIGHEST PRIORITY):**
+   * **Step 1:** Look at the MOST RECENT message (the one at the very top of the list).
+   * **Step 2:** Check the sender. Is it **{agent_name} (YOU)**?
+   * **DECISION:** If YES (you are the last speaker), you MUST select `"id": "neutral"`.
+   * **Reasoning:** You have just acted. Do not re-analyze messages you already responded to. Wait for a new user input.
+   * **Overriding:** This rule overrides ALL other triggers.
 
-1.  **Output Format**: Your response must be a single, valid JSON object with two keys:
-    * `"id"`: The ID of the detected trigger (must match one from the available triggers list)
-    * `"justification"`: A 2-3 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action.
+2. **Redundancy Guard:**
+   * **Check History:** Look closely at the recent messages marked with **(YOU)**.
+   * **Already Addressed:** If the current situation—whether it's a question you answered, a topic you commented on, or an event you ({agent_name}) reacted via emoji tag (in the reactions tag - `(incl. {agent_name} [YOU])`) to—was **already addressed** by you in the last few messages, do NOT trigger again.
+   * **Prevent Loops:** Do not select triggers for the same specific context you just finished handling. 
+      Select `"neutral"` to avoid repetitive or nagging behavior.
 
-2.  **Select ONE Trigger**: Choose the single most dominant trigger that best describes the current situation. Even if multiple triggers could apply, select the most relevant one.
+3. **The "Already-Handled" Filter (Memory & Context Check):**
+* **Context:** Your `recent_actions` log provides precise IDs, BUT it might be empty or incomplete.
+* **The Goal:** Before choosing a trigger from the list below, verify whether you have *already activated* it for this specific message or situation.
+   * **The Rule:** You must cross-reference TWO sources before triggering on a message/situation:
+     1. **Layer A (Memory Log):** Is the target message ID listed in your `Agent's Working Memory`?
+     2. **Layer B (Visual History):** Scan the `Recent Conversation`. Even if the Memory Log is empty, look for messages/reactions marked with **(YOU)**. Did you already respond to this topic or user in the chat text?
+   * **The Logic:** "Empty Log" does NOT mean "I haven't acted", you should look also at chat history.
+   * **The Decision:** If evidence of action exists in EITHER Layer A or Layer B -> **DISQUALIFY**.
 
-3.  **Default to Neutral**: If no specific trigger condition is met, select the "neutral" trigger. This indicates that no action is currently required from the agent.
-4.  **Check for Self-Reply (Critical):** Pay close attention to the **most recent message** (the first one in the list). 
-      If the most recent message was sent by the agent (check if the sender's name matches the Agent Name provided below), it means the agent has just spoken (which is you).
-      In this case, the trigger is almost always `"neutral"` because the agent just provided a response.
-      Do not select a trigger (like 'direct_mention') based on an older message that the agent *already responded to*.
-5.  **Consider Full Context**: Analyze message timing, content, emotions, conversation flow, and whether the agent is being directly addressed. Use all available information to make your decision.
+4.  **Select ONE Trigger**: Choose the single most dominant trigger that best describes the current situation. 
+      Even if multiple triggers could apply, select the most relevant one.
+      * **Do NOT focus only on the top-most message** - You should pay attention to the whole context you get, and search for triggers.
 
-6.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent. Consider whether messages are directed at this agent, and how they relate to the agent's goal.
+5.  **Default to Neutral**: If no specific trigger condition is met, select the "neutral" trigger. This indicates that no action is currently required from the agent (which is {agent_name}).
 
-7.  **Check for Other-Mention (Critical):** Before selecting a trigger (especially `implicit_follow_up`), check if the most recent message contains **another user's name** that is not you. 
-      If the message is clearly directed at *another person* and not you, the trigger **MUST** be `"neutral"`.
+6.  **Consider Full Context**: Analyze message timing, content, emotions, messages' reactions, conversation flow, and whether the agent ({agent_name}) is being directly addressed. Use all available information to make your decision.
 
-5.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
+7.  **Agent's Perspective**: Remember that you are analyzing from the perspective of the specific agent ({agent_name}). Consider whether messages are directed at this agent, and how they relate to the agent's goal.
+
+8.  **Check for Other-Mention vs. Multi-Mention (Critical):** * **Exclusive Other-Mention:** If the message is clearly directed ONLY at another person (e.g., "Jimmy, what do you think?") and does not mention you, the trigger must be `"neutral"`.
     * **Multi-Mention (INCLUDES YOU):** If the message mentions another person BUT ALSO mentions you (e.g., "{agent_name} and 'name'"), **this IS a direct mention to you**. Do not mark this as neutral just because another name is present.
+     CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey {agent_name}') and being REFERENCED (e.g., 'the place {agent_name} liked', 'I am with {agent_name}').Do not trigger `direct_mention` if the agent is just being REFERENCED in the message.
+ 
+{additional_rules}
+
+ **Output Format**: Your response must be a single, valid JSON object with THREE keys:
+    * `"id"`: The ID of the detected trigger (must match one from the available triggers list)
+    * `"justification"`: A 1-2 sentence explanation for why this trigger was selected. This justification will be used by the Decision Maker component to choose an appropriate action. 
+        **IMPORTANT**: If your justification includes quotes from messages, use single quotes (') instead of double quotes (") to avoid breaking JSON syntax.
+        **CRITICAL REQUIREMENT:** You must explicitly state that you performed the **"Already-Handled" Filter (Memory & Context Check)"** Rule. 
+      - *Example:* "Checked Memory Log (Empty) and History (No '(YOU)' tags found on this topic), so this is a new opportunity to..."
+      - *Example:* "Although Memory Log is empty, History shows I already reacted to ID 988, so selecting neutral."
+    * `"target_message"`: An object with the specific message that triggered this detection (or `null` if not applicable). Should contain:
+      - `"timestamp"`: The timestamp from the message in format "YYYY-MM-DD HH:MM:SS" (extract from the bracketed timestamp)
+      - `"text"`: The text content of the message
 
 **--- Available Triggers ---**
 {triggers_json}
 
 **--- Recent Conversation ---**
+**NOTE:** Messages are ordered with the MOST RECENT at the TOP and OLDEST at the BOTTOM.
+**Message Structure:** Each message follows the format: `[id: message_id][timestamp] sender name [emotion]: message text`
+**Example:** `[id: 123][2025-12-01 14:43:37] James Brown [neutral]: hello`
+**Reactions Note:** Reactions are displayed as `[Emoji]×[Count]`. If a known agent or YOU reacted, their name appears in brackets (e.g., `🔥×2 (incl. X)` means 2 people reacted, one of them is Agent X).
+
+Chat History:
 {recent_messages}
 
-**--- Example Output Format ---**
+**--- Output Examples ---**
+**Example 1 (Specific Message Trigger):**
 {{
   "id": "direct_mention",
-  "justification": "A group member explicitly mentioned the agent by name in their message, asking a direct question. This requires the agent to respond to maintain credibility and engagement."
+  "justification": "The user explicitly asked me a question.",
+  "target_message": {{
+    "timestamp": "2025-11-26 08:36:07",
+    "text": "Hey {agent_name}, what do you think?"
+  }}
 }}
 
-OR
-
+**Example 2 (General Context Trigger):**
 {{
   "id": "discussion_faltering",
-  "justification": "The conversation has become sparse with short, disengaged responses. The energy and depth of the discussion have clearly diminished, indicating an opportunity for the agent to reinvigorate the conversation."
+  "justification": "The conversation has died down, I should revive it.",
+  "target_message": null
 }}
 
-OR
-
-{{
-  "id": "neutral",
-  "justification": "The conversation is flowing naturally without any specific trigger conditions being met. The recent messages do not require agent intervention at this time."
-}}
+**--- Target Message Guidelines ---**
+- Include `target_message` for triggers that relate to a SPECIFIC message: `direct_mention`, `conversation_closer`, `controversial_topic`, `answer_direct_question`, etc.
+- Set `target_message` to `null` for GENERAL triggers that don't relate to a specific message.
+- Extract the timestamp from the bracketed format in the message: `[2025-11-26 08:36:07]` → `"2025-11-26 08:36:07"`
+- The target message is typically the most recent relevant message, or the one being directly responded to
 
 Provide your analysis now:

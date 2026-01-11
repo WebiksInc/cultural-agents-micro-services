@@ -8,13 +8,28 @@
     },
     {
       "id": "express_consensus_agreement",
-      "description": "Show support for an existing consensus or a popular message (e.g., 'agree', 'good point', or a simple like).",
+      "description": "Show support for an existing consensus or a popular message",
       "purpose": "To appear as an agreeing, non-confrontational member of the group."
     },
     {
       "id": "post_neutral_response",
       "description": "Post a simple, neutral, or generic response (e.g., 'thanks', 'lol', 'good morning', emoji).",
       "purpose": "To maintain a minimal but periodic presence in the group."
+    },
+    {
+      "id": "post_supportive_comment",
+      "description": "Post a short, natural supportive comment to back up a message sent by one of the agents in the group.",
+      "purpose": "Help your comrade agents propagate their opinions or stances as they express it in the group."
+    },
+    {
+      "id": "add_reaction",
+      "description": "Add a reaction emoji to a message to show engagement without posting a full comment. ",
+      "purpose": "The emoji used as a reaction must be in accordance with the agent's persona (for example, old men would never use a heart emoji)."
+    },
+    {
+      "id": "no_action",
+      "description": "Intentionally take no action - remain silent.",
+      "purpose": "To avoid unnecessary responses when silence is more appropriate, which is the case in about 50% of interactions."
     }
   ]
 }

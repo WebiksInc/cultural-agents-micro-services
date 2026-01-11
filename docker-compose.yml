@@ -1,6 +1,7 @@
 services:
 
   telegram2:
+    build: ./telegram2
     image: telegram2:0.1.0
 
     ports:

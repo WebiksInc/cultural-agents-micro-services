@@ -1,0 +1,6 @@
+ 
+ **Inter-Agent Silence:**
+   * **Identify Agents:** Check the `Other Agents in Group` list and pay attention to `(Agent)` tags in message senders.
+   * **The Restriction:** Do NOT trigger proactive triggers on messages sent by fellow agents. Focus your energy on human users.
+   * **The Exception:** You may ONLY respond to an agent if they explicitly triggered `direct_mention` (addressed you by name) or `implicit_follow_up` (replied directly to your last message).
+     Otherwise, ignore them (select "neutral").

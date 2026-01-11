@@ -1,26 +1,32 @@
-"""
-Executor Node - Executes actions from the execution queue
-
-Responsibilities:
-1. Get ready actions from execution_queue
-2. Send messages to Telegram using agent phone numbers
-3. Remove executed actions from queue and selected_actions
-4. Return control for next polling cycle
-"""
-
-import logging
 from typing import Dict, Any
 from logs.logfire_config import get_logger
-from nodes.supervisor.scheduler import get_ready_actions, mark_action_sent
-
-# Import Telegram sending function
+from logs import log_node_start
+# from nodes.supervisor.scheduler import get_ready_actions, mark_action_sent
+from nodes.supervisor.scheduler import get_ready_actions
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from telegram_exm import send_telegram_message
+from telegram_exm import *
+from utils import get_most_recent_message_timestamp, convert_timestamp_to_iso
+from memory import save_action
+import time
+from datetime import datetime, timezone
 
-# Configure logging
 logger = get_logger(__name__)
+
+
+def calculate_typing_duration(content: str) -> int:
+    # Base calculation: ~100ms per character, but with bounds
+    # Average reading/typing speed: about 10-15 chars per second
+    char_count = len(content)
+    
+    # Calculate duration: 100ms per character
+    duration = char_count * 100
+    
+    # Clamp between 2 seconds (2000ms) and 8 seconds (8000ms)
+    duration = max(2000, min(8000, duration))
+    
+    return duration
 
 
 def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -29,6 +35,7 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     Executes all ready actions from the execution queue by sending them to Telegram.
     Removes executed actions from both execution_queue and selected_actions.
+    Updates action_timestamp in agents_recent_actions after successful execution.
     
     Args:
         state: SupervisorState dict containing execution_queue and group_metadata
@@ -36,9 +43,18 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict with cleared execution_queue and selected_actions
     """
+    log_node_start("executor", {
+        "execution_queue_count": len(state.get('execution_queue', []))
+    }, supervisor_state=state)
+    
     execution_queue = state.get('execution_queue', [])
     group_metadata = state.get('group_metadata', {})
     chat_id = group_metadata.get('id', '')
+    recent_messages = state.get('recent_messages', [])
+    agents_recent_actions = state.get('agents_recent_actions', {})
+    
+    # Get the most recent message timestamp for comparison
+    most_recent_timestamp = get_most_recent_message_timestamp(recent_messages)
     
     # If queue is empty, nothing to execute
     if not execution_queue:
@@ -55,52 +71,173 @@ def executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         logger.info("Executor: No ready actions in queue")
         return {}
     
-    logger.info(f"Executor: Executing {len(ready_actions)} actions")
+    logger.info(f"Executor: Executing {len(ready_actions)} actions", supervisor_state=state)
+    
+    # Track successful executions for timestamp updates
+    executed_agents = []
+    
+    # Get group name for action logging
+    group_name = group_metadata.get('name', 'Unknown Group')
     
     # Execute each action
     executed_count = 0
     for action in ready_actions:
         agent_name = action.get('agent_name', 'unknown')
-        action_id = action.get('action', {}).get('id', 'unknown')
+        action_id = action.get('action_id', 'unknown')
         action_content = action.get('action_content', '')
         phone_number = action.get('phone_number', '')
+        target_message = action.get('target_message')
+        
+        # Get trigger info for action logging
+        trigger_id = action.get('trigger_id', 'unknown')
+        trigger_justification = action.get('trigger_justification', '')
+        action_purpose = action.get('action_purpose', '')
+        
+        # Extract triggered_by_msg and msg_id from target_message
+        triggered_by_msg = ''
+        triggered_by_msg_id = ''
+        if target_message and isinstance(target_message, dict):
+            triggered_by_msg = target_message.get('text', '')
+            triggered_by_msg_id = str(target_message.get('message_id', ''))
         
         logger.info(f"Executing action '{action_id}' from {agent_name}")
         
         if not phone_number:
             logger.error(f"No phone number for agent {agent_name}")
-            mark_action_sent(execution_queue, action)
             continue
         
         if not action_content:
             logger.error(f"No message content for action from {agent_name}")
-            mark_action_sent(execution_queue, action)
             continue
         
-        logger.info(f"Sending message from {agent_name} ({phone_number}) to {chat_id}")
-        logger.info(f"Message preview: {action_content[:100]}...")
+        # Convert timestamp and determine if we should use reply
+        # Only use reply if target message is NOT the most recent message (unless it's a reaction)
+        reply_timestamp = None
+        if target_message and isinstance(target_message, dict):
+            timestamp_str = target_message.get('timestamp', '')
+            if timestamp_str:
+                # Convert to ISO format for Telegram API
+                reply_timestamp = convert_timestamp_to_iso(timestamp_str)
+                
+                if not reply_timestamp:
+                    logger.warning(f"Failed to convert timestamp '{timestamp_str}'")
+                else:
+                    # For reactions, we always need the timestamp
+                    # For regular messages, only use reply if target is not the most recent
+                    if action_id != "add_reaction":
+                        is_most_recent = (timestamp_str == most_recent_timestamp)
+                        if is_most_recent:
+                            logger.info(f"Target message is the most recent - skipping reply (no need to quote)")
+                            reply_timestamp = None
+                        else:
+                            logger.info(f"Target message is older - using reply: {timestamp_str} -> {reply_timestamp}")
+                    else:
+                        logger.info(f"Reaction target: {timestamp_str} -> {reply_timestamp}")
         
-        # Send message to Telegram
-        response = send_telegram_message(
-            from_phone=phone_number,
-            to_target=chat_id,
-            content_value=action_content,
-            reply_to_timestamp=None
-        )
+        # Route based on action_id
+        if action_id == "add_reaction":
+            # For add_reaction, use add_reaction_to_message
+            if not reply_timestamp:
+                logger.error(f"add_reaction action requires target_message with timestamp, but none provided")
+                continue
+            
+            # For reactions, action_content contains the emoji
+            emoji = action_content.strip()
+            logger.info(f"Adding reaction '{emoji}' from {agent_name} ({phone_number}) to message at {reply_timestamp}")
+            
+            response = add_reaction_to_message(
+                phone=phone_number,
+                chat_id=chat_id,
+                message_timestamp=reply_timestamp,
+                emoji=emoji
+            )
+            
+            if response and response.get("success"):
+                logger.info(f"Successfully added reaction from {agent_name}")
+                executed_count += 1
+                executed_agents.append((agent_name, action_id))
+                
+                # Log action to memory
+                save_action(
+                    chat_id=chat_id,
+                    agent_name=agent_name,
+                    group_name=group_name,
+                    trigger_detected=trigger_id,
+                    triggered_by_msg=triggered_by_msg,
+                    triggered_by_msg_id=triggered_by_msg_id,
+                    action_reason=trigger_justification,
+                    action_id=action_id,
+                    action_content=emoji
+                )
+            else:
+                logger.error(f"ERROR: Failed to add reaction from {agent_name}: {response.get('error', 'Unknown error')}")
         
-        if response and response.get("success"):
-            logger.info(f"✓ Successfully sent message from {agent_name}")
-            executed_count += 1
         else:
-            logger.error(f"✗ Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
-        
-        # Mark as sent (remove from queue) regardless of success to avoid infinite retries
-        mark_action_sent(execution_queue, action)
-    
+            # For all other actions, use send_telegram_message
+            # First, show typing indicator
+            typing_duration = calculate_typing_duration(action_content)
+            # logger.info(f"Showing typing indicator from {agent_name} for {typing_duration}ms")
+            
+            try:
+                show_typing_indicator(
+                    phone=phone_number,
+                    chatId=chat_id,
+                    duration=typing_duration
+                )
+                # Wait for typing indicator to complete
+                time.sleep(typing_duration / 750)  # Slightly less than duration to account for processing time
+            except Exception as e:
+                logger.warning(f"Failed to show typing indicator: {e}")
+            
+            # Now send the actual message
+            logger.info(f"Sending message from {agent_name} ({phone_number}) to {chat_id}")
+            
+            response = send_telegram_message(
+                from_phone=phone_number,
+                to_target=chat_id,
+                content_value=action_content,
+                reply_to_timestamp=reply_timestamp  # Use if available, None otherwise
+            )
+            
+            if response and response.get("success"):
+                logger.info(f"Successfully sent message from {agent_name}")
+                executed_count += 1
+                executed_agents.append((agent_name, action_id))
+                
+                # Log action to memory
+                save_action(
+                    chat_id=chat_id,
+                    agent_name=agent_name,
+                    group_name=group_name,
+                    trigger_detected=trigger_id,
+                    triggered_by_msg=triggered_by_msg,
+                    triggered_by_msg_id=triggered_by_msg_id,
+                    action_reason=trigger_justification,
+                    action_id=action_id,
+                    action_content=action_content
+                )
+            else:
+                logger.error(f"ERROR: Failed to send message from {agent_name}: {response.get('error', 'Unknown error')}")
+        if len(ready_actions) > 1:
+            time.sleep(2)  # Short delay between actions 
     logger.info(f"Executor: Executed {executed_count}/{len(ready_actions)} actions successfully")
     
-    # Clear both execution_queue and selected_actions after execution
+    # Update action_timestamp for successfully executed actions in agents_recent_actions
+    # We update the records in-place since they're mutable dicts
+    execution_timestamp = datetime.now(timezone.utc).isoformat()
+    
+    for agent_name, action_id in executed_agents:
+        if agent_name in agents_recent_actions:
+            agent_actions = agents_recent_actions[agent_name]
+            # Find the most recent action with matching action_id and no timestamp
+            for action_record in reversed(agent_actions):
+                if (action_record.get('action_id') == action_id and 
+                    action_record.get('action_timestamp') is None):
+                    action_record['action_timestamp'] = execution_timestamp
+                    logger.info(f"Updated action_timestamp for {agent_name}'s action {action_id}")
+                    break
+    
     return {
-        'execution_queue': execution_queue,  # Now empty after mark_action_sent calls
-        'selected_actions': []  # Clear for next cycle
+        'execution_queue': execution_queue,
+        'selected_actions': "CLEAR"
     }

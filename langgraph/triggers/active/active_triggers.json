@@ -3,9 +3,12 @@
   "triggers": [
     {
       "id": "direct_mention",
-      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
+      "description": "Agent was directly addressed by a group member (e.g., @{agent_name} or replying directly to the agent).EXCEPTION: If the message is merely a short acknowledgment containing the name (e.g., Thanks {agent_name}, Ok {agent_name}), classify it as 'conversation_closer', NOT 'direct_mention'. CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey {agent_name}') and being REFERENCED (e.g., 'the place {agent_name} liked', 'I am with {agent_name}'). Only trigger if the agent is the intended recipient of the message.",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction",
+        "expand_already_lively_discussion",
+        "change_narrative"
       ]
     },
      {
@@ -14,7 +17,8 @@
       "suggested_actions": [
         "answer_direct_question",
         "show_interest",
-        "expand_discussion"
+        "expand_already_lively_discussion",
+        "add_reaction"
       ]
     },
     {
@@ -23,7 +27,7 @@
       "suggested_actions": [
         "initiate_discussion",
         "change_narrative",
-        "expand_discussion"
+        "expand_already_lively_discussion"
       ]
     },
     {
@@ -37,11 +41,19 @@
       "id": "discussion_faltering",
       "description": "An ongoing discussion is losing momentum or needs to be stoked to generate more engagement.",
       "suggested_actions": [
-        "expand_discussion",
+        "expand_already_lively_discussion",
         "show_interest",
         "change_narrative",
         "initiate_discussion"
       ]
+    },
+    {
+      "id": "conversation_closer",
+      "description": "A short acknowledgment (e.g., 'Thanks', 'Ok', 'Cool', 'Received') or emoji. this is usually a **Conversation Closer** which doesn't merit a reply. CRITICAL CONDITION: Select this ONLY if the message is a reply TO THE AGENT or closes a thread THE AGENT was participating in. If User A says 'thanks' to User B (and the agent is not involved), classify this as 'neutral'. Do not react to strangers' goodbyes.",
+      "suggested_actions": [
+        "no_action",
+        "add_reaction"
+      ]   
     },
     {
       "id": "neutral",

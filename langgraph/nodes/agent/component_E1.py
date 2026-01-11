@@ -2,29 +2,23 @@ import json
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.chat_models import init_chat_model
+import logfire
 
 # utilities
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings
+from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt, format_personality_summary
 from logs.logfire_config import get_logger
-from logs import log_node_start, log_prompt, log_node_output, log_state
+from logs import log_node_start, log_node_output, log_state
+from utils import get_messages_replies
+
 
 # Configure logging
 logger = get_logger(__name__)
 
 
 def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Component E.1: Text Generator Node
-    
-    Generates response content based on selected action and conversation context.
-    Modifies the state in-place by setting generated_response.
-    
-    Args:
-        state: AgentState dict containing agent_prompt, selected_action, recent_messages, etc.
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
@@ -40,23 +34,28 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     recent_messages = state.get('recent_messages', [])
     selected_persona = state.get('selected_persona', {})
     agent_goal = state.get('agent_goal', 'No goal specified')
+    agent_type = state.get('agent_type', 'unknown')
     group_sentiment = state.get('group_sentiment', 'No sentiment analysis available')
     actions = state.get('actions', {})
     group_metadata = state.get('group_metadata', {})
-    
+    agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
     # Validate selected_action
     if not selected_action:
         logger.error("No selected_action - cannot generate response")
-        state['generated_response'] = None
-        return
+        return {
+            'generated_response': None,
+            'current_node': 'text_generator'
+        }
     
     action_id = selected_action.get('id')
     action_purpose = selected_action.get('purpose', 'No purpose specified')
     
     if not action_id:
         logger.error("selected_action missing 'id' field")
-        state['generated_response'] = None
-        return
+        return {
+            'generated_response': None,
+            'current_node': 'text_generator'
+        }
     
     # Get full action details (description)
     action_description = 'No description available'
@@ -66,37 +65,80 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
             action_description = action.get('description', 'No description available')
             break
         
-    # Format recent messages as JSON
-    recent_messages_json = json.dumps(recent_messages, indent=2, default=str)
+    # Format recent messages with (YOU) marker and reply annotations
+    # Get replies to agent's messages for context
+    messages_replies = get_messages_replies(selected_persona, recent_messages)
     
-    # Format persona as JSON
-    persona_json = json.dumps(selected_persona, indent=2)
+    recent_messages_formatted = [
+        format_message_for_prompt(
+            msg, 
+            include_timestamp=True, 
+            include_emotion=True, 
+            selected_persona=selected_persona,
+            messages_replies=messages_replies,
+            recent_messages=recent_messages
+        )
+        for msg in recent_messages
+    ]
+    recent_messages_json = json.dumps(recent_messages_formatted, indent=2, ensure_ascii=False, default=str)
     
+    # Format persona as JSON (exclude phone_number)
+    persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
+    persona_json = json.dumps(persona_for_prompt, indent=2, ensure_ascii=False)
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E1/component_E1_prompt.txt")
+    
+    # Get other agents info for group context
+    other_agents_info = format_other_agents_for_prompt(agent_name)
+    recent_actions = state.get('recent_actions', [])
+    formatted_recent_actions = format_recent_actions(recent_actions)
+    
+    # Format participants' personality summary
+    participants_personality_summary = format_personality_summary(recent_messages)
+    
+    # Build additional rules based on agent type
+    additional_rules = ""
+    e1_rules_file_map = {
+        "chaos": "agent_graph/E1/rules/chaos_rules.txt"
+    }
+    if agent_type in e1_rules_file_map:
+        try:
+            additional_rules = load_prompt(e1_rules_file_map[agent_type])
+        except FileNotFoundError:
+            logger.warning(f"E1 rules file not found for agent type: {agent_type}")
+    
     main_prompt = prompt_template.format(
+        agent_name=agent_name,
         agent_goal=agent_goal,
+        formatted_recent_actions=formatted_recent_actions,
         action_id=action_id,
         action_description=action_description,
         action_purpose=action_purpose,
         name=group_metadata.get('name', 'Unknown'),
         topic=group_metadata.get('topic', 'No topic provided'),
         group_sentiment=group_sentiment,
+        participants_personality_summary=participants_personality_summary,
+        other_agents_info=other_agents_info,
         recent_messages_json=recent_messages_json,
-        persona_json=persona_json
+        persona_json=persona_json,
+        additional_rules=additional_rules
     )
     
     # If there's validation feedback, prepend it to the prompt for retry
     validation_feedback = state.get('validation_feedback')
     if validation_feedback:
-        logger.info(f"Retry attempt - including validation feedback")
+        logger.info(f"Retry attempt - including validation feedback {agent_name}")
+        previous_response = state.get('generated_response', 'No previous response available')
         feedback_note = f"""
                             IMPORTANT - PREVIOUS ATTEMPT FAILED VALIDATION 
 
-                            Your previous response was rejected for the following reason:
+                            Your previous response was:
+                            "{previous_response}"
+
+                            It was rejected for the following reason:
                             {validation_feedback}
 
-                            Please generate a NEW response that addresses this issue while still fulfilling the action purpose.
+                            Generate a NEW response that addresses this issue while still fulfilling the action purpose.
                             Focus on fixing the specific problem mentioned above."""
                                                                   
         main_prompt = feedback_note + main_prompt
@@ -109,8 +151,7 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         provider = model_settings['provider']
         
         # Log prompt to Logfire (including system prompt)
-        try:
-            import logfire
+        try:      
             display_name = f"text_generator ({agent_name})"
             logfire.info(f"📝 Prompt for {display_name}", **{
                 "component": "text_generator",
@@ -139,14 +180,20 @@ def text_generator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         response = model.invoke(messages)
         response_text = response.content.strip()
-        
-        # Log output to Logfire
-        log_node_output("text_generator", {"generated_response": response_text}, agent_name=agent_name)
-        log_state("text_generator", state, "exit")
-        
-        # Return generated response
+        result = json.loads(response_text)
+        thought_process = result.get('thought_process', 'No thought process provided')
+        generated_response = result.get('message', None)
+        output = {
+                    'E1': {
+                        "approved": True,
+                        "thought process": thought_process,
+                        "response": generated_response
+                    }
+        }
+        log_node_output("text_generator", output['E1'], agent_name=agent_name)
+        log_state("text_generator_exit", {**state, **output}, "agent")
         return {
-            'generated_response': response_text,
+            'generated_response': generated_response,
             'current_node': 'text_generator'
         }
         

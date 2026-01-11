@@ -7,9 +7,9 @@
       "purpose": "To proactively start a conversation and steer it towards the agent's goal."
     },
     {
-      "id": "expand_discussion",
-      "description": "Expand on an existing discussion by adding new information, asking follow-up questions, or relating it to a broader topic.",
-      "purpose": "To deepen the conversation and increase engagement among participants."
+      "id": "expand_already_lively_discussion",
+      "description": "Expand on an existing discussion that is being talked about in the group by one of the following: adding new information, or asking a single follow-up question.",
+      "purpose": "To deepen the conversation if it pertains to your goal, and increase engagement among participants in a natural, not forced manner. Find like-minded people."
     },
     {
       "id": "change_narrative",
@@ -23,9 +23,18 @@
     },
     {
       "id": "answer_direct_question",
-      "description": "Provide a direct answer to a question that was explicitly aimed at the agent.",
-      "purpose": "To maintain credibility and fulfill the agent's role when called upon."
+      "description": "Respond directly to a specific prompt, question, invitation, or mention that was explicitly addressed to the agent.",
+      "purpose": "To provide a direct reply and to maintain credibility and fulfill the agent's role when called upon."
+    },
+    {
+      "id": "add_reaction",
+      "description": "React to the target message with a single emoji instead of sending a text response.",
+      "purpose": "To provide quick validation, show agreement, or acknowledge a 'Conversation Closer' (like 'Thanks' or a single emoji) without cluttering the chat or forcing the conversation to continue unnecessarily."
+    },
+    {
+      "id": "no_action",
+      "description": "Intentionally take no action - remain silent.",
+      "purpose": "To avoid unnecessary responses when silence is more appropriate, which is the case in about 50% of interactions."
     }
-    
   ]
 }

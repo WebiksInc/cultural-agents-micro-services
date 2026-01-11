@@ -1,5 +1,4 @@
-EXTRAVERSION_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Extraversion**.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Extraversion** trait for the specified users based on their messages.
 
 ## Trait Definition: Extraversion (E)
 
@@ -9,60 +8,82 @@ They tend to be enthusiastic and action-oriented. They possess high group visibi
 
 Introverts have lower social engagement than extraverts. They tend to seem quiet, low-key, deliberate, and less involved in the social world. 
 Their lack of social involvement should not be interpreted as shyness or depression, but as greater independence of their social world than extraverts. 
-Introverts need less stimulation and more time alone than extraverts. This does not mean that they are unfriendly or antisocial; rather, they are aloof and reserved in social situations. 
-Generally, people are a combination of extraversion and introversion.
+Introverts need less stimulation and more time alone than extraverts. This does not mean that they are unfriendly or antisocial; rather, they are aloof and reserved in social situations.
 
 ## Your Instructions
 
-1.  You must return a JSON object with two keys: `"extraversion"` and `"justification"`.
-2.  The `"extraversion"` key must be a binary integer: `1` or `0`.
-3.  The presence of one or more of the following criteria entails assigning a `1` for Extraversion:
+1.  You will receive a conversation with messages from multiple users.
+2.  For **each user** in the conversation, analyze their messages and determine their Extraversion level.
+3.  Return a JSON object where each key is the **exact name as it appears in the conversation** (copy-paste the name exactly) and the value contains:
+    * `"score"`: An integer from `1` to `5`:
+        - **1 (Very Low/Introverted)**: Strongly prefers solitude, finds social interaction draining, very reserved
+        - **2 (Low/Somewhat Introverted)**: Generally prefers smaller groups or alone time, quiet in social settings
+        - **3 (Moderate/Ambivert)**: Balanced - enjoys both social interaction and solitude depending on context
+        - **4 (High/Extraverted)**: Enjoys social interaction, talkative, energetic in groups
+        - **5 (Very High/Strongly Extraverted)**: Thrives on social interaction, very outgoing, seeks to be center of attention
+    * `"confidence"`: A float from `0.0` to `1.0` representing how confident you are:
+        - **0.0-0.3**: Very low confidence - user's messages provide almost no relevant information
+        - **0.3-0.5**: Low confidence - minimal or ambiguous evidence
+        - **0.5-0.7**: Moderate confidence - some clear indicators but limited data
+        - **0.7-0.9**: High confidence - strong, clear evidence of the trait level
+        - **0.9-1.0**: Very high confidence - abundant, unambiguous evidence
+    * `"justification"`: A brief explanation (1-2 sentences) referencing specific messages
+
+4.  Use these criteria to determine the Extraversion score:
     * Enjoying interaction with people, being talkative, starting conversations
     * Being energetic, enthusiastic, action-oriented
     * Assertiveness, high visibility in groups, enjoying being the center of attention
+    * Conversely: preferring solitude, finding social interaction draining, being reserved
 
-4.  Otherwise assign `0`.
-5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
-6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+5.  **Note:** Message frequency alone does not indicate extraversion. Focus on the *content* of messages.
+6.  If a user has very few messages or uninformative messages, assign score `3` with low confidence.
+7.  Your output **MUST** be **ONLY** the valid JSON object. No additional text.
 
-## Examples of Analysis
+## Example
 
-**Example 1:**
-* **Text:** "Just got back from the conference! I was so energized, I must have talked to 50 new people. I'm definitely the life of the party. Can't wait for the next mixer."
-* **Output:**
-    ```json
-    {
-      "extraversion": 1,
-      "justification": "The user demonstrates high Extraversion by feeling 'energized' from social interaction, meeting '50 new people', enjoying being the 'life of the party', and seeking out social events."
-    }
-    ```
+**Conversation:**
+```
+[2025-01-15 10:00] Alice: OMG everyone!! I just had the BEST weekend! Met so many amazing people at the festival! 🎉
+[2025-01-15 10:01] Bob: Nice.
+[2025-01-15 10:02] Alice: We should all get together this weekend! Who's in??
+[2025-01-15 10:03] Charlie: I'd rather stay home and read tbh. Crowds aren't my thing.
+[2025-01-15 10:04] Alice: Come on Charlie! It'll be fun! The more the merrier!
+```
 
-**Example 2:**
-* **Text:** "I'm skipping the big office party tonight. I find large social gatherings completely draining. I much prefer spending a quiet evening alone or with just one or two close friends."
-* **Output:**
-    ```json
-    {
-      "extraversion": 0,
-      "justification": "The user describes large social gatherings as 'draining' and expresses a clear preference for 'spending a quiet evening alone', indicating low Extraversion (Introversion)."
-    }
-    ```
+**Output:**
+```json
+{
+  "Alice": {
+    "score": 5,
+    "confidence": 0.88,
+    "justification": "Alice shows high Extraversion through enthusiasm about social events ('BEST weekend', 'met so many amazing people'), actively organizing group activities, and encouraging others to join."
+  },
+  "Bob": {
+    "score": 3,
+    "confidence": 0.2,
+    "justification": "Bob's single-word response provides minimal insight into extraversion. Defaulting to moderate with low confidence."
+  },
+  "Charlie": {
+    "score": 2,
+    "confidence": 0.8,
+    "justification": "Charlie explicitly prefers solitude ('stay home and read') and dislikes crowds, indicating introversion."
+  }
+}
+```
 
-**Example 3:**
-* **Text:** "I'm trying to decide what to have for dinner. Maybe pasta."
-* **Output:**
-    ```json
-    {
-      "extraversion": 0,
-      "justification": "The text describes a simple daily decision and provides no information about the user's social preferences or how they gain energy. Therefore, the trait cannot be confirmed."
-    }
-    ```
+## Constraints
+
+{{CONSTRAINTS}}
+
+## Previous Analysis
+
+{{EXISTING_ANALYSIS}}
 
 ## Your Task
 
-Analyze the following text and provide your JSON output:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
-**Text:**
-"{{USER_TEXT}}"
+**Conversation:**
+{{CONVERSATION}}
 
 **Output:**
-"""

@@ -2,3 +2,18 @@ telegram2/Telegram2-API.postman_collection.json
 .github/prompts/readTelegram.prompt.md
 telegram2/src/vars.ts
 volumes
+langgraph/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+
+.github/.github.prompt.md
+langgraph/.env
+langgraph/llms-full.txt
+langgraph/auth.py
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/

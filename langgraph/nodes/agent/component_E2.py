@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings
+from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
@@ -16,26 +16,17 @@ logger = get_logger(__name__)
 
 
 def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Component E.2: Styler Node
-    
-    Stylizes the generated response to match the agent's persona.
-    Modifies the state in-place by setting styled_response.
-    
-    Args:
-        state: AgentState dict containing generated_response, selected_persona, agent_prompt, etc.
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
     
     log_node_start("styler", agent_name=agent_name)
     log_state("styler", state, "entry")
-    # logger.info("Starting Styler (E.2)")
     
     # Get required inputs
     generated_response = state.get('generated_response')
     agent_prompt = state.get('agent_prompt', '')
+    recent_messages = state.get('recent_messages', [])
     
     # Validate generated_response
     if not generated_response:
@@ -45,16 +36,29 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
             'current_node': 'styler'
         }
     
-    # logger.info(f"Styling response ({len(generated_response)} chars)")
+    # Format selected_persona as JSON (exclude phone_number)
+    persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
+    selected_persona_json = json.dumps(persona_for_prompt, indent=2, ensure_ascii=False)
     
-    # Format selected_persona as JSON
-    selected_persona_json = json.dumps(selected_persona, indent=2)
-    
+    recent_messages_formatted = [
+        format_message_for_prompt(
+            msg, 
+            include_timestamp=True, 
+            include_emotion=True, 
+            selected_persona=selected_persona,
+            recent_messages=recent_messages
+        )
+        for msg in recent_messages
+    ]
+    recent_messages_json = json.dumps(recent_messages_formatted, indent=2, ensure_ascii=False, default=str)
     # Build the main prompt
     prompt_template = load_prompt("agent_graph/E2/component_E2_prompt.txt")
     main_prompt = prompt_template.format(
         generated_response=generated_response,
-        selected_persona=selected_persona_json
+        selected_persona=selected_persona_json,
+        recent_messages=recent_messages_json,
+        agent_name=agent_name
+    
     )
     
     try:
@@ -66,9 +70,7 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         # Log prompt to Logfire
         log_prompt("styler", main_prompt, model_name, temperature, agent_name=agent_name)
-        
-        # logger.info(f"Using model: {model_name} (temperature: {temperature})")
-        
+                
         model = init_chat_model(
             model=model_name,
             model_provider=provider,
@@ -83,9 +85,6 @@ def styler_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
         response = model.invoke(messages)
         response_text = response.content.strip()
-        
-        # logger.info(f"Styled response ({len(response_text)} chars): {response_text[:100]}...\n")
-        print(("-" * 80))
         
         # Log output to Logfire
         log_node_output("styler", {"styled_response": response_text}, agent_name=agent_name)

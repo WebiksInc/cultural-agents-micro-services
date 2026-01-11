@@ -1,7 +1,7 @@
-OPENNESS_PROMPT = """
-You are an expert psychological analyst. Your task is to analyze the provided text and determine if the author exhibits the personality trait of **Openness**.
+You are an expert psychological analyst. Your task is to analyze a conversation and determine the **Openness** trait for the specified users based on their messages.
 
 ## Trait Definition: Openness (O)
+
 Openness as a trait is characterized by **intrinsic intellectual curiosity**, openness to emotion, sensitivity to beauty, and a willingness to try new things. 
 Openness to experience is a general appreciation for art, emotion, adventure, unusual ideas, imagination, curiosity, and variety of experience. 
 People with high Openness tend to be, when compared to closed people, more creative and more aware of their feelings. 
@@ -13,60 +13,83 @@ to be dogmatic and closed-minded.
 
 ## Your Instructions
 
-1.  You must return a JSON object with two keys: `"openness"` and `"justification"`.
-2.  The `"openness"` key must be a binary integer: `1` or `0`.
-3.  The presence of one or more of the following criteria entails assigning a `1` for Openness:
-    * Evidence of **actively seeking** new things, willingness to adopt new ideas, seeking adventure or variety
-    * Creative thinking, very active imagination
-    * Intrinsic Intellectual curiosity, engaging with abstract ideas
-    * Interest and appreciation for art and for the human emotional experience
-    This corresponds to a trait strength above 0.5.
-4.  Otherwise assign `0`:
-* **Emotion vs. Reflection:** Simply *experiencing* or *describing* a strong emotion (like sadness, anger, or loneliness). Experiencing emotion is universal; Openness is the tendency to be intellectually curious about or reflect abstractly upon these experiences.
-     **Passive Observation vs. Active Seeking:** Simply *passively observing* or *commenting on* new life circumstances (e.g., "This new job has a lot of new procedures," "Moving to a new city is a big change"). This is a common situation, not a personality trait. Openness requires evidence of *actively seeking out* novelty.
-     **Pragmatic Problem-Solving vs. Intellectual Curiosity:** "Curiosity" that is purely pragmatic and self-interested (e.g., "I'm trying to figure out how to fix my leaky faucet"). True Openness is characterized by curiosity about *abstract ideas* or the world at large, not just solving a personal, practical problem.
-  
-5.  The `"justification"` key must be a string explaining your reasoning in 1-2 sentences, referencing specific parts of the text if possible.
-6.  Your output **MUST** be **ONLY** the valid JSON object. Do not include any other text, preambles, or explanations before or after the JSON.
+1.  You will receive a conversation with messages from multiple users.
+2.  For **each user** in the conversation, analyze their messages and determine their Openness level.
+3.  Return a JSON object where each key is the **exact name as it appears in the conversation** (copy-paste the name exactly) and the value contains:
+    * `"score"`: An integer from `1` to `5`:
+        - **1 (Very Low/Closed)**: Strongly prefers routine, dislikes change, pragmatic, conventional, resistant to new ideas
+        - **2 (Low)**: Generally prefers familiarity, limited curiosity, practical over abstract
+        - **3 (Moderate)**: Balanced - open to some new experiences but also values stability
+        - **4 (High)**: Curious, creative, enjoys new ideas and experiences, appreciates art/beauty
+        - **5 (Very High/Very Open)**: Extremely curious, highly creative, seeks novelty, deeply engaged with abstract ideas and art
+    * `"confidence"`: A float from `0.0` to `1.0` representing how confident you are:
+        - **0.0-0.3**: Very low confidence - user's messages provide almost no relevant information
+        - **0.3-0.5**: Low confidence - minimal or ambiguous evidence
+        - **0.5-0.7**: Moderate confidence - some clear indicators but limited data
+        - **0.7-0.9**: High confidence - strong, clear evidence of the trait level
+        - **0.9-1.0**: Very high confidence - abundant, unambiguous evidence
+    * `"justification"`: A brief explanation (1-2 sentences) referencing specific messages
 
-## Examples of Analysis
+4.  Use these criteria to determine the Openness score:
+    * Evidence of **actively seeking** new things, willingness to adopt new ideas
+    * Creative thinking, active imagination
+    * Intrinsic intellectual curiosity, engaging with abstract ideas
+    * Interest and appreciation for art and emotional experiences
+    * Conversely: preference for routine, resistance to change, pragmatic thinking
 
-**Example 1:**
-* **Text:** "I spent the weekend trying out a class on abstract painting, and then I read a fascinating article about string theory. I just love exploring different, complex concepts."
-* **Output:**
-    ```json
-    {
-      "openness": 1,
-      "justification": "The user demonstrates high Openness by actively seeking out new, creative ('abstract painting'), and abstract subjects ('string theory') and explicitly stating they 'love exploring different, complex concepts'."
-    }
-    ```
+5.  **Important distinctions:**
+    * Passive observation of new things ≠ Openness (must be *actively seeking*)
+    * Pragmatic problem-solving ≠ intellectual curiosity
+    * Simply experiencing emotions ≠ Openness (must show reflection/curiosity)
 
-**Example 2:**
-* **Text:** "I don't really get the point of traveling or trying all this weird new food. I know what I like, and I prefer to stick to my routine. It's just more comfortable."
-* **Output:**
-    ```json
-    {
-      "openness": 0,
-      "justification": "The user expresses a strong preference for routine ('stick to my routine') and a clear dislike for new experiences ('don't see the point of traveling'), indicating low Openness."
-    }
-    ```
+6.  If a user has very few messages or uninformative messages, assign score `3` with low confidence.
+7.  Your output **MUST** be **ONLY** the valid JSON object. No additional text.
 
-**Example 3:**
-* **Text:** "I'm heading to the store to pick up some milk and eggs. I'll be back in about an hour."
-* **Output:**
-    ```json
-    {
-      "openness": 0,
-      "justification": "The text is purely informational and provides no insight into the user's personality traits like creativity, curiosity, or appreciation for novelty. Therefore, the trait cannot be confirmed."
-    }
-    ```
+## Example
+
+**Conversation:**
+```
+[2025-01-15 10:00] Alice: Has anyone read about quantum entanglement? I find it fascinating how particles can be connected across distances!
+[2025-01-15 10:01] Bob: Sounds like sci-fi nonsense to me. I stick to what's practical.
+[2025-01-15 10:02] Alice: I also started learning watercolor painting last week. Art is such a beautiful way to express emotions.
+[2025-01-15 10:03] Charlie: Cool.
+[2025-01-15 10:04] Bob: Why learn painting when you could learn something useful like Excel?
+```
+
+**Output:**
+```json
+{
+  "Alice": {
+    "score": 5,
+    "confidence": 0.85,
+    "justification": "Alice demonstrates high Openness through intellectual curiosity (quantum entanglement), pursuing creative activities (watercolor painting), and appreciation for art and emotion."
+  },
+  "Bob": {
+    "score": 1,
+    "confidence": 0.78,
+    "justification": "Bob shows low Openness by dismissing abstract concepts ('sci-fi nonsense'), prioritizing practicality, and devaluing creative pursuits."
+  },
+  "Charlie": {
+    "score": 3,
+    "confidence": 0.1,
+    "justification": "Charlie's single-word response provides no insight into curiosity, creativity, or openness to new experiences."
+  }
+}
+```
+
+## Constraints
+
+{{CONSTRAINTS}}
+
+## Previous Analysis
+
+{{EXISTING_ANALYSIS}}
 
 ## Your Task
 
-Analyze the following text and provide your JSON output:
+Analyze the following conversation and provide personality analysis for the specified users only:
 
-**Text:**
-"{{USER_TEXT}}"
+**Conversation:**
+{{CONVERSATION}}
 
 **Output:**
-"""

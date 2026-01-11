@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
 
@@ -7,7 +7,7 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt
+from utils import format_recent_actions, load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt, format_personality_summary
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
@@ -15,25 +15,19 @@ from logs import log_node_start, log_prompt, log_node_output, log_state
 logger = get_logger(__name__)
 
 
-def decision_maker_node(state: Dict[str, Any]) -> None:
-    """
-    Decision Maker Node
-    
-    Selects the best action from suggested actions based on trigger and context.
-    Modifies the state in-place by setting selected_action.
-    
-    Args:
-        state: AgentState dict containing detected_trigger, actions, recent_messages, etc.
-    """
-    # Get agent name for logging
+def decision_maker_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    # agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
-    
+    occupation = selected_persona.get('occupation', 'Unknown Occupation')
+    education = selected_persona.get('education', 'Unknown Education')
+
     log_node_start("decision_maker", {
         "trigger_id": state.get('detected_trigger', {}).get('id', 'none')
     }, agent_name=agent_name)
     log_state("decision_maker_entry", state, "agent")
-        
+    
+    # Values to be injected into prompt    
     detected_trigger = state.get('detected_trigger', {})
     actions = state.get('actions', {})
     triggers = state.get('triggers', {})
@@ -42,20 +36,24 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     agent_type = state.get('agent_type', 'unknown')
     agent_goal = state.get('agent_goal', 'No goal specified')
     
-    # Get trigger details
+    # Trigger details
     trigger_id = detected_trigger.get('id', 'neutral')
     trigger_justification = detected_trigger.get('justification', 'No justification provided')
     
     # Handle neutral trigger - no action needed
     if trigger_id == 'neutral':
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None,
+            'current_node': 'decision_maker'
+        }
     
     # Handle error trigger
     if trigger_id == 'ERROR':
         logger.error("Trigger analysis returned ERROR - cannot make decision")
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None,
+            'current_node': 'decision_maker'
+        }
     
     # Find the detected trigger in triggers list to get suggested actions
     suggested_action_ids = []
@@ -68,8 +66,10 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     # If no suggested actions, default to no action
     if not suggested_action_ids:
         logger.warning(f"No suggested actions for trigger '{trigger_id}' - no action taken")
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None,
+            'current_node': 'decision_maker'
+        }
     
 
     # Get full details for suggested actions
@@ -83,28 +83,46 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
     
     if not suggested_actions:
         logger.error(f"Could not find action details for suggested actions: {suggested_action_ids}")
-        state['selected_action'] = None
-        return
+        return {
+            'selected_action': None,
+            'current_node': 'decision_maker'
+        }
     
     # Format recent messages for prompt
     message_lines = []
     for msg in recent_messages:
-        message_lines.append(format_message_for_prompt(msg, include_timestamp=True, include_emotion=True))
+        message_lines.append(format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona, recent_messages=recent_messages))
     recent_messages_text = "\n".join(message_lines) if message_lines else "No recent messages"
     
     # Format suggested actions as JSON
-    suggested_actions_json = json.dumps(suggested_actions, indent=2)
+    suggested_actions_json = json.dumps(suggested_actions, indent=2, ensure_ascii=False)
     
     # Build prompt
     prompt_template = load_prompt("agent_graph/decision_maker/decision_maker_prompt.txt")
+    
+    # Get other agents info
+    other_agents_info = format_other_agents_for_prompt(agent_name)
+
+    recent_actions = state.get('recent_actions', [])
+    formatted_recent_actions = format_recent_actions(recent_actions)
+    
+    # Format participants' personality summary
+    participants_personality_summary = format_personality_summary(recent_messages)
+    
     prompt = prompt_template.format(
+        agent_name=agent_name,
         agent_type=agent_type,
         agent_goal=agent_goal,
         trigger_id=trigger_id,
         trigger_justification=trigger_justification,
         group_sentiment=group_sentiment,
+        participants_personality_summary=participants_personality_summary,
+        other_agents_info=other_agents_info,
+        formatted_recent_actions=formatted_recent_actions,
         recent_messages=recent_messages_text,
-        suggested_actions_json=suggested_actions_json
+        suggested_actions_json=suggested_actions_json,
+        occupation=occupation,
+        education=education
     )
     
     try:
@@ -114,17 +132,14 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
         temperature = model_settings['temperature']
         provider = model_settings['provider']
         
-        # Log prompt to Logfire
         log_prompt("decision_maker", prompt, model_name, temperature, agent_name=agent_name)
-        
         
         model = init_chat_model(
             model=model_name,
             model_provider=provider,
             temperature=temperature
         )
-        
-        # Call LLM
+
         response = model.invoke([HumanMessage(content=prompt)])
         response_text = response.content
         
@@ -146,17 +161,24 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             if action_id not in suggested_action_ids:
                 logger.warning(f"LLM selected action '{action_id}' not in suggested actions. Using it anyway.")
             
+            # Pass through target_message from detected_trigger
+            target_message = detected_trigger.get('target_message')
+            
             # Log output to Logfire
             output_data = {
                 'selected_action': {
                     'id': action_id,
-                    'purpose': purpose
+                    'purpose': purpose,
+                    'target_message': target_message,
+                    'trigger_id': trigger_id,
+                    'trigger_justification': trigger_justification
                 },
                 'current_node': 'decision_maker'
             }
             log_node_output("decision_maker", {
                 "action_id": action_id,
                 "purpose": purpose,
+                "target_message": target_message,
                 "suggested_actions": suggested_action_ids
             }, agent_name=agent_name)
             log_state("decision_maker_exit", {**state, **output_data}, "agent")
@@ -164,7 +186,10 @@ def decision_maker_node(state: Dict[str, Any]) -> None:
             return {
                 'selected_action': {
                     'id': action_id,
-                    'purpose': purpose
+                    'purpose': purpose,
+                    'target_message': target_message,
+                    'trigger_id': trigger_id,
+                    'trigger_justification': trigger_justification
                 },
                 'current_node': 'decision_maker'
             }

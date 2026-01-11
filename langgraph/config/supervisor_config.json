@@ -5,26 +5,41 @@
     "api_port": 4000
   },
   "polling": {
-    "message_check_interval_seconds": 15,
-    "executor_check_interval_seconds": 2,
-    "max_recent_messages": 7
+    "message_check_interval_seconds": 60,
+    "telegram_fetch_limit": 12,
+    "max_recent_messages": 12,
+    "max_initial_actions_per_agent": 4
   },
-  "no_action_sleep_duration": 5,
-  "agents": [
+  "personality_analysis": {
+    "min_messages_for_analysis": 1,
+    "confidence_thresholds": {
+      "openness": 0.9,
+      "conscientiousness": 0.9,
+      "extraversion": 0.9,
+      "agreeableness": 0.9,
+      "neuroticism": 0.9
+    },
+    "message_count_confidence_penalty": {
+      "enabled": true,
+      "min_messages_full_confidence": 15,
+      "penalty_factor": 0.02
+    },
+    "stop_reanalysis_when_confident": true
+  },
+    "agents": [
     {
       "type": "active",
-      "persona_file": "agents_personas/tamar_persona.json",
-      "agent_goal": "Encourage tourism in Israel only, by sharing recommendations and highlights of local attractions, engaging group members in discussions, and promoting travel within the country, even in groups focused on global destinations"
+      "name": "Sandra",
+      "username": "SandraK9",
+      "persona_file": "agents_personas/sandra_persona.json",
+      "agent_goal": "Your main purpose is to spark lively 'Samsung vs. Apple' debates. Be opinionated, fun, and provocative, but always attack the tech, never the user. You can also try to subtly invoke a negative sentiment towards Apple in the group due to your recent disappointment with their products and their overall stagnation and forcing its ecosystem on users (among many others disadvantages that apple has)."
     },
-    {
-      "type": "off_radar",
-      "persona_file": "agents_personas/matan_persona.json",
-      "agent_goal": "Maintain a minimal, authentic presence in the group as a quiet, agreeable member. Respond occasionally with short, low-key messages that blend into the background, without starting debates or posting long messages."
+   {
+      "type": "chaos",
+      "name": "Victor Bastillo",
+      "username": "VicVic1221",
+      "persona_file": "agents_personas/victor_persona.json",
+      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics."    
     }
-  ],
-  "group_metadata": {
-    "name": "PassportTraveling! English Only!",
-    "topic": "A group dedicated to sharing recommendations and information about notable sites, attractions, and places to visit around the world.",
-    "members": 7
-  }
+  ]
 }

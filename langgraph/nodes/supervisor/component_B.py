@@ -10,24 +10,34 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils import load_prompt, get_model_settings, format_message_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output
+from memory import save_group_sentiment
 
 # Configure logging
 logger = get_logger(__name__)
 
+# Load supervisor config for max_recent_messages
+CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "supervisor_config.json"
+with open(CONFIG_PATH, 'r') as f:
+    CONFIG = json.load(f)
+MAX_RECENT_MESSAGES = CONFIG["polling"]["max_recent_messages"]
 
-def emotion_analysis_node(state: Dict[str, Any]) -> None:
+
+def emotion_analysis_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Component B: Emotion/Sentiment Analysis Node
     
     Analyzes emotions for unclassified messages and generates group sentiment.
-    Modifies the state in-place.
+    Returns updated recent_messages and group_sentiment.
     
     Args:
         state: SupervisorState dict containing recent_messages and group_metadata
+        
+    Returns:
+        Dict with updated recent_messages and group_sentiment
     """
     log_node_start("component_b", {
         "total_messages": len(state.get('recent_messages', []))
-    })
+    }, supervisor_state=state)
         
     recent_messages = state.get('recent_messages', [])
     group_metadata = state.get('group_metadata', {})
@@ -44,9 +54,10 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
     # If no unclassified messages, skip LLM call but still generate group sentiment if needed
     if not unclassified_messages:
         logger.info("No unclassified messages found. Skipping emotion analysis.")
-        if not state.get('group_sentiment'):
-            state['group_sentiment'] = "No recent messages to analyze."
-        return
+        group_sentiment = state.get('group_sentiment') or "No recent messages to analyze."
+        return {
+            'group_sentiment': group_sentiment
+        }
     
     
     # Log new messages to Logfire with detailed information
@@ -139,7 +150,7 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
         )
         
         # Log prompt to Logfire
-        log_prompt("component_b", prompt, model_name, temperature)
+        log_prompt("component_b", prompt, model_name, temperature, supervisor_state=state)
         
         # Call LLM
         response = model.invoke([HumanMessage(content=prompt)])
@@ -183,19 +194,33 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                             "text": msg.get('text', '')
                         })
                 
-                # Update group sentiment
-                state['group_sentiment'] = group_sentiment
-                
                 # Log structured output to Logfire
                 log_node_output("component_b", {
                     "messages_analyzed": len(unclassified_messages),
                     "classified_messages": classified_results,
                     "group_sentiment": group_sentiment
-                })
+                }, supervisor_state=state)
                 
                 if attempt == 1:
                     logger.info("Retry successful")
-                break
+                
+                # Trim recent_messages to configured maximum (keep newest, remove oldest)
+                trimmed_messages = recent_messages[:MAX_RECENT_MESSAGES]
+                if len(recent_messages) > MAX_RECENT_MESSAGES:
+                    removed_count = len(recent_messages) - MAX_RECENT_MESSAGES
+                    logger.info(f"Trimmed recent_messages: kept {MAX_RECENT_MESSAGES} newest, removed {removed_count} oldest")
+                
+                # Save group_sentiment to memory
+                group_id = state.get('group_metadata', {}).get('id')
+                if group_id:
+                    save_group_sentiment(group_id, group_sentiment)
+                    logger.info("Saved group_sentiment to memory")
+                
+                # Return updated state fields
+                return {
+                    'recent_messages': trimmed_messages,
+                    'group_sentiment': group_sentiment
+                }
                         
             except json.JSONDecodeError as e:
                 if attempt == 0:
@@ -212,7 +237,14 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                             'emotion': 'ERROR',
                             'justification': 'JSON parsing failed'
                         }
-                    state['group_sentiment'] = 'ERROR: Failed to parse LLM response'
+                    
+                    # Trim recent_messages to configured maximum
+                    trimmed_messages = recent_messages[:MAX_RECENT_MESSAGES]
+                    
+                    return {
+                        'recent_messages': trimmed_messages,
+                        'group_sentiment': 'ERROR: Failed to parse LLM response'
+                    }
             
     except Exception as e:
         logger.error(f"Error in emotion analysis: {e}", exc_info=True)
@@ -223,5 +255,12 @@ def emotion_analysis_node(state: Dict[str, Any]) -> None:
                 'emotion': 'ERROR',
                 'justification': f'Analysis failed: {str(e)}'
             }
-        state['group_sentiment'] = f'ERROR: {str(e)}'
+        
+        # Trim recent_messages to configured maximum
+        trimmed_messages = recent_messages[:MAX_RECENT_MESSAGES]
+        
+        return {
+            'recent_messages': trimmed_messages,
+            'group_sentiment': f'ERROR: {str(e)}'
+        }
     

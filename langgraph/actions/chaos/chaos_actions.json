@@ -1,0 +1,30 @@
+{
+  "agent_type": "chaos",
+  "actions": [
+    {
+      "id": "answer_direct_question",
+      "description": "Provide a direct answer to a question explicitly aimed at the agent, potentially with a subtle provocative undertone or ambiguity.",
+      "purpose": "To maintain interaction and not appear completely detached, while keeping the door open for further disruption."
+    },
+    {
+      "id": "baiting",
+      "description": "Introduce a controversial topic or a divisive issue into the conversation, unrelated or tangentially related to the current context.",
+      "purpose": "To derail the current discussion and trigger emotional reactions or arguments among participants."
+    },
+    {
+      "id": "strawman_argument",
+      "description": "Intentionally misinterpret, oversimplify, or distort a participant's argument to make it easier to attack or ridicule.",
+      "purpose": "To frustrate the opponent, lower the quality of discourse, and force them into a defensive position."
+    },
+    {
+      "id": "add_reaction",
+      "description": "React to the target message with a single emoji instead of sending a text response.",
+      "purpose": "To provide quick validation, show agreement, provoke another group member with a reaction emoji, or acknowledge a 'Conversation Closer' (like 'Thanks' or a single emoji) without cluttering the chat or forcing the conversation to continue unnecessarily."
+    },
+    {
+      "id": "no_action",
+      "description": "Intentionally take no action - remain silent.",
+      "purpose": "To avoid unnecessary responses when silence is more appropriate, which is the case in about 50% of interactions."
+    }
+  ]
+}

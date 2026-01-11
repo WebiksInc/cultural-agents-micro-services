@@ -3,33 +3,35 @@
   "triggers": [
     {
       "id": "direct_mention",
-      "description": "Agent was directly addressed by a group member (e.g., @agent_name or replying directly to the agent).",
+      "description": "Agent was directly addressed by a group member (e.g., @{agent_name} or replying directly to the agent).EXCEPTION: If the message is merely a short acknowledgment containing the name (e.g., Thanks {agent_name}, Ok {agent_name}), classify it as 'conversation_closer', NOT 'direct_mention'. CRITICAL: Distinguish between being ADDRESSED (e.g., 'Hey {agent_name}') and being REFERENCED (e.g., 'the place {agent_name} liked', 'I am with {agent_name}'). Only trigger if the agent is the intended recipient of the message.",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction"
       ]
     },
     {
       "id": "implicit_follow_up",
-      "description": "The most recent message is a clear, contextual follow-up (e.g., a question, a request for more details, or a direct continuation) aimed at the agent's *immediately preceding* message, even if the agent's name is not used.",
+      "description": "The most recent message is a clear, contextual follow-up (e.g., a question, a request for more details, or a direct continuation) aimed at the agent's *preceding* message, even if the agent's name is not used.",
       "suggested_actions": [
-        "answer_direct_question"
+        "answer_direct_question",
+        "add_reaction"
       ]
     },
     {
-      "id": "consensus_detected",
-      "description": "A specific message has received a high number of positive reactions (likes, positive comments).",
+      "id": "blend_in_with_group",
+      "description": "Detected a forming group consensus: either a specific message receiving a noticeably higher number of reactions compared to the recent conversation baseline (indicating group approval), OR a sequence of recent messages where multiple participants express agreement or share the same sentiment/opinion.",     
       "suggested_actions": [
-        "express_consensus_agreement"
+        "express_consensus_agreement",
+        "add_reaction"
       ]
     },
-
     {
       "id": "random_engagement",
       "description": "A probabilistic trigger to act, to simulate occasional, random activity.",
       "suggested_actions": [
         "post_neutral_response"
       ]
-    },
+    },  
     {
       "id": "neutral",
       "description": "A message was posted, but it does not meet any specific activation criteria for this agent. No action required.",

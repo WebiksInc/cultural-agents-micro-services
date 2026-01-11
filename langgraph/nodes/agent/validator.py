@@ -1,12 +1,4 @@
-"""
-Validator Node
-
-Performs final quality check on styled response before sending.
-Validates against 4 criteria: goal alignment, action alignment, persona coherence, context sanity.
-"""
-
 import json
-import logging
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
@@ -15,32 +7,16 @@ from langchain.chat_models import init_chat_model
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils import load_prompt, get_model_settings, format_message_for_prompt
+from utils import load_prompt, get_model_settings, format_message_for_prompt, format_other_agents_for_prompt
 from logs.logfire_config import get_logger
 from logs import log_node_start, log_prompt, log_node_output, log_state
 
-# Configure logging
 logger = get_logger(__name__)
 
 # Maximum number of retries before accepting the response
 MAX_RETRIES = 3
 
-
 def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Validator Node
-    
-    Validates the styled response against 4 criteria:
-    1. Goal Alignment
-    2. Action Alignment
-    3. Persona Coherence
-    4. Context Sanity Check
-    
-    Modifies the state in-place by setting validation dict.
-    
-    Args:
-        state: AgentState dict containing styled_response, agent_goal, selected_action, etc.
-    """
     # Get agent name for logging
     selected_persona = state.get('selected_persona', {})
     agent_name = f"{selected_persona.get('first_name', 'Unknown')} {selected_persona.get('last_name', '')}".strip()
@@ -51,6 +27,7 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Get required inputs
     styled_response = state.get('styled_response')
     agent_goal = state.get('agent_goal', '')
+    agent_type = state.get('agent_type', 'unknown')
     selected_action = state.get('selected_action', {})
     selected_persona = state.get('selected_persona', {})
     recent_messages = state.get('recent_messages', [])
@@ -59,48 +36,67 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Validate styled_response exists
     if not styled_response:
         logger.error("No styled_response to validate")
-        state['validation'] = {
-            "approved": False,
-            "explanation": "No styled response was generated",
-            "styled_response": styled_response
+        return {
+            'validation': {
+                "approved": False,
+                "explanation": "No styled response was generated",
+                "styled_response": styled_response
+            },
+            'validation_feedback': "No styled response was generated",
+            'current_node': 'validator'
         }
-        state['validation_feedback'] = "No styled response was generated"
-        return
     
-    logger.info(f"Validating response (retry_count: {retry_count}/{MAX_RETRIES})")
+    logger.info(f"Validating response (retry_count: {retry_count}/{MAX_RETRIES}) - ({agent_name})")
     
     # Check if we've exceeded max retries - if so, approve by default
     if retry_count >= MAX_RETRIES:
-        logger.warning(f"Max retries ({MAX_RETRIES}) reached - approving response by default")
-        state['validation'] = {
-            "approved": True,
-            "styled_response": styled_response
+        logger.warning(f"Max retries ({MAX_RETRIES}) reached - approving response by default - ({agent_name})")
+        return {
+            'validation': {
+                "approved": True,
+                "styled_response": styled_response
+            },
+            'validation_feedback': None,
+            'retry_count': 0,
+            'current_node': 'validator'
         }
-        state['validation_feedback'] = None
-        state['retry_count'] = 0  # Reset for next action
-        return
-    
+     
     # Format selected_action as JSON
-    selected_action_json = json.dumps(selected_action, indent=2)
+    selected_action_json = json.dumps(selected_action, indent=2, ensure_ascii=False)
     
-    # Format selected_persona as JSON
-    selected_persona_json = json.dumps(selected_persona, indent=2)
+    # Format selected_persona as JSON (exclude phone_number)
+    persona_for_prompt = {k: v for k, v in selected_persona.items() if k != 'phone_number'}
+    selected_persona_json = json.dumps(persona_for_prompt, indent=2, ensure_ascii=False)
     
     # Format recent_messages as JSON
     recent_messages_formatted = [
-        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True)
+        format_message_for_prompt(msg, include_timestamp=True, include_emotion=True, selected_persona=selected_persona, recent_messages=recent_messages)
         for msg in recent_messages
     ]
-    recent_messages_json = json.dumps(recent_messages_formatted, indent=2)
+    recent_messages_json = json.dumps(recent_messages_formatted, indent=2, ensure_ascii=False)
     
-    # Build the validation prompt
+    # Building the validation prompt
     prompt_template = load_prompt("agent_graph/validator/validator_prompt.txt")
+    
+    # Build additional rules and other_agents_info based on agent type (only for chaos)
+    additional_rules = ""
+    other_agents_info = ""
+    if agent_type == "chaos":
+        other_agents_info = format_other_agents_for_prompt(agent_name)
+        try:
+            additional_rules = load_prompt("agent_graph/validator/rules/chaos_rules.txt")
+        except FileNotFoundError:
+            logger.warning(f"Validator rules file not found for agent type: {agent_type}")
+    
     validation_prompt = prompt_template.format(
+        agent_name=agent_name,
         styled_response=styled_response,
         agent_goal=agent_goal,
         selected_action=selected_action_json,
         selected_persona=selected_persona_json,
-        recent_messages=recent_messages_json
+        recent_messages=recent_messages_json,
+        other_agents_info=other_agents_info,
+        additional_rules=additional_rules
     )
     
     try:
@@ -108,13 +104,13 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         model_settings = get_model_settings('validator', 'VALIDATOR_MODEL')
         model_name = model_settings['model']
         temperature = model_settings['temperature']
-        
-        # Log prompt to Logfire
+        provider = model_settings.get('provider', 'openai')
+       
         log_prompt("validator", validation_prompt, model_name, temperature, agent_name=agent_name)
                 
         model = init_chat_model(
             model=model_name,
-            model_provider="openai",
+            model_provider=provider,
             temperature=temperature
         )
         
@@ -127,13 +123,15 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
         try:
             validation_result = json.loads(response_text)
             approved = validation_result.get('approved', False)
-            explanation = validation_result.get('explanation', '')
+            # Support both 'justification' (new) and 'explanation' (old) for backward compatibility
+            justification = validation_result.get('justification')
             
             if approved:
-                logger.info("✓ Response APPROVED")
+                logger.info(f"Response APPROVED - ({agent_name})", justification=justification)
                 output = {
                     'validation': {
                         "approved": True,
+                        "justification": justification,
                         "styled_response": styled_response
                     },
                     'validation_feedback': None,
@@ -144,14 +142,14 @@ def validator_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 log_state("validator", state, "exit")
                 return output
             else:
-                logger.warning(f"✗ Response NOT APPROVED: {explanation}")
+                logger.warning(f"Response NOT APPROVED - ({agent_name})", justification=justification)
                 output = {
                     'validation': {
                         "approved": False,
-                        "explanation": explanation,
+                        "justification": justification,
                         "styled_response": styled_response
                     },
-                    'validation_feedback': explanation,
+                    'validation_feedback': justification,
                     'retry_count': retry_count + 1,
                     'current_node': 'validator'
                 }

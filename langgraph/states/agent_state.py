@@ -11,16 +11,26 @@ class Message(TypedDict):
     sender_last_name: str
     text: str # message content
     date: datetime
+    timestamp: str  # Original ISO format from API: "2025-11-26T08:36:07.000Z"
+    reactions: Optional[List[dict]]  # List of reactions: [{"emoji": "👍", "count": 2}, ...]
     message_emotion: Optional[str]  # Filled by Component B (Emotion Analysis)
     sender_personality: Optional[dict]  # Filled by Component C on-demand (Personality Analysis)
     processed: Optional[bool]  # Track if message has been analyzed for triggers
+    replyToMessageId: Optional[int] # ID of the message this is replying to, if any
+
+
+class ActionRecord(TypedDict):
+    """Structure for tracking recent agent actions."""
+    trigger_id: str
+    trigger_justification: str
+    target_message: Optional[dict]  # The message that triggered the action (includes sender_name)
+    action_id: str
+    action_purpose: str
+    action_content: str
+    action_timestamp: Optional[str]  # Filled by executor after sending
 
 
 class AgentState(TypedDict):
-    """
-    State for individual agent graphs.
-    The agent receives a *copy* of relevant data from the Supervisor.
-    """
     # Data copied from Supervisor
     recent_messages: List[Message]
     group_sentiment: str
@@ -46,6 +56,9 @@ class AgentState(TypedDict):
     validation: Optional[dict]  # Output of Validator, e.g., {"approved": True/False, "explanation": "...", "styled_response": "..."}
     validation_feedback: Optional[str]  # Feedback from failed validation to help E.1 regenerate
     retry_count: int  # Number of times E.1 has been retried due to validation failure
+    
+    # Action history tracking
+    recent_actions: List[ActionRecord]  # History of recent actions taken by this agent
     
     # Internal tracking
     current_node: Optional[str]

@@ -108,7 +108,11 @@ def main():
     
     # Run the emotion analysis node
     try:
-        emotion_analysis_node(test_state)
+        result = emotion_analysis_node(test_state)
+        
+        # Update test_state with returned values (simulating LangGraph behavior)
+        if result:
+            test_state.update(result)
         
         print()
         print("=" * 80)

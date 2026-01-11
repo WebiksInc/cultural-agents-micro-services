@@ -122,7 +122,7 @@ def get_logger(name: str) -> LogfireLogger:
     return LogfireLogger(name)
 
 
-def log_node_start(node_name: str, state_summary: dict = None, agent_name: str = None):
+def log_node_start(node_name: str, state_summary: dict = None, agent_name: str = None, supervisor_state: dict = None):
     """
     Log the start of a node execution to Logfire.
     Creates a collapsible span in the UI.
@@ -131,6 +131,7 @@ def log_node_start(node_name: str, state_summary: dict = None, agent_name: str =
         node_name: Name of the node being executed
         state_summary: Optional summary of state (e.g., message count, current values)
         agent_name: Optional agent name to display in brackets
+        supervisor_state: Optional full supervisor state to include as expandable field
     """
     if _logfire_configured:
         try:
@@ -139,13 +140,15 @@ def log_node_start(node_name: str, state_summary: dict = None, agent_name: str =
                 attrs.update(state_summary)
             if agent_name:
                 attrs["agent_name"] = agent_name
+            if supervisor_state:
+                attrs["supervisor_state"] = supervisor_state
             display_name = f"{node_name} ({agent_name})" if agent_name else node_name
             logfire.info(f"▶️ Starting {display_name}", **attrs)
         except Exception:
             pass
 
 
-def log_prompt(component_name: str, prompt: str, model: str = None, temperature: float = None, agent_name: str = None):
+def log_prompt(component_name: str, prompt: str, model: str = None, temperature: float = None, agent_name: str = None, supervisor_state: dict = None):
     """
     Log a prompt being sent to an LLM.
     
@@ -155,6 +158,7 @@ def log_prompt(component_name: str, prompt: str, model: str = None, temperature:
         model: Model name (e.g., "gpt-4o-mini")
         temperature: Temperature setting
         agent_name: Optional agent name to display in brackets
+        supervisor_state: Optional full supervisor state to include as expandable field
     """
     if _logfire_configured:
         try:
@@ -169,6 +173,8 @@ def log_prompt(component_name: str, prompt: str, model: str = None, temperature:
                 attrs["temperature"] = temperature
             if agent_name:
                 attrs["agent_name"] = agent_name
+            if supervisor_state:
+                attrs["supervisor_state"] = supervisor_state
             
             display_name = f"{component_name} ({agent_name})" if agent_name else component_name
             logfire.info(f"📝 Prompt for {display_name}", **attrs)
@@ -194,6 +200,16 @@ def log_state(node_name: str, state: dict, state_type: str = "agent"):
                 "state": state,  # Logfire will make this expandable in UI
             }
             
+            # Extract agent name if this is agent state
+            agent_name = None
+            if state_type == "agent":
+                first_name = state.get('selected_persona', {}).get('first_name', 'Unknown')
+                last_name = state.get('selected_persona', {}).get('last_name', 'Unknown')
+                
+                if first_name != "Unknown" or last_name != "Unknown":
+                    agent_name = first_name + (" " + last_name if last_name else "")
+                    attrs["agent_name"] = agent_name
+            
             # Add quick summary fields for easy filtering
             if "recent_messages" in state:
                 attrs["message_count"] = len(state.get("recent_messages", []))
@@ -210,12 +226,16 @@ def log_state(node_name: str, state: dict, state_type: str = "agent"):
                 if action:
                     attrs["action_id"] = action.get("id")
             
-            logfire.info(f"📊 State snapshot at {node_name}", **attrs)
+            # Format message differently for supervisor vs agent
+            if agent_name:
+                logfire.info(f"📊 State snapshot at {node_name} ({agent_name})", **attrs)
+            else:
+                logfire.info(f"📊 State snapshot at {node_name}", **attrs)
         except Exception as e:
             logging.debug(f"Failed to log state: {e}")
 
 
-def log_node_output(node_name: str, output_data: dict, agent_name: str = None):
+def log_node_output(node_name: str, output_data: dict, agent_name: str = None, supervisor_state: dict = None):
     """
     Log the output of a node.
     
@@ -223,19 +243,22 @@ def log_node_output(node_name: str, output_data: dict, agent_name: str = None):
         node_name: Name of the node
         output_data: Dictionary of output fields (e.g., generated_response, styled_response)
         agent_name: Optional agent name to display in brackets
+        supervisor_state: Optional full supervisor state to include as expandable field
     """
     if _logfire_configured:
         try:
             attrs = {"node": node_name, **output_data}
             if agent_name:
                 attrs["agent_name"] = agent_name
+            if supervisor_state:
+                attrs["supervisor_state"] = supervisor_state
             display_name = f"{node_name} ({agent_name})" if agent_name else node_name
             logfire.info(f"✅ Output from {display_name}", **attrs)
         except Exception:
             pass
 
 
-def log_flow_transition(from_node: str, to_node: str, reason: str = None):
+def log_flow_transition(from_node: str, to_node: str, reason: str = None, agent_name: str = None, supervisor_state: dict = None):
     """
     Log a flow transition between nodes.
     
@@ -243,6 +266,8 @@ def log_flow_transition(from_node: str, to_node: str, reason: str = None):
         from_node: Current node
         to_node: Next node
         reason: Optional reason for transition
+        agent_name: Optional agent name to display in brackets
+        supervisor_state: Optional full supervisor state to include as expandable field
     """
     if _logfire_configured:
         try:
@@ -252,7 +277,11 @@ def log_flow_transition(from_node: str, to_node: str, reason: str = None):
             }
             if reason:
                 attrs["reason"] = reason
+            if agent_name:
+                attrs["agent_name"] = agent_name
+            if supervisor_state:
+                attrs["supervisor_state"] = supervisor_state
             
-            logfire.info(f"➡️ Flow: {from_node} → {to_node}", **attrs)
+            logfire.info(f"➡️ Flow: {from_node} → {to_node} ({agent_name})", **attrs)
         except Exception:
             pass
