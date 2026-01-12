@@ -211,3 +211,7 @@ data/
 
 # Exported Logfire logs (keep only .gitkeep)
 logs/exports/*.json
+
+# JetBrains IDEs
+.idea/
+*.iml
