@@ -19,7 +19,7 @@ from utils.data_loader import LogDataLoader
 HITL_AVAILABLE = False
 HITL_ERROR = None
 approval_state = None
-log_rejection = None
+log_decision = None
 
 try:
     import importlib.util
@@ -31,7 +31,7 @@ try:
         approval_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(approval_module)
         approval_state = approval_module.approval_state
-        log_rejection = approval_module.log_rejection
+        log_decision = approval_module.log_decision
         HITL_AVAILABLE = True
     else:
         HITL_ERROR = f"approval_state.py not found at {approval_state_path}"
@@ -40,8 +40,8 @@ except Exception as e:
 
 # Page config
 st.set_page_config(
-    page_title="Cultural Agents - Log Viewer",
-    page_icon="🤖",
+    page_title="Cultural Agents",
+    page_icon="👳🏼‍♀️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -932,25 +932,56 @@ def render_approval_queue_tab():
         st.error("⚠️ HITL module not available. Check langgraph path.")
         return
     
-    # Auto-refresh toggle
-    col1, col2 = st.columns([3, 1])
-    with col2:
+    # Controls row: Manual refresh + Auto-refresh toggle
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        if st.button("🔄 Refresh", key="manual_refresh_top", use_container_width=True):
+            # Clear all approval-related session state
+            keys_to_clear = [k for k in list(st.session_state.keys()) 
+                            if k.startswith(('processed_', 'decision_result_', 'edit_', 'reason_', 'replacement_'))]
+            for k in keys_to_clear:
+                del st.session_state[k]
+            st.rerun()
+    with col3:
         auto_refresh = st.checkbox("🔄 Auto-refresh (5s)", value=True, key="auto_refresh_toggle")
+    
+    # Helper to clear approval session state
+    def clear_approval_state():
+        keys_to_clear = [k for k in list(st.session_state.keys()) 
+                        if k.startswith(('processed_', 'decision_result_', 'edit_', 'reason_', 'replacement_'))]
+        for k in keys_to_clear:
+            del st.session_state[k]
     
     # Check for pending approvals
     pending = approval_state.get_pending()
     
+    # Check if a response was already submitted (waiting for graph to process)
+    has_response = approval_state.has_response()
+    
     if not pending:
-        st.info("✅ No pending approvals. The system is either idle or all messages have been processed.")
+        # Clear stale session state when no pending
+        clear_approval_state()
+        if "last_pending_timestamp" in st.session_state:
+            del st.session_state["last_pending_timestamp"]
         
-        # Manual refresh button
-        if st.button("🔄 Refresh Now", key="refresh_approvals"):
-            st.rerun()
+        st.info("✅ No pending approvals. The system is either idle or all messages have been processed.")
         
         # Auto-refresh using streamlit's native rerun
         if auto_refresh:
             import time
             time.sleep(5)
+            st.rerun()
+        return
+    
+    # If we have pending BUT also have a response, show waiting state
+    if has_response:
+        st.success("✅ Response submitted! Waiting for the graph to process...")
+        st.info("⏳ The supervisor will pick up your decision shortly.")
+        
+        # Auto-refresh to detect when graph consumes the response
+        if auto_refresh:
+            import time
+            time.sleep(3)  # Shorter interval when waiting for graph
             st.rerun()
         return
     
@@ -961,9 +992,31 @@ def render_approval_queue_tab():
     group_info = interrupt_data.get("group_info", {})
     timestamp = pending.get("timestamp", "")
     
+    # Check if this is a NEW pending batch - clear old state if so
+    if st.session_state.get("last_pending_timestamp") != timestamp:
+        clear_approval_state()
+        st.session_state["last_pending_timestamp"] = timestamp
+    
+    # Operator name input (persisted in session state)
+    st.markdown("### 👤 Operator")
+    operator_name = st.text_input(
+        "Your name:",
+        value=st.session_state.get("operator_name", ""),
+        key="operator_name_input",
+        placeholder="Enter your name to log decisions"
+    )
+    if operator_name:
+        st.session_state["operator_name"] = operator_name
+    
+    if not operator_name:
+        st.warning("⚠️ Please enter your name before approving/rejecting messages")
+    
+    st.markdown("---")
+    
     # Show group info
     st.markdown(f"""
     ### 📍 Group: {group_info.get('name', 'Unknown')}
+    - **Group ID:** `{group_info.get('id', 'Unknown')}`
     - **Members:** {group_info.get('members', 0)}
     - **Topic:** {group_info.get('topic', 'N/A')}
     - **Pending since:** {timestamp}
@@ -1051,56 +1104,40 @@ def render_approval_queue_tab():
             if processed_key in st.session_state and st.session_state[processed_key]:
                 st.success(f"✅ Already submitted: {st.session_state.get(f'decision_result_{i}', 'processed')}")
             else:
-                # Decision options in columns
-                col1, col2, col3 = st.columns([2, 2, 2])
+                # Get operator name and group_id for logging
+                current_operator = st.session_state.get("operator_name", "")
+                current_group_id = group_info.get("id", "unknown")
+                
+                # Decision options in columns (removed Edit option)
+                col1, col2 = st.columns([1, 1])
                 
                 with col1:
                     # Quick approve button
                     if st.button(f"✅ Approve", key=f"approve_{i}", type="primary", use_container_width=True):
-                        # Submit approval immediately
-                        decisions = [{
-                            "agent_name": agent_name,
-                            "decision": "approved",
-                            "edited_content": None,
-                            "rejection_reason": None,
-                            "replacement_message": None,
-                            "message_index": i
-                        }]
-                        approval_state.set_response({"decisions": decisions})
-                        st.session_state[processed_key] = True
-                        st.session_state[f'decision_result_{i}'] = "Approved ✅"
-                        st.success("✅ Approved! Graph will resume.")
-                        import time
-                        time.sleep(1)
-                        st.rerun()
-                
-                with col2:
-                    # Edit before approve
-                    with st.expander("✏️ Edit & Approve"):
-                        edited_content = st.text_area(
-                            "Edit message:",
-                            value=proposed_message,
-                            key=f"edit_{i}",
-                            height=100
-                        )
-                        if st.button(f"Submit Edited", key=f"submit_edit_{i}", use_container_width=True):
+                        if not current_operator:
+                            st.error("⚠️ Please enter your name first")
+                        else:
+                            # Submit approval immediately
                             decisions = [{
                                 "agent_name": agent_name,
                                 "decision": "approved",
-                                "edited_content": edited_content if edited_content != proposed_message else None,
                                 "rejection_reason": None,
                                 "replacement_message": None,
                                 "message_index": i
                             }]
-                            approval_state.set_response({"decisions": decisions})
+                            approval_state.set_response({
+                                "decisions": decisions,
+                                "operator_name": current_operator,
+                                "group_id": current_group_id
+                            })
                             st.session_state[processed_key] = True
-                            st.session_state[f'decision_result_{i}'] = "Approved (edited) ✅"
-                            st.success("✅ Approved with edits!")
+                            st.session_state[f'decision_result_{i}'] = "Approved ✅"
+                            st.success("✅ Approved! Graph will resume.")
                             import time
                             time.sleep(1)
                             st.rerun()
                 
-                with col3:
+                with col2:
                     # Reject with reason
                     with st.expander("❌ Reject"):
                         rejection_reason = st.text_area(
@@ -1116,18 +1153,23 @@ def render_approval_queue_tab():
                             height=80
                         )
                         if st.button(f"Submit Rejection", key=f"submit_reject_{i}", use_container_width=True):
-                            if not rejection_reason:
+                            if not current_operator:
+                                st.error("⚠️ Please enter your name first")
+                            elif not rejection_reason:
                                 st.warning("Please provide a reason")
                             else:
                                 decisions = [{
                                     "agent_name": agent_name,
                                     "decision": "rejected",
-                                    "edited_content": None,
                                     "rejection_reason": rejection_reason,
                                     "replacement_message": replacement_message if replacement_message else None,
                                     "message_index": i
                                 }]
-                                approval_state.set_response({"decisions": decisions})
+                                approval_state.set_response({
+                                    "decisions": decisions,
+                                    "operator_name": current_operator,
+                                    "group_id": current_group_id
+                                })
                                 st.session_state[processed_key] = True
                                 st.session_state[f'decision_result_{i}'] = "Rejected ❌"
                                 st.error("❌ Rejected!")

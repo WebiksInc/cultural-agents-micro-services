@@ -31,7 +31,7 @@ from typing import Optional, Dict, Any
 STATE_DIR = Path(__file__).parent / "data" / "hitl_state"
 PENDING_FILE = STATE_DIR / "pending.json"
 RESPONSE_FILE = STATE_DIR / "response.json"
-REJECTION_LOG_PATH = Path(__file__).parent / "logs" / "rejection_log.json"
+OPERATOR_DECISIONS_DIR = Path(__file__).parent / "logs" / "operator_decisions"
 
 
 class ApprovalState:
@@ -124,60 +124,81 @@ class ApprovalState:
         self._write_json(RESPONSE_FILE, None)
 
 
-def log_rejection(
+def log_decision(
+    decision_type: str,
+    operator_name: str,
     agent_name: str,
     proposed_message: str,
-    rejection_reason: str,
+    group_id: str,
+    group_name: Optional[str] = None,
+    rejection_reason: Optional[str] = None,
     replacement_message: Optional[str] = None,
     trigger_id: Optional[str] = None,
     action_id: Optional[str] = None,
-    group_id: Optional[str] = None,
-    group_name: Optional[str] = None,
     context: Optional[Dict[str, Any]] = None
 ) -> None:
     """
-    Log a rejection to the rejection log file.
+    Log an operator decision (approval or rejection) to the group's decision log.
     
     Args:
-        agent_name: Name of the agent whose message was rejected
-        proposed_message: The message that was rejected
-        rejection_reason: Operator's reason for rejection
+        decision_type: 'approved' or 'rejected'
+        operator_name: Name of the operator who made the decision
+        agent_name: Name of the agent whose message was reviewed
+        proposed_message: The message that was reviewed
+        group_id: The Telegram group ID (used for folder structure)
+        group_name: The group name for display
+        rejection_reason: Operator's reason for rejection (if rejected)
         replacement_message: Optional replacement message from operator
         trigger_id: The trigger that led to this message
         action_id: The action type that was taken
-        group_id: The group ID this was for
-        group_name: The group name this was for
-        context: Additional context about the rejection
+        context: Additional context about the decision
     """
-    # Load existing log
-    existing_log = []
-    if REJECTION_LOG_PATH.exists():
-        try:
-            with open(REJECTION_LOG_PATH, 'r', encoding='utf-8') as f:
-                existing_log = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            existing_log = []
+    # Build path: logs/operator_decisions/{group_id}/decisions.json
+    group_dir = OPERATOR_DECISIONS_DIR / str(group_id)
+    decisions_file = group_dir / "decisions.json"
     
-    # Add new entry
+    # Load existing log with approved/rejected structure
+    existing_log = {"approved": [], "rejected": []}
+    if decisions_file.exists():
+        try:
+            with open(decisions_file, 'r', encoding='utf-8') as f:
+                existing_log = json.load(f)
+                # Ensure both keys exist
+                if "approved" not in existing_log:
+                    existing_log["approved"] = []
+                if "rejected" not in existing_log:
+                    existing_log["rejected"] = []
+        except (json.JSONDecodeError, IOError):
+            existing_log = {"approved": [], "rejected": []}
+    
+    # Build entry
     entry = {
         "timestamp": datetime.now().isoformat(),
+        "operator_name": operator_name,
         "agent_name": agent_name,
-        "proposed_message": proposed_message,
-        "rejection_reason": rejection_reason,
-        "replacement_message": replacement_message,
-        "trigger_id": trigger_id,
-        "action_id": action_id,
-        "group_id": group_id,
+        "message": proposed_message,
         "group_name": group_name,
-        "context": context
+        "trigger_id": trigger_id,
+        "action_id": action_id
     }
-    existing_log.append(entry)
+    
+    # Add rejection-specific fields
+    if decision_type == "rejected":
+        entry["rejection_reason"] = rejection_reason
+        entry["replacement_message"] = replacement_message
+        entry["context"] = context
+    
+    # Append to appropriate list
+    if decision_type == "approved":
+        existing_log["approved"].append(entry)
+    else:
+        existing_log["rejected"].append(entry)
     
     # Ensure directory exists
-    REJECTION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    group_dir.mkdir(parents=True, exist_ok=True)
     
     # Write back
-    with open(REJECTION_LOG_PATH, 'w', encoding='utf-8') as f:
+    with open(decisions_file, 'w', encoding='utf-8') as f:
         json.dump(existing_log, f, indent=2)
 
 

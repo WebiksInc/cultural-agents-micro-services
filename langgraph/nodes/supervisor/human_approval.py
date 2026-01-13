@@ -22,6 +22,8 @@ from typing import Dict, Any, List, Literal
 from langgraph.types import interrupt, Command
 from logs.logfire_config import get_logger
 from logs import log_node_start
+from approval_state import log_decision
+
 
 logger = get_logger(__name__)
 
@@ -36,13 +38,13 @@ def is_hitl_enabled() -> bool:
             config = json.load(f)
         return config.get("hitl", {}).get("enabled", True)
     except Exception:
-        return True  # Default to enabled if config can't be read
+        return True 
 
 
 def build_approval_request(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Build the approval request payload from the current state.
-    This payload will be shown to the operator in the Streamlit UI.
+    This payload will be shown to the operator in the UI.
     
     Args:
         state: SupervisorState containing execution_queue, recent_messages, etc.
@@ -130,13 +132,14 @@ def process_approval_response(
     Returns:
         Updated execution_queue with only approved actions
     """
-    from approval_state import log_rejection
     
     execution_queue = state.get('execution_queue', [])
     group_metadata = state.get('group_metadata', {})
     group_name = group_metadata.get('name', 'Unknown Group')
+    group_id = group_metadata.get('id', 'unknown')
     
     decisions = response.get('decisions', [])
+    operator_name = response.get('operator_name', 'Unknown Operator')
     
     # Build lookup for decisions by agent_name
     decision_lookup = {d.get('agent_name'): d for d in decisions}
@@ -152,11 +155,17 @@ def process_approval_response(
         decision_type = decision.get('decision', 'rejected')  # Default to rejected if no decision
         
         if decision_type == 'approved':
-            # Check if operator edited the content
-            edited_content = decision.get('edited_content')
-            if edited_content:
-                action['action_content'] = edited_content
-                logger.info(f"Operator edited message for {agent_name}")
+            # Log the approval
+            log_decision(
+                decision_type='approved',
+                operator_name=operator_name,
+                agent_name=agent_name,
+                proposed_message=action.get('action_content', ''),
+                group_id=group_id,
+                group_name=group_name,
+                trigger_id=action.get('trigger_id', 'unknown'),
+                action_id=action.get('action_id')
+            )
             
             approved_actions.append(action)
             logger.info(f"Approved action from {agent_name}: {action.get('action_id')}")
@@ -166,10 +175,13 @@ def process_approval_response(
             replacement_message = decision.get('replacement_message')
             
             # Log the rejection
-            log_rejection(
+            log_decision(
+                decision_type='rejected',
+                operator_name=operator_name,
                 agent_name=agent_name,
-                group_name=group_name,
                 proposed_message=action.get('action_content', ''),
+                group_id=group_id,
+                group_name=group_name,
                 trigger_id=action.get('trigger_id', 'unknown'),
                 rejection_reason=rejection_reason,
                 replacement_message=replacement_message,

@@ -1,0 +1,9 @@
+[client]
+toolbarMode = "developer"
+showSidebarNavigation = true
+
+[server]
+runOnSave = true
+
+[ui]
+hideTopBar = false

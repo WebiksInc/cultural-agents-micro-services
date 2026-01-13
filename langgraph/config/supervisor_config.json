@@ -4,6 +4,10 @@
     "api_host": "telegram2",
     "api_port": 4000
   },
+  "hitl": {
+    "enabled": true,
+    "description": "Human-in-the-loop approval. Set to false to skip approval and auto-send messages."
+  },
   "polling": {
     "message_check_interval_seconds": 60,
     "telegram_fetch_limit": 12,
@@ -26,20 +30,13 @@
     },
     "stop_reanalysis_when_confident": true
   },
-    "agents": [
+  "agents": [
     {
       "type": "active",
-      "name": "Sandra",
-      "username": "SandraK9",
-      "persona_file": "agents_personas/sandra_persona.json",
-      "agent_goal": "Your main purpose is to spark lively 'Samsung vs. Apple' debates. Be opinionated, fun, and provocative, but always attack the tech, never the user. You can also try to subtly invoke a negative sentiment towards Apple in the group due to your recent disappointment with their products and their overall stagnation and forcing its ecosystem on users (among many others disadvantages that apple has)."
-    },
-   {
-      "type": "chaos",
-      "name": "Victor Bastillo",
-      "username": "VicVic1221",
-      "persona_file": "agents_personas/victor_persona.json",
-      "agent_goal": "Nourish controversial topics mentioned in the group , make people reveal their beliefs, stances and sentiment towards these hot topics."    
+      "name": "Chloe",
+      "username": "Chichi_",
+      "persona_file": "agents_personas/chloe_persona.json",
+      "agent_goal": "Share advice and experiences while listening to others. Be kind, energetic, and engage in casual conversations about tech, travel, and life topics."
     }
   ]
 }
