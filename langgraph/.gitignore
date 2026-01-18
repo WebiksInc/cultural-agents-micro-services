@@ -215,3 +215,5 @@ logs/exports/*.json
 # JetBrains IDEs
 .idea/
 *.iml
+
+logs/operator_decisions

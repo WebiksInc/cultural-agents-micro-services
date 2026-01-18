@@ -197,7 +197,16 @@ def process_approval_response(
             if replacement_message:
                 replacement_action = action.copy()
                 replacement_action['action_content'] = replacement_message
-                replacement_action['action_id'] = 'operator_replacement'
+                
+                # Preserve action_id for reactions - operator is changing emoji, not action type
+                original_action_id = action.get('action_id', '')
+                if original_action_id == 'add_reaction':
+                    # Keep it as add_reaction so executor calls the reaction API
+                    replacement_action['action_id'] = 'add_reaction'
+                    logger.info(f"Operator replaced reaction emoji for {agent_name}: {replacement_message}")
+                else:
+                    replacement_action['action_id'] = 'operator_replacement'
+                    
                 replacement_action['action_purpose'] = f"Operator replacement for: {action.get('action_purpose', '')}"
                 approved_actions.append(replacement_action)
                 logger.info(f"Using operator replacement message for {agent_name}")

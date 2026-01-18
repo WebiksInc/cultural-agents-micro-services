@@ -957,12 +957,15 @@ def render_approval_queue_tab():
     
     # Check if a response was already submitted (waiting for graph to process)
     has_response = approval_state.has_response()
+    just_submitted = st.session_state.get("just_submitted", False)
     
     if not pending:
         # Clear stale session state when no pending
         clear_approval_state()
         if "last_pending_timestamp" in st.session_state:
             del st.session_state["last_pending_timestamp"]
+        if "just_submitted" in st.session_state:
+            del st.session_state["just_submitted"]
         
         st.info("✅ No pending approvals. The system is either idle or all messages have been processed.")
         
@@ -973,15 +976,19 @@ def render_approval_queue_tab():
             st.rerun()
         return
     
-    # If we have pending BUT also have a response, show waiting state
-    if has_response:
+    # If we have pending BUT also have a response (or just submitted), show waiting state
+    if has_response or just_submitted:
         st.success("✅ Response submitted! Waiting for the graph to process...")
         st.info("⏳ The supervisor will pick up your decision shortly.")
+        
+        # Clear the just_submitted flag after showing - the response file check will take over
+        if just_submitted and has_response:
+            st.session_state["just_submitted"] = False
         
         # Auto-refresh to detect when graph consumes the response
         if auto_refresh:
             import time
-            time.sleep(3)  # Shorter interval when waiting for graph
+            time.sleep(2)  # Shorter interval when waiting for graph
             st.rerun()
         return
     
@@ -1130,11 +1137,10 @@ def render_approval_queue_tab():
                                 "operator_name": current_operator,
                                 "group_id": current_group_id
                             })
+                            # Mark that we just submitted - this triggers the waiting state on next render
+                            st.session_state["just_submitted"] = True
                             st.session_state[processed_key] = True
                             st.session_state[f'decision_result_{i}'] = "Approved ✅"
-                            st.success("✅ Approved! Graph will resume.")
-                            import time
-                            time.sleep(1)
                             st.rerun()
                 
                 with col2:
@@ -1170,11 +1176,10 @@ def render_approval_queue_tab():
                                     "operator_name": current_operator,
                                     "group_id": current_group_id
                                 })
+                                # Mark that we just submitted - this triggers the waiting state on next render
+                                st.session_state["just_submitted"] = True
                                 st.session_state[processed_key] = True
                                 st.session_state[f'decision_result_{i}'] = "Rejected ❌"
-                                st.error("❌ Rejected!")
-                                import time
-                                time.sleep(1)
                                 st.rerun()
             
             st.markdown("---")
