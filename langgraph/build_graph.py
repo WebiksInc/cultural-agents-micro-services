@@ -1,10 +1,11 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Literal
+from typing import Dict, Any, Literal, Optional
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
+from langgraph.checkpoint.memory import InMemorySaver
 
 # Import state definitions
 from states.supervisor_state import SupervisorState
@@ -14,6 +15,7 @@ from states.agent_state import AgentState
 from nodes.supervisor.component_B import emotion_analysis_node
 from nodes.supervisor.component_C import personality_analysis_node
 from nodes.supervisor.scheduler import scheduler_node
+from nodes.supervisor.human_approval import human_approval_node
 from nodes.supervisor.executor import executor_node
 
 # Import agent nodes
@@ -270,15 +272,20 @@ def create_agent_node(agent_name: str, agent_graph: StateGraph, agent_config: Di
     return agent_node
 
 
-def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateGraph:
+def build_supervisor_graph(
+    config_path: Path = SUPERVISOR_CONFIG_PATH,
+    checkpointer: Optional[InMemorySaver] = None
+) -> StateGraph:
     """
     Build the main Supervisor graph with embedded agent subgraphs.
     
     Flow:
-    START → component_B → component_C → [agent1, agent2, ...] (parallel) → scheduler → executor → END
+    START → component_B → component_C → [agent1, agent2, ...] (parallel) → 
+    scheduler → human_approval (interrupt) → executor → END
     
     Args:
         config_path: Path to supervisor_config.json
+        checkpointer: Optional checkpointer for persistence (required for HITL)
         
     Returns:
         Compiled StateGraph for the supervisor
@@ -336,6 +343,9 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     # Add scheduler node
     supervisor_builder.add_node("scheduler", scheduler_node)
     
+    # Add human approval node (HITL interrupt point)
+    supervisor_builder.add_node("human_approval", human_approval_node)
+    
     # Add executor node
     supervisor_builder.add_node("executor", executor_node)
     
@@ -353,13 +363,22 @@ def build_supervisor_graph(config_path: Path = SUPERVISOR_CONFIG_PATH) -> StateG
     # All agents already route to scheduler via Command(goto="scheduler")
     # No explicit edges needed due to Command-based routing
     
-    # scheduler → executor
-    supervisor_builder.add_edge("scheduler", "executor")
+    # scheduler → human_approval (HITL interrupt point)
+    supervisor_builder.add_edge("scheduler", "human_approval")
+    
+    # human_approval routes to executor via Command(goto="executor")
+    # No explicit edge needed due to Command-based routing
     
     # executor → END
     supervisor_builder.add_edge("executor", END)
     
-    return supervisor_builder.compile()
+    # Compile with checkpointer if provided (required for HITL)
+    if checkpointer:
+        logger.info("Compiling graph with checkpointer for HITL support")
+        return supervisor_builder.compile(checkpointer=checkpointer)
+    else:
+        logger.warning("Compiling graph without checkpointer - HITL will not work")
+        return supervisor_builder.compile()
 
 
 if __name__ == "__main__":
@@ -371,7 +390,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
     try:
-        graph = build_supervisor_graph()
+        # Build with checkpointer for HITL support
+        checkpointer = InMemorySaver()
+        graph = build_supervisor_graph(checkpointer=checkpointer)
+        print("Graph built successfully with HITL support")
     except Exception as e:
         import traceback
         traceback.print_exc()

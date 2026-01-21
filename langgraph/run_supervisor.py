@@ -6,6 +6,7 @@ This script:
 2. Calls Telegram for new messages periodically
 3. Runs the graph when new messages arrive
 4. Handles the continuous polling loop with sleep intervals
+5. Supports Human-in-the-Loop (HITL) approval via interrupt mechanism
 """
 
 import time
@@ -13,6 +14,7 @@ import json
 import logging
 from pathlib import Path
 from datetime import datetime
+from uuid import uuid4
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -22,6 +24,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 from build_graph import build_supervisor_graph
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.types import Command
 from utils import get_all_agent_usernames, load_agent_personas, is_agent_sender
 from states.supervisor_state import SupervisorState
 from states.agent_state import Message
@@ -31,6 +35,7 @@ from memory import save_group_messages, update_messages_emotions, get_group_mess
 from collections import deque
 import time
 from logs.logfire_export import export_run_logs
+from approval_state import approval_state
 
 # Setup Logfire
 setup_logfire("cultural-agents-supervisor")
@@ -98,6 +103,56 @@ def parse_telegram_message(msg_data: dict, agent_usernames: list = None) -> Mess
     )
 
 
+# HITL Approval check interval (seconds)
+APPROVAL_CHECK_INTERVAL = 2
+
+
+def invoke_graph_with_hitl(graph, state: dict, config: dict) -> dict:
+    """
+    Invoke the graph with Human-in-the-Loop support.
+    
+    If the graph hits an interrupt (human_approval node), this function:
+    1. Stores the pending approval in approval_state
+    2. Waits for operator response
+    3. Resumes the graph with the operator's decision
+    
+    Args:
+        graph: The compiled LangGraph
+        state: The current SupervisorState
+        config: The graph config with thread_id
+        
+    Returns:
+        The final state after graph completion
+    """
+    # Invoke graph - may hit interrupt
+    result = graph.invoke(state, config)
+    
+    # Check if we hit an interrupt
+    if "__interrupt__" in result:
+        interrupt_data = result["__interrupt__"][0].value
+        logger.info(f"🔔 HITL: Graph interrupted with {interrupt_data.get('total_pending', 0)} pending approvals")
+        
+        # Store pending approval for Streamlit to pick up
+        approval_state.set_pending(config, interrupt_data)
+        
+        # Wait for operator response
+        logger.info("⏳ HITL: Waiting for operator approval...")
+        while not approval_state.has_response():
+            time.sleep(APPROVAL_CHECK_INTERVAL)
+        
+        # Get operator response and resume
+        operator_response = approval_state.get_response()
+        logger.info(f"✅ HITL: Received operator response, resuming graph...")
+        
+        # Resume the graph with operator's decision
+        result = graph.invoke(Command(resume=operator_response), config)
+        
+        # Clear approval state
+        approval_state.clear()
+        logger.info("HITL: Graph resumed and completed")
+    
+    return result
+
 
 def run_supervisor_loop():
     # STEP 1: INITIALIZATION 
@@ -106,9 +161,10 @@ def run_supervisor_loop():
     # Track when the run started for log export
     run_start_time = datetime.utcnow()
     
-    # 1. Build graph and dependencies
-    graph = build_supervisor_graph()
-    logger.info("Supervisor graph built successfully")
+    # 1. Build graph with checkpointer for HITL support
+    checkpointer = InMemorySaver()
+    graph = build_supervisor_graph(checkpointer=checkpointer)
+    logger.info("Supervisor graph built successfully with HITL support")
     
     agent_personas = load_agent_personas()
     logger.info(f"Loaded {len(agent_personas)} agent personas")
@@ -238,7 +294,9 @@ def run_supervisor_loop():
         
         if unprocessed:
             logger.info(f"Running graph for {len(unprocessed)} initial unprocessed messages...")
-            state = graph.invoke(state)
+            # Use HITL-aware invocation with unique thread_id
+            config = {"configurable": {"thread_id": f"init-{uuid4()}"}}
+            state = invoke_graph_with_hitl(graph, state, config)
             
             # Persist emotion analysis to group_history
             update_messages_emotions(CHAT_ID, state["recent_messages"])
@@ -305,7 +363,9 @@ def run_supervisor_loop():
                         
                         if unprocessed:
                             logger.info(f"Running graph for {len(unprocessed)} new messages")
-                            state = graph.invoke(state)
+                            # Use HITL-aware invocation with unique thread_id
+                            config = {"configurable": {"thread_id": f"poll-{uuid4()}"}}
+                            state = invoke_graph_with_hitl(graph, state, config)
                             
                             # Persist emotion analysis to group_history
                             update_messages_emotions(CHAT_ID, state["recent_messages"])

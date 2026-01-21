@@ -17,3 +17,12 @@ langgraph/auth.py
 venv/
 env/
 ENV/
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+.github/
+
+.langgraph/logs/operator_decisions/
+llms-full_langgraph.txt

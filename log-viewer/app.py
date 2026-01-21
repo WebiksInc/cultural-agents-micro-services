@@ -5,18 +5,43 @@ A Streamlit app to visualize Logfire logs organized by:
 - Supervisor Runs (complete flow from start to response)
 - Agents
 - Groups
+- Approval Queue (Human-in-the-Loop)
 
 Run with: streamlit run app.py
 """
 
 import streamlit as st
 from datetime import date, timedelta
+from pathlib import Path
 from utils.data_loader import LogDataLoader
+
+# Import approval state for HITL using importlib to avoid path conflicts
+HITL_AVAILABLE = False
+HITL_ERROR = None
+approval_state = None
+log_decision = None
+
+try:
+    import importlib.util
+    langgraph_path = Path(__file__).resolve().parent.parent / "langgraph"
+    approval_state_path = langgraph_path / "approval_state.py"
+    
+    if approval_state_path.exists():
+        spec = importlib.util.spec_from_file_location("approval_state", approval_state_path)
+        approval_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(approval_module)
+        approval_state = approval_module.approval_state
+        log_decision = approval_module.log_decision
+        HITL_AVAILABLE = True
+    else:
+        HITL_ERROR = f"approval_state.py not found at {approval_state_path}"
+except Exception as e:
+    HITL_ERROR = f"{e}"
 
 # Page config
 st.set_page_config(
-    page_title="Cultural Agents - Log Viewer",
-    page_icon="🤖",
+    page_title="Cultural Agents",
+    page_icon="👳🏼‍♀️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -275,7 +300,14 @@ def render_metrics(loader: LogDataLoader):
     runs_with_response = sum(1 for r in runs if r["has_response"])
     total_prompts = sum(r["prompt_count"] for r in runs)
     
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Get pending approvals count
+    pending_count = 0
+    if HITL_AVAILABLE:
+        pending = approval_state.get_pending()
+        if pending:
+            pending_count = len(pending.get("data", {}).get("pending_messages", []))
+    
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     with col1:
         st.metric("🚀 Runs", len(runs))
@@ -287,6 +319,11 @@ def render_metrics(loader: LogDataLoader):
         st.metric("👥 Groups", len(groups))
     with col5:
         st.metric("💬 LLM Calls", total_prompts)
+    with col6:
+        if pending_count > 0:
+            st.metric("🔔 Pending", pending_count, delta="awaiting", delta_color="inverse")
+        else:
+            st.metric("🔔 Pending", 0)
 
 
 def render_run_card(run: dict, loader: LogDataLoader):
@@ -887,6 +924,267 @@ def render_groups_tab(loader: LogDataLoader):
             st.info("No messages sent in this group during the selected period")
 
 
+def render_approval_queue_tab():
+    """Render the Human-in-the-Loop approval queue tab."""
+    st.markdown("## 🔔 Pending Approvals")
+    
+    if not HITL_AVAILABLE:
+        st.error("⚠️ HITL module not available. Check langgraph path.")
+        return
+    
+    # Controls row: Manual refresh + Auto-refresh toggle
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        if st.button("🔄 Refresh", key="manual_refresh_top", use_container_width=True):
+            # Clear all approval-related session state
+            keys_to_clear = [k for k in list(st.session_state.keys()) 
+                            if k.startswith(('processed_', 'decision_result_', 'edit_', 'reason_', 'replacement_'))]
+            for k in keys_to_clear:
+                del st.session_state[k]
+            st.rerun()
+    with col3:
+        auto_refresh = st.checkbox("🔄 Auto-refresh (5s)", value=True, key="auto_refresh_toggle")
+    
+    # Helper to clear approval session state
+    def clear_approval_state():
+        keys_to_clear = [k for k in list(st.session_state.keys()) 
+                        if k.startswith(('processed_', 'decision_result_', 'edit_', 'reason_', 'replacement_'))]
+        for k in keys_to_clear:
+            del st.session_state[k]
+    
+    # Check for pending approvals
+    pending = approval_state.get_pending()
+    
+    # Check if a response was already submitted (waiting for graph to process)
+    has_response = approval_state.has_response()
+    just_submitted = st.session_state.get("just_submitted", False)
+    
+    if not pending:
+        # Clear stale session state when no pending
+        clear_approval_state()
+        if "last_pending_timestamp" in st.session_state:
+            del st.session_state["last_pending_timestamp"]
+        if "just_submitted" in st.session_state:
+            del st.session_state["just_submitted"]
+        
+        st.info("✅ No pending approvals. The system is either idle or all messages have been processed.")
+        
+        # Auto-refresh using streamlit's native rerun
+        if auto_refresh:
+            import time
+            time.sleep(5)
+            st.rerun()
+        return
+    
+    # If we have pending BUT also have a response (or just submitted), show waiting state
+    if has_response or just_submitted:
+        st.success("✅ Response submitted! Waiting for the graph to process...")
+        st.info("⏳ The supervisor will pick up your decision shortly.")
+        
+        # Clear the just_submitted flag after showing - the response file check will take over
+        if just_submitted and has_response:
+            st.session_state["just_submitted"] = False
+        
+        # Auto-refresh to detect when graph consumes the response
+        if auto_refresh:
+            import time
+            time.sleep(2)  # Shorter interval when waiting for graph
+            st.rerun()
+        return
+    
+    # Extract pending data
+    interrupt_data = pending.get("data", {})
+    pending_messages = interrupt_data.get("pending_messages", [])
+    context_messages = interrupt_data.get("context_messages", [])
+    group_info = interrupt_data.get("group_info", {})
+    timestamp = pending.get("timestamp", "")
+    
+    # Check if this is a NEW pending batch - clear old state if so
+    if st.session_state.get("last_pending_timestamp") != timestamp:
+        clear_approval_state()
+        st.session_state["last_pending_timestamp"] = timestamp
+    
+    # Operator name input (persisted in session state)
+    st.markdown("### 👤 Operator")
+    operator_name = st.text_input(
+        "Your name:",
+        value=st.session_state.get("operator_name", ""),
+        key="operator_name_input",
+        placeholder="Enter your name to log decisions"
+    )
+    if operator_name:
+        st.session_state["operator_name"] = operator_name
+    
+    if not operator_name:
+        st.warning("⚠️ Please enter your name before approving/rejecting messages")
+    
+    st.markdown("---")
+    
+    # Show group info
+    st.markdown(f"""
+    ### 📍 Group: {group_info.get('name', 'Unknown')}
+    - **Group ID:** `{group_info.get('id', 'Unknown')}`
+    - **Members:** {group_info.get('members', 0)}
+    - **Topic:** {group_info.get('topic', 'N/A')}
+    - **Pending since:** {timestamp}
+    """)
+    
+    st.markdown("---")
+    
+    # Show conversation context with better formatting
+    with st.expander("📜 Conversation Context (Recent Messages)", expanded=False):
+        for msg in context_messages[-15:]:  # Show last 15 messages
+            # Get sender name - try multiple fields
+            sender = msg.get("sender_first_name") or msg.get("sender_name") or msg.get("sender_username") or "Unknown"
+            text = msg.get("text", "")
+            
+            # Handle emotion - could be string or dict
+            emotion_raw = msg.get("message_emotion", "")
+            if isinstance(emotion_raw, dict):
+                emotion = emotion_raw.get("emotion", "")
+            elif isinstance(emotion_raw, list) and len(emotion_raw) > 0:
+                emotion = emotion_raw[0].get("emotion", "") if isinstance(emotion_raw[0], dict) else str(emotion_raw[0])
+            else:
+                emotion = str(emotion_raw) if emotion_raw else ""
+            
+            # Color-coded emotion badges
+            emotion_colors = {
+                "joy": "🟢", "happy": "🟢", "excited": "🟢",
+                "sad": "🔵", "melancholy": "🔵",
+                "angry": "🔴", "frustrated": "🔴",
+                "fear": "🟣", "anxious": "🟣",
+                "neutral": "⚪",
+            }
+            emotion_icon = emotion_colors.get(emotion.lower(), "⚪") if emotion else ""
+            emotion_badge = f" {emotion_icon} `{emotion}`" if emotion else ""
+            
+            st.markdown(f"**{sender}**{emotion_badge}: {text}")
+    
+    st.markdown("---")
+    st.markdown(f"### ⏳ {len(pending_messages)} Message(s) Awaiting Approval")
+    
+    # Render each pending message with INDIVIDUAL approve/reject buttons
+    for i, msg in enumerate(pending_messages):
+        agent_name = msg.get("agent_name", "Unknown")
+        agent_type = msg.get("agent_type", "unknown")
+        proposed_message = msg.get("proposed_message", "")
+        action_id = msg.get("action_id", "unknown")
+        action_purpose = msg.get("action_purpose", "")
+        trigger_id = msg.get("trigger_id", "")
+        trigger_justification = msg.get("trigger_justification", "")
+        target_message = msg.get("target_message")
+        
+        # Card for each pending message
+        with st.container():
+            st.markdown(f"#### 🤖 Message {i+1}: {agent_name} ({agent_type})")
+            
+            # Show trigger info
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**🎯 Trigger:** `{trigger_id}`")
+                st.caption(f"Justification: {trigger_justification}")
+            with col2:
+                st.markdown(f"**⚡ Action:** `{action_id}`")
+                st.caption(f"Purpose: {action_purpose}")
+            
+            # Show target message if responding to someone - with better sender name
+            if target_message:
+                target_sender = (
+                    target_message.get("sender_first_name") or 
+                    target_message.get("sender_name") or 
+                    target_message.get("sender_username") or 
+                    "Unknown"
+                )
+                st.markdown("**💬 Responding to:**")
+                st.info(f"**{target_sender}**: {target_message.get('text', '')}")
+            
+            # Show proposed message
+            st.markdown("**📝 Proposed Message:**")
+            st.success(proposed_message)
+            
+            # Individual decision UI for THIS message
+            st.markdown("---")
+            decision_key = f"msg_{i}"
+            
+            # Check if already processed
+            processed_key = f"processed_{i}"
+            if processed_key in st.session_state and st.session_state[processed_key]:
+                st.success(f"✅ Already submitted: {st.session_state.get(f'decision_result_{i}', 'processed')}")
+            else:
+                # Get operator name and group_id for logging
+                current_operator = st.session_state.get("operator_name", "")
+                current_group_id = group_info.get("id", "unknown")
+                
+                # Decision options in columns (removed Edit option)
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    # Quick approve button
+                    if st.button(f"✅ Approve", key=f"approve_{i}", type="primary", use_container_width=True):
+                        if not current_operator:
+                            st.error("⚠️ Please enter your name first")
+                        else:
+                            # Submit approval immediately
+                            decisions = [{
+                                "agent_name": agent_name,
+                                "decision": "approved",
+                                "rejection_reason": None,
+                                "replacement_message": None,
+                                "message_index": i
+                            }]
+                            approval_state.set_response({
+                                "decisions": decisions,
+                                "operator_name": current_operator,
+                                "group_id": current_group_id
+                            })
+                            # Mark that we just submitted - this triggers the waiting state on next render
+                            st.session_state["just_submitted"] = True
+                            st.session_state[processed_key] = True
+                            st.session_state[f'decision_result_{i}'] = "Approved ✅"
+                            st.rerun()
+                
+                with col2:
+                    # Reject with reason
+                    with st.expander("❌ Reject"):
+                        rejection_reason = st.text_area(
+                            "Rejection reason:",
+                            key=f"reason_{i}",
+                            placeholder="Why is this being rejected?",
+                            height=80
+                        )
+                        replacement_message = st.text_area(
+                            "Replacement (optional):",
+                            key=f"replacement_{i}",
+                            placeholder="Send this instead",
+                            height=80
+                        )
+                        if st.button(f"Submit Rejection", key=f"submit_reject_{i}", use_container_width=True):
+                            if not current_operator:
+                                st.error("⚠️ Please enter your name first")
+                            elif not rejection_reason:
+                                st.warning("Please provide a reason")
+                            else:
+                                decisions = [{
+                                    "agent_name": agent_name,
+                                    "decision": "rejected",
+                                    "rejection_reason": rejection_reason,
+                                    "replacement_message": replacement_message if replacement_message else None,
+                                    "message_index": i
+                                }]
+                                approval_state.set_response({
+                                    "decisions": decisions,
+                                    "operator_name": current_operator,
+                                    "group_id": current_group_id
+                                })
+                                # Mark that we just submitted - this triggers the waiting state on next render
+                                st.session_state["just_submitted"] = True
+                                st.session_state[processed_key] = True
+                                st.session_state[f'decision_result_{i}'] = "Rejected ❌"
+                                st.rerun()
+            
+            st.markdown("---")
+
+
 def main():
     """Main app entry point."""
     # Sidebar
@@ -906,13 +1204,29 @@ def main():
     st.title("🤖 Cultural Agents Log Viewer")
     st.caption(f"Viewing logs from {start_date} to {end_date}")
     
+    # Check for pending approvals and show indicator
+    has_pending = HITL_AVAILABLE and approval_state.has_pending()
+    pending_indicator = " 🔴" if has_pending else ""
+    
     # Top metrics
     render_metrics(loader)
     
     st.markdown("---")
     
-    # Main tabs
-    tab1, tab2, tab3 = st.tabs(["🚀 Supervisor Runs", "🤖 Agents", "👥 Groups"])
+    # Main tabs - always show Approval Queue tab
+    tab0, tab1, tab2, tab3 = st.tabs([
+        f"🔔 Approval Queue{pending_indicator}", 
+        "🚀 Supervisor Runs", 
+        "🤖 Agents", 
+        "👥 Groups"
+    ])
+    
+    with tab0:
+        if HITL_AVAILABLE:
+            render_approval_queue_tab()
+        else:
+            st.error(f"⚠️ HITL not available. Import error: {HITL_ERROR}")
+            st.info("Make sure the langgraph folder is accessible and approval_state.py exists.")
     
     with tab1:
         render_supervisor_runs_tab(loader)
