@@ -25,3 +25,4 @@ ENV/
 .github/
 
 .langgraph/logs/operator_decisions/
+llms-full_langgraph.txt
